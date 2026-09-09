@@ -51,8 +51,15 @@ GitFlow: `main` solo para releases estables, `develop` como rama de integración
 
 ## Estado
 
-En diseño — modelo de datos, diagramas UML (clases, casos de uso, secuencia, despliegue) y
-estructura de repo ya cerrados. Implementación de modelos, endpoints y app Flutter pendiente.
+Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implementación:
+
+- ✅ `apps/satelital`: `FocoIncendio` + `ClienteNasaFirms` — probado de punta a punta contra
+  `docker compose up` real (163 focos reales de Colombia persistidos, deduplicación verificada,
+  9/9 tests pasando con Postgres real).
+- ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
+  verificado con login real.
+- ⬜ `ClienteInpeQueimadas`, `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`,
+  `ModeloRecurrencia`, `Notificador`/`DespachadorNotificaciones`, endpoints REST, app Flutter.
 
 ## Licencia
 
