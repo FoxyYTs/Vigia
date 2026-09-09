@@ -141,6 +141,7 @@ INPE_QUEIMADAS_WFS_URL = env(
     default="https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/wfs",
 )
 UNGRD_SOCRATA_APP_TOKEN = env("UNGRD_SOCRATA_APP_TOKEN", default="")
+UNGRD_SOCRATA_APP_SECRET = env("UNGRD_SOCRATA_APP_SECRET", default="")
 UNGRD_DATASET_ID = env("UNGRD_DATASET_ID", default="")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CANAL_PUBLICO_ID = env("TELEGRAM_CANAL_PUBLICO_ID", default="")
