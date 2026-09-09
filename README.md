@@ -53,3 +53,9 @@ GitFlow: `main` solo para releases estables, `develop` como rama de integración
 
 En diseño — modelo de datos, diagramas UML (clases, casos de uso, secuencia, despliegue) y
 estructura de repo ya cerrados. Implementación de modelos, endpoints y app Flutter pendiente.
+
+## Licencia
+
+[GPL v3](LICENSE). Cualquiera puede usar y modificar este código; las versiones derivadas que
+se distribuyan también deben ser open source bajo GPL — coherente con que Vigía está pensado
+como herramienta de interés público para entidades gubernamentales colombianas.
