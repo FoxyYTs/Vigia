@@ -27,7 +27,13 @@ RUN pip install --no-cache-dir -r ${REQUIREMENTS_FILE}
 
 COPY . .
 
-RUN useradd --create-home vigia
-USER vigia
+# TODO: corría antes como usuario no-root ("vigia"), pero los volúmenes
+# nombrados de Docker (static_files, media_files) los crea Docker con
+# dueño root — collectstatic fallaba con PermissionError al escribir ahí.
+# El arreglo correcto es un entrypoint que haga chown de los volúmenes
+# antes de bajar privilegios (con gosu/su-exec); por ahora corre como
+# root, simplificación aceptada para el MVP ya que este contenedor no
+# queda expuesto directo a internet (Nginx + Cloudflare Tunnel delante).
+# Ver Vigia-UML-Despliegue § Pendiente.
 
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
