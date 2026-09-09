@@ -15,7 +15,15 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env()
-environ.Env.read_env(BASE_DIR.parent / ".env")
+
+# El build context del Dockerfile es solo backend/ (ver Vigia-UML-Despliegue),
+# así que dentro del contenedor no existe un .env físico en BASE_DIR.parent
+# — ahí las variables ya llegan inyectadas por `env_file:` de
+# docker-compose.yml. read_env() es solo para desarrollo local fuera de
+# Docker; por eso se guarda condicionado a que el archivo exista.
+_dotenv_path = BASE_DIR.parent / ".env"
+if _dotenv_path.exists():
+    environ.Env.read_env(_dotenv_path)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
