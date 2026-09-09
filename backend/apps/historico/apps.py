@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class HistoricoConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.historico"
+    verbose_name = "historico"

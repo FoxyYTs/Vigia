@@ -1,0 +1,29 @@
+# Ver Vigia.md § Stack Tecnológico (vault de Obsidian) — versiones exactas
+# se fijan al instalar por primera vez, no antes de tener un entorno real
+# donde probarlas.
+
+Django>=5.1,<5.2
+djangorestframework
+djangorestframework-simplejwt
+django-environ
+psycopg[binary]
+
+# Asíncrono / tareas programadas
+celery
+django-celery-beat
+redis
+
+# Geoespacial (PostGIS) — requiere GDAL/GEOS/PROJ del sistema, ver
+# backend/Dockerfile
+# (django.contrib.gis viene con Django, no es un paquete pip aparte)
+
+# Aprendizaje automático — ModeloRecurrencia (ver Vigia-UML-Clases § Servicios)
+pandas
+scikit-learn
+
+# Notificaciones
+python-telegram-bot
+firebase-admin
+
+# Servidor de aplicación (producción)
+gunicorn
