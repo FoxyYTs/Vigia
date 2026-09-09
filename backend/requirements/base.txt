@@ -7,6 +7,7 @@ djangorestframework
 djangorestframework-simplejwt
 django-environ
 psycopg[binary]
+requests
 
 # Asíncrono / tareas programadas
 celery
