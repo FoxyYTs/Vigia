@@ -132,11 +132,16 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
-# Credenciales de integraciones externas — ver Vigia-Roadmap-Desarrollo
-# § Bloqueante "Credenciales de las APIs externas" (siguiente ítem del
-# roadmap, todavía sin resolver).
+# Credenciales e integraciones externas — ver Vigia-Credenciales-APIs
+# (vault de Obsidian) para el proceso de registro de cada una y el
+# formato exacto de uso (MAP_KEY en la URL, X-App-Token como header, etc.)
 NASA_FIRMS_MAP_KEY = env("NASA_FIRMS_MAP_KEY", default="")
+INPE_QUEIMADAS_WFS_URL = env(
+    "INPE_QUEIMADAS_WFS_URL",
+    default="https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/wfs",
+)
 UNGRD_SOCRATA_APP_TOKEN = env("UNGRD_SOCRATA_APP_TOKEN", default="")
+UNGRD_DATASET_ID = env("UNGRD_DATASET_ID", default="")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CANAL_PUBLICO_ID = env("TELEGRAM_CANAL_PUBLICO_ID", default="")
 TELEGRAM_CANAL_PRIVADO_ID = env("TELEGRAM_CANAL_PRIVADO_ID", default="")
