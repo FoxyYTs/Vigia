@@ -1,7 +1,8 @@
 # Ver Vigia-UML-Despliegue (vault de Obsidian) para el diagrama completo.
-# 6 servicios: nginx, backend (Gunicorn), celery-worker, celery-beat,
-# redis, db (PostgreSQL+PostGIS). El bot de Telegram y el modelo de
-# recurrencia corren dentro de celery-worker, no como servicios propios.
+# 7 servicios: nginx, backend (Gunicorn), celery-worker, celery-beat,
+# redis, db (PostgreSQL+PostGIS), cloudflared. El bot de Telegram y el
+# modelo de recurrencia corren dentro de celery-worker, no como servicios
+# propios.
 
 services:
   db:
@@ -90,13 +91,24 @@ services:
   nginx:
     build: ./nginx
     restart: unless-stopped
+    # Solo accesible en localhost — cloudflared llega por la red interna
+    # de Docker (nginx:80), no por este puerto. Publicado en 127.0.0.1
+    # únicamente para poder probar sin pasar por el túnel durante
+    # desarrollo local.
     ports:
-      - "8080:80"  # Cloudflare Tunnel apunta aquí — no exponer directo a internet
+      - "127.0.0.1:8080:80"
     depends_on:
       - backend
     volumes:
       - static_files:/app/staticfiles:ro
       - media_files:/app/media:ro
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?falta CLOUDFLARE_TUNNEL_TOKEN en .env}
+    depends_on:
+      - nginx
 
 volumes:
   postgres_data:
