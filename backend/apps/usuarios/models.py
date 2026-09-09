@@ -38,7 +38,13 @@ class Usuario(AbstractUser):
         ADMINISTRADOR = "administrador", "Administrador"
         STAFF = "staff", "Staff"
 
-    rol = models.CharField(max_length=20, choices=Rol.choices)
+    # default=STAFF (no CIUDADANO): sin esto, un superusuario creado con
+    # createsuperuser queda con rol='' — encontrado probando de verdad
+    # (createsuperuser no falla, pero es_administrador()/es_staff() daban
+    # False los dos). Quien crea un superusuario es por definición del
+    # equipo de desarrollo; los flujos de registro de ciudadano/admin
+    # deben fijar el rol explícitamente de todas formas.
+    rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.STAFF)
 
     # Solo aplica a rol=ciudadano.
     municipio_residencia = models.ForeignKey(
