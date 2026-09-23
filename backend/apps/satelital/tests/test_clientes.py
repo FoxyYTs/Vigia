@@ -12,14 +12,26 @@ escribir este archivo. Correr con `pytest` dentro del contenedor
 """
 
 import csv
+import json
+import re
+from datetime import date
 from pathlib import Path
 
 import pytest
 import responses
 
-from apps.satelital.clientes import COLOMBIA_BBOX, ClienteNasaFirms, parsear_fila_firms
+from apps.satelital.clientes import (
+    COLOMBIA_BBOX,
+    ClienteInpeQueimadas,
+    ClienteNasaFirms,
+    parsear_feature_inpe,
+    parsear_fila_firms,
+    ventanas_de_dias,
+)
+from apps.satelital.models import FocoIncendio
 
 FIXTURE_CSV = Path(__file__).parent / "fixtures" / "firms_sample.csv"
+FIXTURE_INPE = Path(__file__).parent / "fixtures" / "inpe_sample.json"
 
 
 def _filas_fixture():
@@ -111,7 +123,121 @@ def test_descargar_csv_detecta_map_key_invalida():
         cliente._descargar_csv(1)
 
 
-def test_descargar_historico_no_implementado():
+# --- Histórico FIRMS -------------------------------------------------------
+
+
+def test_ventanas_de_dias_parte_en_bloques_de_cinco():
+    ventanas = list(ventanas_de_dias(date(2026, 1, 1), date(2026, 1, 12)))
+    assert ventanas == [
+        (date(2026, 1, 1), 5),
+        (date(2026, 1, 6), 5),
+        (date(2026, 1, 11), 2),
+    ]
+
+
+def test_ventanas_de_dias_un_solo_dia():
+    assert list(ventanas_de_dias(date(2026, 1, 1), date(2026, 1, 1))) == [(date(2026, 1, 1), 1)]
+
+
+def test_ventanas_de_dias_rechaza_rango_invertido():
+    with pytest.raises(ValueError):
+        list(ventanas_de_dias(date(2026, 1, 2), date(2026, 1, 1)))
+
+
+def test_url_historica_incluye_sensor_y_fecha():
     cliente = ClienteNasaFirms(map_key="clave-de-prueba")
-    with pytest.raises(NotImplementedError):
-        cliente.descargar_historico()
+    url = cliente._url(5, date(2020, 3, 1), "VIIRS_NOAA20_SP")
+    assert url.endswith("/VIIRS_NOAA20_SP/-79.0,-4.3,-66.8,13.5/5/2020-03-01")
+
+
+@pytest.mark.django_db
+@responses.activate
+def test_descargar_historico_recorre_ventanas_y_es_idempotente():
+    cliente = ClienteNasaFirms(map_key="clave-de-prueba")
+    desde, hasta = date(2026, 9, 1), date(2026, 9, 7)  # ventanas: 5 días + 2 días
+    sensor = "VIIRS_NOAA20_SP"
+    cuerpo = FIXTURE_CSV.read_text()
+    vacio = cuerpo.splitlines()[0] + "\n"  # solo encabezado: ventana sin focos
+    responses.add(responses.GET, cliente._url(5, date(2026, 9, 1), sensor), body=cuerpo)
+    responses.add(responses.GET, cliente._url(2, date(2026, 9, 6), sensor), body=vacio)
+
+    nuevos = cliente.descargar_historico(desde, hasta, pausa=0)
+    assert nuevos == 524
+
+    responses.add(responses.GET, cliente._url(5, date(2026, 9, 1), sensor), body=cuerpo)
+    responses.add(responses.GET, cliente._url(2, date(2026, 9, 6), sensor), body=vacio)
+    assert cliente.descargar_historico(desde, hasta, pausa=0) == 0
+    assert FocoIncendio.objects.count() == 524
+
+
+# --- INPE QUEIMADAS --------------------------------------------------------
+
+
+def _features_inpe():
+    return json.loads(FIXTURE_INPE.read_text())["features"]
+
+
+def test_parsear_feature_inpe_contra_datos_reales():
+    """inpe_sample.json es una respuesta real del WFS (23-sep-2026, capa
+    bdqueimadas2:focos, pais='Colombia'), con 8 focos por satélite."""
+    features = _features_inpe()
+    assert len(features) == 71
+
+    resultados = [parsear_feature_inpe(f) for f in features]
+
+    assert {r["fuente"] for r in resultados} == {"INPE_QUEIMADAS"}
+    assert {"GOES-19", "NOAA-20", "NPP-375", "AQUA_M-T"} <= {r["satelite"] for r in resultados}
+    for r in resultados:
+        assert r["confianza"] == ""  # INPE no entrega confianza
+        assert r["fecha_hora"].tzinfo is not None
+        assert -80 <= r["longitud"] <= -66 and -5 <= r["latitud"] <= 14
+
+
+def test_parsear_feature_inpe_frp_nulo():
+    feature = {
+        "properties": {
+            "data_hora_gmt": "2026-09-23T20:10:00Z",
+            "latitude": 4.5,
+            "longitude": -74.0,
+            "satelite": "GOES-19",
+            "frp": None,
+        }
+    }
+    assert parsear_feature_inpe(feature)["brillo_frp"] is None
+
+
+def test_params_inpe_filtra_por_pais_y_fecha():
+    from datetime import datetime, timezone
+
+    cliente = ClienteInpeQueimadas(url="https://wfs.test/wfs")
+    params = cliente._params(datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc), 0)
+    assert params["cql_filter"] == "pais='Colombia' AND data_hora_gmt >= 2026-09-22T12:00:00Z"
+    assert params["typeNames"] == "bdqueimadas2:focos"
+
+
+@pytest.mark.django_db
+@responses.activate
+def test_inpe_sincronizar_persiste_y_no_duplica():
+    cliente = ClienteInpeQueimadas(url="https://wfs.test/wfs")
+    respuesta = json.dumps({"type": "FeatureCollection", "features": _features_inpe()})
+    responses.add(responses.GET, re.compile(r"https://wfs\.test/wfs.*"), body=respuesta)
+
+    primera = cliente.sincronizar(dias=1)
+    segunda = cliente.sincronizar(dias=1)
+
+    assert primera == 71
+    assert segunda == 0
+
+
+@pytest.mark.django_db
+@responses.activate
+def test_inpe_sincronizar_pagina_hasta_agotar():
+    cliente = ClienteInpeQueimadas(url="https://wfs.test/wfs")
+    cliente.TAMANO_PAGINA = 40
+    features = _features_inpe()
+    pagina1 = json.dumps({"features": features[:40]})
+    pagina2 = json.dumps({"features": features[40:]})
+    responses.add(responses.GET, re.compile(r"https://wfs\.test/wfs.*startIndex=0.*"), body=pagina1)
+    responses.add(responses.GET, re.compile(r"https://wfs\.test/wfs.*startIndex=40.*"), body=pagina2)
+
+    assert cliente.sincronizar(dias=1) == 71

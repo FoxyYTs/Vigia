@@ -44,6 +44,8 @@ docker compose up --build
 La API queda en `http://localhost:8080/api/`, el admin de Django en
 `http://localhost:8080/admin/`.
 
+También disponible públicamente vía Cloudflare Tunnel: https://vigia.foxyyts.qzz.io
+
 ## Ramas
 
 GitFlow: `main` solo para releases estables, `develop` como rama de integración,
@@ -53,13 +55,15 @@ GitFlow: `main` solo para releases estables, `develop` como rama de integración
 
 Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implementación:
 
-- ✅ `apps/satelital`: `FocoIncendio` + `ClienteNasaFirms` — probado de punta a punta contra
-  `docker compose up` real (163 focos reales de Colombia persistidos, deduplicación verificada,
-  9/9 tests pasando con Postgres real).
+- ✅ `apps/satelital`: `FocoIncendio` + `ClienteNasaFirms` (tiempo real e histórico) +
+  `ClienteInpeQueimadas` (WFS, capa `bdqueimadas2:focos` filtrada por Colombia). Probados contra las
+  APIs reales; 20/20 tests con Postgres real. La tarea de Celery `sincronizar_focos` corre cada 3 h
+  y cada fuente falla de forma aislada.
+- ✅ Histórico: `python manage.py cargar_historico_firms` (VIIRS NOAA-20, 2018-04 → hoy, idempotente).
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
   verificado con login real.
-- ⬜ `ClienteInpeQueimadas`, `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`,
-  `ModeloRecurrencia`, `Notificador`/`DespachadorNotificaciones`, endpoints REST, app Flutter.
+- ⬜ `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`, `ModeloRecurrencia`,
+  `Notificador`/`DespachadorNotificaciones`, endpoints REST, app Flutter.
 
 ## Licencia
 
