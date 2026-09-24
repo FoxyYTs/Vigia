@@ -2,8 +2,13 @@
 
 from datetime import datetime, timezone
 
+import io
+
 import pytest
 from django.contrib.gis.geos import Point
+from django.core.cache import cache
+from PIL import Image
+from rest_framework.test import APIClient
 
 from apps.reportes.models import ReporteCiudadano
 from apps.satelital.models import FocoIncendio
@@ -74,3 +79,37 @@ def crear_reporte(db, ciudadano):
 @pytest.fixture
 def reporte(crear_reporte):
     return crear_reporte()
+
+
+@pytest.fixture(autouse=True)
+def _aislar_efectos_laterales(settings, tmp_path):
+    """Cada test arranca sin contadores de throttling y escribe las fotos
+    subidas en un directorio temporal, no en backend/media."""
+    cache.clear()
+    settings.MEDIA_ROOT = tmp_path / "media"
+
+
+@pytest.fixture
+def api():
+    return APIClient()
+
+
+@pytest.fixture
+def api_como(api):
+    """api_como(usuario) → cliente autenticado como ese usuario."""
+
+    def _como(usuario):
+        api.force_authenticate(usuario)
+        return api
+
+    return _como
+
+
+@pytest.fixture
+def imagen_png():
+    """Foto mínima pero válida (Pillow la abre) para los endpoints con ImageField."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (4, 4), "orange").save(buffer, format="PNG")
+    return SimpleUploadedFile("foco.png", buffer.getvalue(), content_type="image/png")
