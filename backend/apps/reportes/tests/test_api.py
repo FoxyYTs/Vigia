@@ -94,8 +94,19 @@ def test_administrador_ve_todos_y_filtra_por_estado(api_como, administrador, cre
     assert [x["id"] for x in cliente.get("/api/reportes/?estado=pendiente").data["results"]] == [pendiente.id]
 
 
-def test_staff_no_accede_a_los_reportes(api_como, staff):
-    assert api_como(staff).get("/api/reportes/").status_code == 403
+def test_staff_consulta_todos_los_reportes_en_solo_lectura(api_como, staff, crear_reporte):
+    reporte = crear_reporte()
+    cliente = api_como(staff)
+    assert [x["id"] for x in cliente.get("/api/reportes/").data["results"]] == [reporte.id]
+    assert cliente.get(f"/api/reportes/{reporte.id}/").status_code == 200
+
+
+def test_staff_no_puede_validar_ni_rechazar(api_como, staff, reporte):
+    cliente = api_como(staff)
+    assert cliente.post(f"/api/reportes/{reporte.id}/validar/").status_code == 403
+    assert cliente.post(f"/api/reportes/{reporte.id}/rechazar/").status_code == 403
+    reporte.refresh_from_db()
+    assert reporte.estado == "pendiente"
 
 
 def test_administrador_valida_un_reporte(api_como, administrador, reporte):

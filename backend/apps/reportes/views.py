@@ -5,7 +5,7 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from apps.reportes.models import ReporteCiudadano
 from apps.reportes.serializers import ReporteCiudadanoSerializer
-from apps.usuarios.permissions import EsAdministrador, EsCiudadano
+from apps.usuarios.permissions import EsAdministrador, EsCiudadano, EsStaff
 
 
 class ReporteCiudadanoViewSet(
@@ -17,6 +17,7 @@ class ReporteCiudadanoViewSet(
     """
     Ciudadano: crea reportes y consulta los suyos.
     Administrador: consulta todos y los valida o rechaza.
+    Staff: consulta todos (solo lectura, para revisarlos); no crea ni resuelve.
 
     NOTA: aún no se filtra por la jurisdicción de la entidad del
     administrador — requiere la geometría de `Municipio`, que todavía no está
@@ -32,7 +33,7 @@ class ReporteCiudadanoViewSet(
             return [EsCiudadano()]
         if self.action in ("validar", "rechazar"):
             return [EsAdministrador()]
-        return [(EsCiudadano | EsAdministrador)()]
+        return [(EsCiudadano | EsAdministrador | EsStaff)()]
 
     def get_queryset(self):
         usuario = self.request.user

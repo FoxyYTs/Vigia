@@ -59,7 +59,7 @@ Todo cuelga de `/api/`. Auth con JWT (`Authorization: Bearer <access>`); el toke
 | `GET focos/` | Anónimo | Focos para el mapa: `desde`, `hasta` (48 h por defecto, máx. 31 días), `fuente`, `bbox` |
 | `GET zonas-recurrentes/` | Anónimo | Zonas de la corrida más reciente del modelo (`min_puntaje`) |
 | `POST reportes/` (multipart) | Ciudadano | Crea un reporte con foto y las dos ubicaciones |
-| `GET reportes/` | Ciudadano (los suyos) / Administrador (todos) | `?estado=` |
+| `GET reportes/` | Ciudadano (los suyos) / Administrador y Staff (todos, Staff solo lectura) | `?estado=` |
 | `POST reportes/{id}/validar/`, `rechazar/` | Administrador | 409 si ya estaba resuelto |
 | `GET alertas/` | Autenticado | `?tipo=` |
 | `GET notificaciones/`, `POST notificaciones/{id}/marcar-leida/` | Autenticado | Solo las propias |
