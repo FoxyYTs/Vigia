@@ -114,9 +114,17 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    ),
+    # Cerrado por defecto: cada vista pública declara AllowAny explícitamente.
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_PAGINATION_CLASS": "config.pagination.PaginacionEstandar",
+    # Los límites por usuario/IP protegen registro, login y creación de
+    # reportes. El caché por defecto es local a cada proceso de gunicorn;
+    # para un límite global compartido, configurar CACHES con Redis.
+    "DEFAULT_THROTTLE_RATES": {
+        "registro": "20/hour",
+        "login": "60/hour",
+        "reporte": "30/hour",
+    },
 }
 
 SIMPLE_JWT = {
