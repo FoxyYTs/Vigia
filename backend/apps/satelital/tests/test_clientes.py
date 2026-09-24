@@ -28,6 +28,7 @@ from apps.satelital.clientes import (
     parsear_fila_firms,
     ventanas_de_dias,
 )
+from apps.satelital.geografia import esta_en_colombia
 from apps.satelital.models import FocoIncendio
 
 FIXTURE_CSV = Path(__file__).parent / "fixtures" / "firms_sample.csv"
@@ -39,10 +40,20 @@ def _filas_fixture():
         return list(csv.DictReader(f))
 
 
+def _dentro_de_colombia(fila):
+    return esta_en_colombia(float(fila["longitude"]), float(fila["latitude"]))
+
+
+# El CSV de prueba viene de consultar el rectángulo (bbox) de Colombia, así que
+# incluye focos de países vecinos: solo estos deben persistirse.
+FOCOS_DENTRO = sum(_dentro_de_colombia(f) for f in _filas_fixture())
+
+
 def test_parsear_fila_firms_contra_datos_reales():
     """
     fixtures/firms_sample.csv es una respuesta real de la API (capturada
-    09-sep-2026, 524 detecciones VIIRS_NOAA20_NRT en Colombia) — no datos
+    09-sep-2026, 524 detecciones VIIRS_NOAA20_NRT dentro del bbox de Colombia, incluidos
+    países vecinos) — no datos
     sintéticos, para no validar el parser contra suposiciones propias
     sobre el formato.
     """
@@ -94,7 +105,9 @@ def test_sincronizar_persiste_focos_nuevos():
 
     nuevos = cliente.sincronizar(dias=1)
 
-    assert nuevos == 524
+    assert 0 < FOCOS_DENTRO < 524  # el CSV sí trae focos de otros países
+    assert nuevos == FOCOS_DENTRO
+    assert FocoIncendio.objects.count() == FOCOS_DENTRO
 
 
 @pytest.mark.django_db
@@ -110,7 +123,7 @@ def test_sincronizar_no_duplica_en_segunda_corrida():
     primera = cliente.sincronizar(dias=1)
     segunda = cliente.sincronizar(dias=1)
 
-    assert primera == 524
+    assert primera == FOCOS_DENTRO
     assert segunda == 0
 
 
@@ -162,12 +175,12 @@ def test_descargar_historico_recorre_ventanas_y_es_idempotente():
     responses.add(responses.GET, cliente._url(2, date(2026, 9, 6), sensor), body=vacio)
 
     nuevos = cliente.descargar_historico(desde, hasta, pausa=0)
-    assert nuevos == 524
+    assert nuevos == FOCOS_DENTRO
 
     responses.add(responses.GET, cliente._url(5, date(2026, 9, 1), sensor), body=cuerpo)
     responses.add(responses.GET, cliente._url(2, date(2026, 9, 6), sensor), body=vacio)
     assert cliente.descargar_historico(desde, hasta, pausa=0) == 0
-    assert FocoIncendio.objects.count() == 524
+    assert FocoIncendio.objects.count() == FOCOS_DENTRO
 
 
 # --- INPE QUEIMADAS --------------------------------------------------------
