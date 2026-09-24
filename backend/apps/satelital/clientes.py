@@ -14,6 +14,7 @@ import requests
 from django.conf import settings
 from django.contrib.gis.geos import Point
 
+from apps.satelital.geografia import esta_en_colombia
 from apps.satelital.models import FocoIncendio
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,16 @@ class ClienteDatosExternos:
         """Descarga y persiste los datos nuevos. Retorna la cantidad de
         registros nuevos creados."""
         raise NotImplementedError
+
+    def _solo_colombia(self, datos: list[dict]) -> list[dict]:
+        """Descarta los focos fuera de Colombia (ver geografia.py)."""
+        dentro = [d for d in datos if esta_en_colombia(d["longitud"], d["latitud"])]
+        if len(dentro) < len(datos):
+            logger.info(
+                "%s: %s de %s focos descartados por caer fuera de Colombia",
+                type(self).__name__, len(datos) - len(dentro), len(datos),
+            )
+        return dentro
 
     def _contar(self) -> int:
         return FocoIncendio.objects.filter(fuente=self.FUENTE).count()
@@ -126,6 +137,8 @@ class ClienteNasaFirms(ClienteDatosExternos):
     """
 
     FUENTE = FocoIncendio.Fuente.NASA_FIRMS
+    # El bbox de FIRMS es un rectángulo: los focos que caen en otros países se
+    # descartan con `_solo_colombia`. INPE no lo necesita (filtra por país).
     SENSOR = "VIIRS_NOAA20_NRT"
     SENSOR_HISTORICO = "VIIRS_NOAA20_SP"
     BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
@@ -163,8 +176,7 @@ class ClienteNasaFirms(ClienteDatosExternos):
         """
         filas = self._descargar_csv(dias)
         nuevos = 0
-        for fila in filas:
-            datos = parsear_fila_firms(fila, self.FUENTE)
+        for datos in self._solo_colombia([parsear_fila_firms(f, self.FUENTE) for f in filas]):
             _, creado = FocoIncendio.objects.get_or_create(
                 fuente=datos["fuente"],
                 ubicacion=Point(datos["longitud"], datos["latitud"], srid=4326),
@@ -216,7 +228,7 @@ class ClienteNasaFirms(ClienteDatosExternos):
         antes = self._contar()
         for inicio, dias in ventanas_de_dias(desde, hasta):
             filas = self._descargar_csv(dias, inicio, sensor)
-            self._insertar_masivo([parsear_fila_firms(f, self.FUENTE) for f in filas])
+            self._insertar_masivo(self._solo_colombia([parsear_fila_firms(f, self.FUENTE) for f in filas]))
             logger.info(
                 "ClienteNasaFirms.descargar_historico: %s + %s días → %s filas (%s)",
                 inicio, dias, len(filas), sensor,

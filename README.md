@@ -60,6 +60,9 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   APIs reales; 20/20 tests con Postgres real. La tarea de Celery `sincronizar_focos` corre cada 3 h
   y cada fuente falla de forma aislada.
 - ✅ Histórico: `python manage.py cargar_historico_firms` (VIIRS NOAA-20, 2018-04 → hoy, idempotente).
+- ✅ Filtro de Colombia: FIRMS se consulta con un rectángulo que incluye países vecinos y mar
+  (57 % de los focos caían fuera), así que se descartan al ingerir con un contorno aproximado
+  (`apps/satelital/data/`, CC BY 4.0). `depurar_focos_fuera_de_colombia` limpia lo ya cargado.
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
   verificado con login real.
 - ⬜ `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`, `ModeloRecurrencia`,
