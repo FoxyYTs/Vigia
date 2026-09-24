@@ -46,6 +46,27 @@ La API queda en `http://localhost:8080/api/`, el admin de Django en
 
 También disponible públicamente vía Cloudflare Tunnel: https://vigia.foxyyts.qzz.io
 
+## API
+
+Todo cuelga de `/api/`. Auth con JWT (`Authorization: Bearer <access>`); el token incluye el `rol`.
+
+| Endpoint | Quién | Qué hace |
+|---|---|---|
+| `POST auth/registro/` | Anónimo | Crea un **ciudadano** (el rol nunca lo elige el cliente) |
+| `POST auth/token/`, `auth/token/refresh/` | Anónimo | Login / renovar acceso |
+| `GET auth/yo/` | Autenticado | Perfil del usuario |
+| `GET municipios/` | Anónimo | Catálogo (`?departamento=`) |
+| `GET focos/` | Anónimo | Focos para el mapa: `desde`, `hasta` (48 h por defecto, máx. 31 días), `fuente`, `bbox` |
+| `GET zonas-recurrentes/` | Anónimo | Zonas de la corrida más reciente del modelo (`min_puntaje`) |
+| `POST reportes/` (multipart) | Ciudadano | Crea un reporte con foto y las dos ubicaciones |
+| `GET reportes/` | Ciudadano (los suyos) / Administrador y Staff (todos, Staff solo lectura) | `?estado=` |
+| `POST reportes/{id}/validar/`, `rechazar/` | Administrador | 409 si ya estaba resuelto |
+| `GET alertas/` | Autenticado | `?tipo=` |
+| `GET notificaciones/`, `POST notificaciones/{id}/marcar-leida/` | Autenticado | Solo las propias |
+
+Registro, login y creación de reportes tienen límite de intentos. Un administrador aún ve
+todos los reportes: el filtro por jurisdicción necesita la geometría de `Municipio`.
+
 ## Ramas
 
 GitFlow: `main` solo para releases estables, `develop` como rama de integración,
@@ -62,8 +83,9 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ✅ Histórico: `python manage.py cargar_historico_firms` (VIIRS NOAA-20, 2018-04 → hoy, idempotente).
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
   verificado con login real.
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (109 tests).
 - ⬜ `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`, `ModeloRecurrencia`,
-  `Notificador`/`DespachadorNotificaciones`, endpoints REST, app Flutter.
+  `Notificador`/`DespachadorNotificaciones`, app Flutter.
 
 ## Licencia
 

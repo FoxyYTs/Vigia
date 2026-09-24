@@ -56,5 +56,20 @@ class FocoIncendio(models.Model):
             ),
         ]
 
+    def reportes_cercanos(self, radio_km: float = 10):
+        """
+        Reportes ciudadanos cuyo `ubicacion_incendio` (nunca `ubicacion_usuario`:
+        el ciudadano puede reportar desde lejos) está a menos de `radio_km`
+        de este foco — la coincidencia geográfica de Vigia-UML-Clases.
+        """
+        # Import diferido: reportes no debe cargarse al importar satelital.
+        from django.contrib.gis.measure import D
+
+        from apps.reportes.models import ReporteCiudadano
+
+        return ReporteCiudadano.objects.filter(
+            ubicacion_incendio__dwithin=(self.ubicacion, D(km=radio_km))
+        )
+
     def __str__(self):
         return f"{self.fuente} @ {self.fecha_hora:%Y-%m-%d %H:%M} ({self.ubicacion.y:.4f}, {self.ubicacion.x:.4f})"

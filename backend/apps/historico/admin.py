@@ -1,3 +1,10 @@
-from django.contrib import admin  # noqa: F401
+from django.contrib import admin
+from django.contrib.gis.admin import GISModelAdmin
 
-# Registrar modelos aquí una vez existan.
+from apps.historico.models import HistoricoDeforestacion
+
+
+@admin.register(HistoricoDeforestacion)
+class HistoricoDeforestacionAdmin(GISModelAdmin):
+    list_display = ("fuente", "anio", "hectareas_afectadas", "municipio")
+    list_filter = ("fuente", "anio")

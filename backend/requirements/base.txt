@@ -14,6 +14,9 @@ celery
 django-celery-beat
 redis
 
+# Imágenes (ReporteCiudadano.foto usa ImageField)
+Pillow
+
 # Geoespacial (PostGIS) — requiere GDAL/GEOS/PROJ del sistema, ver
 # backend/Dockerfile
 # (django.contrib.gis viene con Django, no es un paquete pip aparte)
