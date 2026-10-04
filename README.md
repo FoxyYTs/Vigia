@@ -26,7 +26,7 @@ Desarrollo individual (José Andrés Daza Gallego).
 │   ├── config/         # settings (base/local/production), celery.py, urls.py
 │   └── apps/           # usuarios · satelital · historico · prediccion ·
 │                        # reportes · alertas · notificaciones · administracion
-├── app/                # Flutter (pendiente de `flutter create`, ver app/README.md)
+├── app/                # Flutter web y Android (ver app/README.md)
 ├── nginx/              # reverse proxy + estáticos de Flutter Web
 └── docker-compose.yml
 ```
@@ -57,6 +57,7 @@ Todo cuelga de `/api/`. Auth con JWT (`Authorization: Bearer <access>`); el toke
 | `GET auth/yo/` | Autenticado | Perfil del usuario |
 | `GET municipios/` | Anónimo | Catálogo (`?departamento=`) |
 | `GET focos/` | Anónimo | Focos para el mapa: `desde`, `hasta` (48 h por defecto, máx. 31 días), `fuente`, `bbox` |
+| `GET focos/ultimo/` | Anónimo | Fecha del foco más reciente cargado (la app arranca el mapa ahí) |
 | `GET zonas-recurrentes/` | Anónimo | Zonas de la corrida más reciente del modelo (`min_puntaje`) |
 | `POST reportes/` (multipart) | Ciudadano | Crea un reporte con foto y las dos ubicaciones |
 | `GET reportes/` | Ciudadano (los suyos) / Administrador y Staff (todos, Staff solo lectura) | `?estado=` |
@@ -87,8 +88,9 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
   verificado con login real.
 - ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (109 tests).
+- 🟡 App Flutter: Mapa Interactivo público e Iniciar Sesión con JWT (ver `app/README.md`).
 - ⬜ `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`, `ModeloRecurrencia`,
-  `Notificador`/`DespachadorNotificaciones`, app Flutter.
+  `Notificador`/`DespachadorNotificaciones`.
 
 ## Licencia
 

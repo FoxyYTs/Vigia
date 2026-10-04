@@ -69,3 +69,16 @@ def test_los_focos_vienen_paginados(api):
 
 def test_focos_no_se_escribe_por_la_api(api_como, administrador):
     assert api_como(administrador).post("/api/focos/", {}).status_code == 405
+
+
+def test_ultimo_devuelve_la_fecha_del_foco_mas_reciente(api):
+    _foco(horas_atras=24 * 20)
+    reciente = _foco(horas_atras=24 * 15)
+    r = api.get("/api/focos/ultimo/")
+    assert r.status_code == 200
+    assert r.data["fecha_hora"] == reciente.fecha_hora
+
+
+def test_ultimo_sin_focos_devuelve_null(api):
+    r = api.get("/api/focos/ultimo/")
+    assert r.status_code == 200 and r.data["fecha_hora"] is None
