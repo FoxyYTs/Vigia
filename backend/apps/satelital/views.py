@@ -2,11 +2,14 @@ from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 
 from django.contrib.gis.geos import Polygon
+from django.db.models import Max
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from apps.satelital.models import FocoIncendio
 from apps.satelital.serializers import FocoIncendioSerializer
@@ -68,3 +71,13 @@ class FocoIncendioViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(ubicacion__intersects=Polygon.from_bbox((oeste, sur, este, norte)))
 
         return qs.order_by("-fecha_hora")
+
+    @action(detail=False, url_path="ultimo")
+    def ultimo(self, request):
+        """Fecha del foco más reciente cargado (o `null` si no hay ninguno).
+
+        El mapa la usa como fecha de corte inicial: si la ingesta lleva un
+        tiempo detenida, las últimas 48 h estarían vacías y el usuario vería
+        un mapa sin datos sin saber por qué."""
+        ultima = FocoIncendio.objects.aggregate(ultima=Max("fecha_hora"))["ultima"]
+        return Response({"fecha_hora": ultima})
