@@ -102,6 +102,10 @@ services:
     volumes:
       - static_files:/app/staticfiles:ro
       - media_files:/app/media:ro
+      # Flutter Web: correr `flutter build web` en app/ antes de levantar
+      # nginx (ver app/README.md). Se sirve desde el mismo origen que /api,
+      # así que no hace falta CORS.
+      - ./app/build/web:/usr/share/nginx/html:ro
 
   cloudflared:
     image: cloudflare/cloudflared:latest
