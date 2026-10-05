@@ -5,6 +5,7 @@ import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
 import 'rutas.dart';
 
@@ -151,6 +152,26 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
                 ),
                 const SizedBox(height: 16),
                 contenido,
+                const Divider(height: 32),
+                // Única subpágina del mapa de navegación:
+                // Gestionar Usuario → Gestionar Permisos.
+                const Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings_outlined, color: VigiaColors.textoSecundario),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Gestionar Permisos', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                          Text('Roles y permisos de los usuarios de cada entidad.',
+                              style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    ProximoIncremento(),
+                  ],
+                ),
               ],
             );
           },
@@ -194,16 +215,7 @@ class _BloquePendiente extends StatelessWidget {
                 children: [
                   Icon(icono, color: VigiaColors.textoSecundario),
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: VigiaColors.superficie,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: VigiaColors.borde),
-                    ),
-                    child: const Text('Próximo incremento',
-                        style: TextStyle(fontSize: 11, color: VigiaColors.textoSecundario)),
-                  ),
+                  const ProximoIncremento(),
                 ],
               ),
               const SizedBox(height: 12),
