@@ -102,10 +102,11 @@ services:
     volumes:
       - static_files:/app/staticfiles:ro
       - media_files:/app/media:ro
-      # Flutter Web: correr `flutter build web` en app/ antes de levantar
-      # nginx (ver app/README.md). Se sirve desde el mismo origen que /api,
-      # así que no hace falta CORS.
-      - ./app/build/web:/usr/share/nginx/html:ro
+      # Flutter Web: se monta app/ completa (existe siempre en el repo) y
+      # Nginx sirve app/build/web. Montar directamente app/build/web haría
+      # que Docker la creara vacía y con dueño root si aún no hay build.
+      # Mismo origen que /api, así que no hace falta CORS.
+      - ./app:/srv/app:ro
 
   cloudflared:
     image: cloudflare/cloudflared:latest

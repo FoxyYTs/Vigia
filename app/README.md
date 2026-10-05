@@ -59,17 +59,25 @@ export CHROME_EXECUTABLE=/usr/bin/chromium
 **Opción A — como en producción (Nginx en `http://localhost:8080`):**
 
 ```bash
+# 1. Compilar la app (genera app/build/web, que Nginx sirve)
 cd app
 flutter pub get
-flutter build web --release      # genera app/build/web, que Nginx monta
+flutter build web --release
+test -f build/web/index.html || { echo "falta flutter build web"; exit 1; }
 cd ..
+# 2. Reconstruir y levantar backend y Nginx
 docker compose build backend nginx
 docker compose up -d backend nginx
 ```
 
 Abrir `http://localhost:8080/` (o `https://vigia.foxyyts.qzz.io` si el túnel está
-arriba). El build hay que hacerlo **antes** de levantar Nginx: si `app/build/web`
-no existe, Docker crea la carpeta vacía y Nginx responde 403.
+arriba). Nginx monta la carpeta `app/` y sirve `app/build/web`, así que un
+`flutter build web` nuevo se ve con solo recargar el navegador, sin reiniciar
+Nginx. Si el build no existe, Nginx no falla: responde 503 con una página que
+indica cómo compilar la app, y la API sigue funcionando.
+
+No borrar ni regenerar `app/build/web` durante la exposición: mientras
+`flutter build web` corre, la carpeta queda incompleta unos segundos.
 
 **Opción B — desarrollo con recarga en caliente:** la app corre en otro puerto,
 así que el navegador bloquearía la API por CORS. Se apunta a la API por su URL y
