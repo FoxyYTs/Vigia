@@ -36,6 +36,7 @@ class FocosProvider extends ChangeNotifier {
 
   List<Foco> _focos = const [];
   int _total = 0;
+  Map<FuenteSatelital, int> _totalPorFuente = const {};
   bool _cargando = false;
   String? _error;
   Foco? _seleccionado;
@@ -53,7 +54,9 @@ class FocosProvider extends ChangeNotifier {
   String? get error => _error;
   Foco? get seleccionado => _seleccionado;
 
-  int contarPorFuente(FuenteSatelital f) => _focos.where((x) => x.fuente == f).length;
+  /// Focos de la fuente en todo el rango (no solo los dibujados), para que
+  /// el desglose sume lo mismo que [total].
+  int contarPorFuente(FuenteSatelital f) => _totalPorFuente[f] ?? 0;
 
   /// Primera carga: usa como fecha de corte el foco más reciente disponible,
   /// así el mapa nunca arranca vacío por una ingesta detenida.
@@ -120,11 +123,25 @@ class FocosProvider extends ChangeNotifier {
         (primera.total / VigiaApi.tamanoPaginaMaximo).ceil(),
         (maximoFocos / VigiaApi.tamanoPaginaMaximo).ceil(),
       );
-      final resto = await Future.wait([for (var n = 2; n <= paginas; n++) pagina(n)]);
+      final resto = Future.wait([for (var n = 2; n <= paginas; n++) pagina(n)]);
+      // Con truncado y sin filtro de fuente, los dibujados no bastan para el
+      // desglose: se pide el total de cada fuente al servidor.
+      final conteoServidor =
+          (_fuente == null && primera.total > maximoFocos) ? _contarEnServidor(desde, corte) : null;
+      final paginasResto = await resto;
+      final totalesServidor = await conteoServidor;
       if (consulta != _consulta) return;
 
-      _focos = [...primera.focos, for (final p in resto) ...p.focos];
+      _focos = [...primera.focos, for (final p in paginasResto) ...p.focos];
       _total = primera.total;
+      final fuente = _fuente;
+      _totalPorFuente = totalesServidor ??
+          {
+            for (final f in FuenteSatelital.values)
+              f: fuente != null
+                  ? (f == fuente ? _total : 0)
+                  : _focos.where((x) => x.fuente == f).length,
+          };
     } on ApiException catch (e) {
       if (consulta != _consulta) return;
       _error = e.mensaje;
@@ -134,6 +151,15 @@ class FocosProvider extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  /// `count` de cada fuente en el rango, con páginas de un solo elemento.
+  Future<Map<FuenteSatelital, int>> _contarEnServidor(DateTime desde, DateTime hasta) async {
+    final conteos = await Future.wait([
+      for (final f in FuenteSatelital.values)
+        _api.listarFocos(desde: desde, hasta: hasta, fuente: f, tamanoPagina: 1).then((p) => p.total),
+    ]);
+    return {for (final (i, f) in FuenteSatelital.values.indexed) f: conteos[i]};
   }
 
   static bool _mismoDia(DateTime a, DateTime b) =>

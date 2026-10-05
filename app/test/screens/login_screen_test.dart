@@ -115,6 +115,17 @@ void main() {
     expect(find.text('pantalla-panel'), findsOneWidget);
   });
 
+  testWidgets('el registro aparece como próximo incremento, sin acción', (t) async {
+    final e = _Escenario((_) async => http.Response('{}', 200));
+    _escritorio(t);
+    await t.pumpWidget(e.app());
+
+    final registro = find.byKey(const Key('registro-proximo'));
+    expect(registro, findsOneWidget);
+    expect(find.descendant(of: registro, matching: find.text('Próximo incremento')), findsOneWidget);
+    expect(find.descendant(of: registro, matching: find.byType(ButtonStyleButton)), findsNothing);
+  });
+
   testWidgets('el botón de mostrar contraseña tiene etiqueta accesible', (t) async {
     final e = _Escenario((_) async => http.Response('{}', 200));
     _escritorio(t);

@@ -87,7 +87,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   (`apps/satelital/data/`, CC BY 4.0). `depurar_focos_fuera_de_colombia` limpia lo ya cargado.
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
   verificado con login real.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (109 tests).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (129 tests de backend; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público e Iniciar Sesión con JWT (ver `app/README.md`).
 - ⬜ `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`, `ModeloRecurrencia`,
   `Notificador`/`DespachadorNotificaciones`.

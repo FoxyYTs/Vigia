@@ -113,7 +113,7 @@ class _MapaFocosState extends State<MapaFocos> {
               ],
             ),
           const SimpleAttributionWidget(
-            source: Text('OpenStreetMap · NASA FIRMS · INPE'),
+            source: Text('OpenStreetMap contributors · NASA FIRMS · INPE'),
           ),
         ],
       ),

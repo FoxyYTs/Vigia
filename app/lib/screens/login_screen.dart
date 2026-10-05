@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
 import 'rutas.dart';
 
@@ -284,6 +285,21 @@ class _FormularioLoginState extends State<FormularioLogin> {
                         )
                       : const Icon(Icons.login),
                   label: Text(auth.enviando ? 'Ingresando…' : 'Ingresar'),
+                ),
+                const SizedBox(height: 12),
+                // "Iniciar Sesión/Registrar Sesión" en el mapa de navegación:
+                // el registro se muestra, pero se habilita en otro incremento.
+                const Row(
+                  key: Key('registro-proximo'),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text('¿No tienes cuenta? Registrar cuenta',
+                          style: TextStyle(color: VigiaColors.textoSecundario)),
+                    ),
+                    SizedBox(width: 8),
+                    ProximoIncremento(),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 const Row(
