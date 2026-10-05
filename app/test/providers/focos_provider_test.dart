@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:vigia_app/data/api/vigia_api.dart';
+import 'package:vigia_app/data/models/foco.dart';
 import 'package:vigia_app/providers/focos_provider.dart';
 
 /// Backend falso con [total] focos, paginado de 500 en 500 como DRF.
@@ -13,6 +14,12 @@ VigiaApi _apiCon(int total, {List<Uri>? pedidas}) => VigiaApi(
         pedidas?.add(r.url);
         if (r.url.path.endsWith('/ultimo/')) {
           return http.Response(jsonEncode({'fecha_hora': '2026-09-24T00:20:00Z'}), 200);
+        }
+        final fuente = r.url.queryParameters['fuente'];
+        if (fuente != null && r.url.queryParameters['page_size'] == '1') {
+          // Conteo por fuente: 2/3 FIRMS y 1/3 INPE.
+          final n = fuente == 'NASA_FIRMS' ? total * 2 ~/ 3 : total - total * 2 ~/ 3;
+          return http.Response(jsonEncode({'count': n, 'next': null, 'results': []}), 200);
         }
         final pagina = int.parse(r.url.queryParameters['page']!);
         final inicio = (pagina - 1) * 500;
@@ -59,7 +66,31 @@ void main() {
     expect(p.focos, hasLength(1000));
     expect(p.total, 3000);
     expect(p.truncado, isTrue);
-    expect(pedidas.where((u) => u.path.endsWith('/focos/')), hasLength(2));
+    expect(pedidas.where((u) => u.queryParameters['page_size'] == '500'), hasLength(2));
+  });
+
+  test('con truncado, el desglose por fuente suma el total y no solo lo dibujado', () async {
+    final p = FocosProvider(api: _apiCon(3000), maximoFocos: 1000);
+
+    await p.inicializar();
+
+    expect(p.contarPorFuente(FuenteSatelital.nasaFirms), 2000);
+    expect(p.contarPorFuente(FuenteSatelital.inpeQueimadas), 1000);
+    expect(
+      p.contarPorFuente(FuenteSatelital.nasaFirms) + p.contarPorFuente(FuenteSatelital.inpeQueimadas),
+      p.total,
+    );
+  });
+
+  test('sin truncado, el desglose se cuenta en el cliente sin peticiones extra', () async {
+    final pedidas = <Uri>[];
+    final p = FocosProvider(api: _apiCon(1200, pedidas: pedidas));
+
+    await p.inicializar();
+
+    expect(p.contarPorFuente(FuenteSatelital.nasaFirms), 1200);
+    expect(p.contarPorFuente(FuenteSatelital.inpeQueimadas), 0);
+    expect(pedidas.where((u) => u.queryParameters['page_size'] == '1'), isEmpty);
   });
 
   test('cambiar la ventana recalcula el rango pedido a la API', () async {
