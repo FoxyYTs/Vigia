@@ -7,7 +7,8 @@ import 'package:provider/provider.dart';
 
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
-import 'panel_filtros.dart' show colorFuente;
+import '../providers/prediccion_provider.dart';
+import 'panel_filtros.dart' show colorFuente, colorPuntaje;
 
 /// Rectángulo que contiene el territorio continental e insular de Colombia.
 final limitesColombia = LatLngBounds(const LatLng(-4.3, -79.2), const LatLng(13.6, -66.8));
@@ -65,6 +66,7 @@ class _MapaFocosState extends State<MapaFocos> {
   @override
   Widget build(BuildContext context) {
     final p = context.watch<FocosProvider>();
+    final zonas = context.watch<PrediccionProvider>().zonas;
     final seleccionado = p.seleccionado;
 
     return Semantics(
@@ -86,6 +88,14 @@ class _MapaFocosState extends State<MapaFocos> {
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.foxyyts.vigia.vigia_app',
           ),
+          // Debajo de los focos: la predicción es contexto, los focos son lo observado.
+          if (zonas.isNotEmpty)
+            PolygonLayer(
+              polygons: [
+                for (final z in zonas)
+                  Polygon(points: z.contorno, color: colorPuntaje(z.puntaje).withValues(alpha: 0.45)),
+              ],
+            ),
           MouseRegion(
             hitTestBehavior: HitTestBehavior.deferToChild,
             cursor: SystemMouseCursors.click,
@@ -113,7 +123,7 @@ class _MapaFocosState extends State<MapaFocos> {
               ],
             ),
           const SimpleAttributionWidget(
-            source: Text('OpenStreetMap contributors · NASA FIRMS · INPE'),
+            source: Text('OpenStreetMap contributors · NASA FIRMS · INPE · Modelo Vigía'),
           ),
         ],
       ),
