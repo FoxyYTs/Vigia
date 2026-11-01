@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/foco.dart';
+import '../models/historico.dart';
 import '../models/usuario.dart';
 import '../models/zona.dart';
 
@@ -125,6 +126,33 @@ class VigiaApi {
     return PaginaZonas.fromJson(json);
   }
 
+  // ----------------------------------------------------------- historico --
+
+  Future<List<MunicipioGeo>> geometriaMunicipios() async {
+    final json = await _enviar(() => _cliente.get(baseUrl.resolve('municipios/geometria/'), headers: _cabeceras()));
+    return [for (final f in json['features'] as List) MunicipioGeo.fromFeature(f as Map<String, dynamic>)];
+  }
+
+  /// Años con datos de cada indicador.
+  Future<Map<IndicadorHistorico, List<int>>> disponibilidadHistorica() async {
+    final json = await _enviar(
+      () => _cliente.get(baseUrl.resolve('historico/capa/disponible/'), headers: _cabeceras()),
+    );
+    return {
+      for (final i in IndicadorHistorico.values)
+        i: [for (final a in (json[i.valorApi] as List? ?? const [])) a as int],
+    };
+  }
+
+  /// Valor del [indicador] en [anio] por código DANE.
+  Future<Map<String, double>> capaHistorica(IndicadorHistorico indicador, int anio) async {
+    final uri = baseUrl.resolve('historico/capa/').replace(
+      queryParameters: {'indicador': indicador.valorApi, 'anio': '$anio'},
+    );
+    final lista = await _enviarLista(() => _cliente.get(uri, headers: _cabeceras()));
+    return {for (final f in lista) f['codigo_dane'] as String: (f['valor'] as num).toDouble()};
+  }
+
   // ------------------------------------------------------------ internos --
 
   Map<String, String> _cabeceras([String? access]) => {
@@ -136,6 +164,16 @@ class VigiaApi {
   Future<Map<String, dynamic>> _enviar(
     Future<http.Response> Function() peticion, {
     String mensaje401 = 'Necesitas iniciar sesión para continuar.',
+  }) =>
+      _pedir<Map<String, dynamic>>(peticion, mensaje401: mensaje401);
+
+  /// Para los endpoints que responden una lista JSON en vez de un objeto.
+  Future<List<dynamic>> _enviarLista(Future<http.Response> Function() peticion) =>
+      _pedir<List<dynamic>>(peticion, mensaje401: 'Necesitas iniciar sesión para continuar.');
+
+  Future<T> _pedir<T>(
+    Future<http.Response> Function() peticion, {
+    required String mensaje401,
   }) async {
     final http.Response respuesta;
     try {
@@ -150,7 +188,7 @@ class VigiaApi {
 
     final cuerpo = _decodificar(respuesta);
     final status = respuesta.statusCode;
-    if (status >= 200 && status < 300 && cuerpo is Map<String, dynamic>) return cuerpo;
+    if (status >= 200 && status < 300 && cuerpo is T) return cuerpo;
 
     throw ApiException(
       switch (status) {

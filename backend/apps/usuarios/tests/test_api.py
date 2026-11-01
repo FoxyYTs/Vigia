@@ -87,3 +87,24 @@ def test_municipios_es_publico_y_filtra_por_departamento(api, municipio):
 
 def test_municipios_no_se_modifica_por_la_api(api_como, staff):
     assert api_como(staff).post("/api/municipios/", {"nombre": "X", "departamento": "Y"}).status_code == 405
+
+
+def test_geometria_de_municipios_es_geojson_simplificado(api, municipio):
+    from django.contrib.gis.geos import MultiPolygon, Polygon
+
+    # Un polígono con 200 vértices casi alineados: la simplificación debe reducirlos.
+    puntos = [(-75.5 + i * 0.001, 6.0 + (i % 2) * 0.0001) for i in range(200)]
+    puntos += [(-75.3, 6.3), (-75.5, 6.3), (-75.5, 6.0)]
+    municipio.codigo_dane, municipio.geom = "05615", MultiPolygon(Polygon(puntos), srid=4326)
+    municipio.save()
+    from apps.usuarios.models import Municipio
+
+    Municipio.objects.create(nombre="Sin polígono", departamento="Chocó", codigo_dane="27493")
+
+    r = api.get("/api/municipios/geometria/").data
+    assert r["type"] == "FeatureCollection" and len(r["features"]) == 1
+    f = r["features"][0]
+    assert f["properties"] == {"codigo_dane": "05615", "nombre": "Rionegro", "departamento": "Antioquia"}
+    anillo = f["geometry"]["coordinates"][0][0]
+    assert f["geometry"]["type"] == "MultiPolygon" and len(anillo) < 20
+    assert api.get("/api/municipios/").data[0]["codigo_dane"] == "05615"

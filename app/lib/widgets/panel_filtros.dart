@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
+import '../data/models/historico.dart';
 import '../providers/focos_provider.dart';
+import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
 import 'formato.dart';
 
@@ -59,6 +61,8 @@ class PanelFiltros extends StatelessWidget {
         const SizedBox(height: 20),
         const PanelPrediccion(),
         const SizedBox(height: 20),
+        const PanelHistorico(),
+        const SizedBox(height: 20),
         const ContadorFocos(),
         const SizedBox(height: 20),
         const Leyenda(),
@@ -108,7 +112,11 @@ class PanelPrediccion extends StatelessWidget {
           title: const Text('Zonas de recurrencia'),
           subtitle: const Text('Dónde suele haber fuego en el mes elegido'),
           value: p.visible,
-          onChanged: p.mostrar,
+          onChanged: (v) {
+            // Una sola capa de contexto a la vez, para que el mapa siga legible.
+            if (v) context.read<HistoricoProvider>().mostrar(false);
+            p.mostrar(v);
+          },
         ),
         if (p.visible) ...[
           if (p.meses.isNotEmpty)
@@ -148,6 +156,118 @@ class PanelPrediccion extends StatelessWidget {
             'Probabilidad de detecciones satelitales según el historial 2019–hoy, en celdas de ~11 km. '
             'No es un pronóstico del clima.'
             '${p.fechaModelo == null ? '' : ' Modelo actualizado el ${Formato.fecha(p.fechaModelo!)}.'}',
+            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Cinco tonos de menor a mayor por indicador (siempre con leyenda).
+List<Color> coloresHistorico(IndicadorHistorico i) => switch (i) {
+      IndicadorHistorico.incendiosUngrd => const [
+          Color(0xFFFDE0C5), Color(0xFFFBB585), Color(0xFFF4845F), Color(0xFFD9480F), Color(0xFF8A2A0A),
+        ],
+      IndicadorHistorico.deforestacionIdeam => const [
+          Color(0xFFE9E4C9), Color(0xFFCBBE8A), Color(0xFFA68B4E), Color(0xFF7A5A2B), Color(0xFF4A3215),
+        ],
+    };
+
+/// Rango de cada clase de la leyenda: "Hasta 2", "3 – 6", "Más de 12"…
+/// Los incendios son conteos: la clase siguiente empieza en el corte + 1.
+List<String> etiquetasClases(List<double> cortes, IndicadorHistorico indicador) {
+  String n(double v) => Formato.entero(v.round());
+  final paso = indicador == IndicadorHistorico.incendiosUngrd ? 1 : 0;
+  final u = indicador.unidad;
+  if (cortes.isEmpty) return ['Con datos'];
+  return [
+    for (var i = 0; i <= cortes.length; i++)
+      if (i == 0)
+        'Hasta ${n(cortes[0])} $u'
+      else if (i == cortes.length)
+        'Más de ${n(cortes.last)} $u'
+      else if (cortes[i - 1] + paso == cortes[i])
+        '${n(cortes[i])} $u'
+      else
+        '${n(cortes[i - 1] + paso)} – ${n(cortes[i])} $u',
+  ];
+}
+
+/// Interruptor, indicador, año y leyenda de la capa por municipio.
+class PanelHistorico extends StatelessWidget {
+  const PanelHistorico({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = context.watch<HistoricoProvider>();
+    final colores = coloresHistorico(h.indicador);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Titulo('Histórico'),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Histórico por municipio'),
+          subtitle: const Text('Incendios reportados y deforestación por año'),
+          value: h.visible,
+          onChanged: (v) {
+            if (v) context.read<PrediccionProvider>().mostrar(false);
+            h.mostrar(v);
+          },
+        ),
+        if (h.visible) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final i in IndicadorHistorico.values)
+                ChoiceChip(
+                  label: Text('${i.etiqueta} (${i.fuente})'),
+                  selected: h.indicador == i,
+                  onSelected: (_) => h.cambiarIndicador(i),
+                  selectedColor: VigiaColors.bosqueClaro,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final a in h.anios)
+                ChoiceChip(
+                  label: Text('$a'),
+                  selected: h.anio == a,
+                  onSelected: (_) => h.cambiarAnio(a),
+                  selectedColor: VigiaColors.bosqueClaro,
+                ),
+            ],
+          ),
+          if (h.cargando) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
+          if (h.error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(h.error!, style: const TextStyle(color: VigiaColors.error)),
+            ),
+          const SizedBox(height: 12),
+          for (final (i, etiqueta) in etiquetasClases(h.cortes, h.indicador).indexed.toList().reversed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Container(width: 14, height: 14, color: colores[i].withValues(alpha: 0.8)),
+                  const SizedBox(width: 10),
+                  Text(etiqueta),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            h.indicador == IndicadorHistorico.incendiosUngrd
+                ? 'Incendios forestales reportados a la UNGRD (2019–2024). Son reportes de emergencias: '
+                    'un municipio sin color puede tener incendios que no se reportaron.'
+                : 'Hectáreas de bosque natural deforestadas en el año, según el monitoreo del IDEAM (SMByC).',
             style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
           ),
         ],
