@@ -14,7 +14,7 @@ escribir este archivo. Correr con `pytest` dentro del contenedor
 import csv
 import json
 import re
-from datetime import date
+from datetime import date, UTC
 from pathlib import Path
 
 import pytest
@@ -220,10 +220,10 @@ def test_parsear_feature_inpe_frp_nulo():
 
 
 def test_params_inpe_filtra_por_pais_y_fecha():
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     cliente = ClienteInpeQueimadas(url="https://wfs.test/wfs")
-    params = cliente._params(datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc), 0)
+    params = cliente._params(datetime(2026, 9, 22, 12, 0, tzinfo=UTC), 0)
     assert params["cql_filter"] == "pais='Colombia' AND data_hora_gmt >= 2026-09-22T12:00:00Z"
     assert params["typeNames"] == "bdqueimadas2:focos"
 

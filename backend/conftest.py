@@ -1,6 +1,6 @@
 """Fixtures compartidas — requieren PostGIS (correr dentro de Docker)."""
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import io
 
@@ -55,7 +55,7 @@ def foco(db):
     return FocoIncendio.objects.create(
         fuente=FocoIncendio.Fuente.NASA_FIRMS,
         ubicacion=RIONEGRO,
-        fecha_hora=datetime(2026, 9, 1, 12, 0, tzinfo=timezone.utc),
+        fecha_hora=datetime(2026, 9, 1, 12, 0, tzinfo=UTC),
         confianza="n",
     )
 

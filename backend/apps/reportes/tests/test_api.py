@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.gis.geos import Point
 
 from apps.reportes.models import ReporteCiudadano
 
@@ -131,3 +132,47 @@ def test_un_ciudadano_no_puede_validar_ni_siquiera_el_suyo(api_como, ciudadano, 
     assert api_como(ciudadano).post(f"/api/reportes/{reporte.id}/validar/").status_code == 403
     reporte.refresh_from_db()
     assert reporte.estado == "pendiente"
+
+
+@pytest.fixture
+def jurisdiccion_cornare(administrador, municipio):
+    """La entidad del administrador (Cornare) cubre Rionegro con un polígono
+    de prueba; Pore (Casanare) queda fuera."""
+    from django.contrib.gis.geos import MultiPolygon, Polygon
+
+    municipio.geom = MultiPolygon(
+        Polygon(((-75.5, 6.0), (-75.5, 6.3), (-75.2, 6.3), (-75.2, 6.0), (-75.5, 6.0))), srid=4326
+    )
+    municipio.save()
+    return administrador
+
+
+PORE = Point(-71.98, 5.73, srid=4326)
+
+
+def test_administrador_solo_ve_los_reportes_de_su_jurisdiccion(api_como, jurisdiccion_cornare, crear_reporte):
+    rionegro, pore = crear_reporte(), crear_reporte(incendio=PORE)
+    cliente = api_como(jurisdiccion_cornare)
+    assert [x["id"] for x in cliente.get("/api/reportes/").data["results"]] == [rionegro.id]
+    assert cliente.get(f"/api/reportes/{pore.id}/").status_code == 404
+
+
+def test_la_jurisdiccion_usa_la_ubicacion_del_incendio_no_la_del_usuario(api_como, jurisdiccion_cornare, crear_reporte):
+    desde_rionegro = crear_reporte(incendio=PORE)  # el ciudadano está en Rionegro, el incendio en Pore
+    assert api_como(jurisdiccion_cornare).get("/api/reportes/").data["results"] == []
+    assert desde_rionegro.ubicacion_usuario.x == -75.3737
+
+
+def test_administrador_no_valida_fuera_de_su_jurisdiccion(api_como, jurisdiccion_cornare, crear_reporte):
+    pore = crear_reporte(incendio=PORE)
+    assert api_como(jurisdiccion_cornare).post(f"/api/reportes/{pore.id}/validar/").status_code == 404
+    pore.refresh_from_db()
+    assert pore.estado == "pendiente"
+
+
+def test_administrador_sin_entidad_ve_todos(api_como, crear_reporte, jurisdiccion_cornare):
+    from apps.usuarios.models import Usuario
+
+    nacional = Usuario.objects.create_user("nacional", password="clave-segura-5", rol=Usuario.Rol.ADMINISTRADOR)
+    crear_reporte(), crear_reporte(incendio=PORE)
+    assert len(api_como(nacional).get("/api/reportes/").data["results"]) == 2

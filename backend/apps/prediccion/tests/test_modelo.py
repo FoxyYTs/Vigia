@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from unittest.mock import patch
 
 import numpy as np
@@ -23,7 +23,12 @@ def _panel_aleatorio(semilla=0):
     rng = np.random.default_rng(semilla)
     meses = pd.period_range("2019-01", "2022-12", freq="M")
     focos = pd.DataFrame(
-        [(x, y, p, 1, rng.uniform(1, 50)) for x, y in CELDAS.itertuples(index=False) for p in meses if rng.random() < 0.3],
+        [
+            (x, y, p, 1, rng.uniform(1, 50))
+            for x, y in CELDAS.itertuples(index=False)
+            for p in meses
+            if rng.random() < 0.3
+        ],
         columns=["x", "y", "p", "n", "frp"],
     )
     return construir_panel(CELDAS, focos, meses, meses[-1])
@@ -60,7 +65,7 @@ def focos_cada_enero(db):
         FocoIncendio(
             fuente=FocoIncendio.Fuente.NASA_FIRMS,
             ubicacion=Point((x + 0.5) * 0.1, (y + 0.5) * 0.1, srid=4326),
-            fecha_hora=datetime(anio, 1, 15, tzinfo=timezone.utc),
+            fecha_hora=datetime(anio, 1, 15, tzinfo=UTC),
             confianza="n",
         )
         for anio in range(2019, 2026)
@@ -69,11 +74,11 @@ def focos_cada_enero(db):
     # Ruido que el modelo debe ignorar: baja confianza e INPE.
     FocoIncendio.objects.create(
         fuente=FocoIncendio.Fuente.NASA_FIRMS, ubicacion=Point(-75.35, 6.35, srid=4326),
-        fecha_hora=datetime(2024, 7, 1, tzinfo=timezone.utc), confianza="l",
+        fecha_hora=datetime(2024, 7, 1, tzinfo=UTC), confianza="l",
     )
     FocoIncendio.objects.create(
         fuente=FocoIncendio.Fuente.INPE_QUEIMADAS, ubicacion=Point(-75.35, 6.35, srid=4326),
-        fecha_hora=datetime(2024, 7, 1, tzinfo=timezone.utc),
+        fecha_hora=datetime(2024, 7, 1, tzinfo=UTC),
     )
 
 
@@ -91,7 +96,11 @@ def test_corrida_aprende_la_temporada_y_guarda_tres_meses(focos_cada_enero, poca
     )
     corrida = ModeloRecurrencia(pd.Period("2025-11", "M")).ejecutar_corrida()
 
-    zonas = pd.DataFrame(corrida.zonas.values("area", "mes_objetivo", "puntaje_recurrencia", "municipio", "cantidad_incendios_historicos"))
+    zonas = pd.DataFrame(
+        corrida.zonas.values(
+            "area", "mes_objetivo", "puntaje_recurrencia", "municipio", "cantidad_incendios_historicos"
+        )
+    )
     assert len(zonas) == len(CELDAS) * 3
     assert sorted(zonas["mes_objetivo"].astype(str).unique()) == ["2025-12-01", "2026-01-01", "2026-02-01"]
 

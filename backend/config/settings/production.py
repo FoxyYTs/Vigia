@@ -11,4 +11,5 @@ CSRF_COOKIE_SECURE = True
 # (incluido el login del admin) falla con "CSRF verification failed" al
 # entrar por el túnel. A diferencia de ALLOWED_HOSTS, necesita el
 # esquema completo (https://), no solo el hostname.
-CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("localhost", "127.0.0.1")]
+# ALLOWED_HOSTS viene de `from .base import *`.
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("localhost", "127.0.0.1")]  # noqa: F405

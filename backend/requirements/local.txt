@@ -6,3 +6,4 @@ pytest-cov
 factory-boy
 django-debug-toolbar
 responses
+ruff

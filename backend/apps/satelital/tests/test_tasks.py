@@ -1,6 +1,6 @@
 """Tests de la tarea de Celery `sincronizar_focos` (sin red)."""
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from unittest.mock import patch
 
 import pytest
@@ -41,7 +41,7 @@ def _foco(lon, lat):
     return FocoIncendio.objects.create(
         fuente=FocoIncendio.Fuente.NASA_FIRMS,
         ubicacion=Point(lon, lat, srid=4326),
-        fecha_hora=datetime(2026, 10, 30, tzinfo=timezone.utc),
+        fecha_hora=datetime(2026, 10, 30, tzinfo=UTC),
         confianza="n",
     )
 
