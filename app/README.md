@@ -20,6 +20,10 @@ Vigía ─┬─ Mapa Interactivo          /         sin cuenta
   debajo de los focos, las celdas de ~11 km con probabilidad ≥ 30 % para uno de
   los 3 meses que predice el modelo (`/api/zonas-recurrentes/`), en 4 tonos con
   leyenda. No pide nada hasta que se activa.
+  La capa **Histórico por municipio** colorea los municipios por incendios
+  reportados a la UNGRD (2019–2024) o por deforestación del IDEAM (2019–2025) en
+  el año elegido, en 5 clases por cuantiles. La geometría se pide una sola vez.
+  Solo una de las dos capas de contexto está activa a la vez.
 - **Iniciar Sesión:** validación del formulario en el cliente, mensajes de error
   en español (credenciales, límite de intentos, sin conexión) y tokens guardados
   con `flutter_secure_storage`. El access se renueva con el refresh al expirar.
@@ -119,3 +123,5 @@ flutter test
   ante 401 y la guarda `RequiereSesion` del panel.
 - `test/providers/prediccion_provider_test.dart`: carga perezosa de la capa de
   predicción, paginación, cambio de mes, respuestas viejas y panel con leyenda.
+- `test/providers/historico_provider_test.dart`: geometría una sola vez, cambio de
+  indicador y año, cuantiles, leyenda y exclusión con la capa de predicción.
