@@ -11,7 +11,10 @@ class ZonaRecurrenteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ZonaRecurrente
-        fields = ["id", "corrida", "area", "puntaje_recurrencia", "cantidad_incendios_historicos", "municipio"]
+        fields = [
+            "id", "corrida", "mes_objetivo", "area", "puntaje_recurrencia",
+            "cantidad_incendios_historicos", "municipio",
+        ]
         read_only_fields = fields
 
     def get_area(self, obj):

@@ -27,4 +27,9 @@ app.conf.beat_schedule = {
         "task": "apps.satelital.tasks.sincronizar_focos",
         "schedule": crontab(minute=0, hour="*/3"),
     },
+    # Día 2: el mes anterior ya está completo y la ingesta del día 1 terminó.
+    "reentrenar-modelo-recurrencia": {
+        "task": "apps.prediccion.tasks.ejecutar_corrida",
+        "schedule": crontab(minute=0, hour=4, day_of_month=2),
+    },
 }

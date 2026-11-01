@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 
@@ -6,10 +8,10 @@ from apps.prediccion.models import CorridaModeloML, ZonaRecurrente
 pytestmark = pytest.mark.django_db
 
 
-def _zona(corrida, puntaje):
+def _zona(corrida, puntaje, mes=date(2026, 1, 1)):
     area = MultiPolygon(Polygon(((0, 0), (0, 1), (1, 1), (1, 0), (0, 0))), srid=4326)
     return ZonaRecurrente.objects.create(
-        corrida=corrida, area=area, puntaje_recurrencia=puntaje, cantidad_incendios_historicos=5
+        corrida=corrida, area=area, mes_objetivo=mes, puntaje_recurrencia=puntaje, cantidad_incendios_historicos=5
     )
 
 
