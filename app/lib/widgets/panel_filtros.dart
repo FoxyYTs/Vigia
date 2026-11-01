@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
+import '../providers/prediccion_provider.dart';
 import 'formato.dart';
 
 /// Filtros, contador y leyenda del Mapa Interactivo. Se usa como panel
@@ -56,6 +57,8 @@ class PanelFiltros extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
+        const PanelPrediccion(),
+        const SizedBox(height: 20),
         const ContadorFocos(),
         const SizedBox(height: 20),
         const Leyenda(),
@@ -66,6 +69,92 @@ class PanelFiltros extends StatelessWidget {
 
 Color colorFuente(FuenteSatelital? f) =>
     f == FuenteSatelital.inpeQueimadas ? VigiaColors.inpe : VigiaColors.firms;
+
+/// Tramos de probabilidad de la capa de predicción (de menor a mayor).
+const tramosPuntaje = [
+  (0.3, '30 – 50 %', Color(0xFFF2C14E)),
+  (0.5, '50 – 70 %', Color(0xFFE8833A)),
+  (0.7, '70 – 85 %', Color(0xFFC8432B)),
+  (0.85, 'Más de 85 %', Color(0xFF7A1C1C)),
+];
+
+Color colorPuntaje(double puntaje) =>
+    tramosPuntaje.lastWhere((t) => puntaje >= t.$1, orElse: () => tramosPuntaje.first).$3;
+
+const _nombresMes = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
+/// "2027-01" → "enero 2027".
+String nombreMes(String aaaaMm) {
+  final [anio, mes] = aaaaMm.split('-');
+  return '${_nombresMes[int.parse(mes) - 1]} $anio';
+}
+
+/// Interruptor, selector de mes y leyenda de las zonas de recurrencia.
+class PanelPrediccion extends StatelessWidget {
+  const PanelPrediccion({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<PrediccionProvider>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Titulo('Predicción'),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Zonas de recurrencia'),
+          subtitle: const Text('Dónde suele haber fuego en el mes elegido'),
+          value: p.visible,
+          onChanged: p.mostrar,
+        ),
+        if (p.visible) ...[
+          if (p.meses.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final m in p.meses)
+                  ChoiceChip(
+                    label: Text(nombreMes(m)),
+                    selected: p.mes == m,
+                    onSelected: (_) => p.cambiarMes(m),
+                    selectedColor: VigiaColors.bosqueClaro,
+                  ),
+              ],
+            ),
+          if (p.cargando) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
+          if (p.error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(p.error!, style: const TextStyle(color: VigiaColors.error)),
+            ),
+          const SizedBox(height: 12),
+          for (final (_, etiqueta, color) in tramosPuntaje.reversed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Container(width: 14, height: 14, color: color.withValues(alpha: 0.7)),
+                  const SizedBox(width: 10),
+                  Text('Probabilidad $etiqueta'),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            'Probabilidad de detecciones satelitales según el historial 2019–hoy, en celdas de ~11 km. '
+            'No es un pronóstico del clima.'
+            '${p.fechaModelo == null ? '' : ' Modelo actualizado el ${Formato.fecha(p.fechaModelo!)}.'}',
+            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 class _SelectorCorte extends StatelessWidget {
   const _SelectorCorte(this.p);

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/foco.dart';
 import '../models/usuario.dart';
+import '../models/zona.dart';
 
 /// Error de la API ya traducido a un mensaje que se le puede mostrar al
 /// usuario. Nunca incluye tokens ni contraseñas.
@@ -96,6 +97,32 @@ class VigiaApi {
     );
     final valor = json['fecha_hora'] as String?;
     return valor == null ? null : DateTime.parse(valor);
+  }
+
+  // ---------------------------------------------------------- prediccion --
+
+  Future<MesesPrediccion> mesesPrediccion() async {
+    final json = await _enviar(
+      () => _cliente.get(baseUrl.resolve('zonas-recurrentes/meses/'), headers: _cabeceras()),
+    );
+    return MesesPrediccion.fromJson(json);
+  }
+
+  /// Zonas del [mes] ("AAAA-MM") con puntaje de al menos [minPuntaje].
+  Future<PaginaZonas> listarZonas({
+    required String mes,
+    double minPuntaje = 0,
+    int pagina = 1,
+    int tamanoPagina = tamanoPaginaMaximo,
+  }) async {
+    final uri = baseUrl.resolve('zonas-recurrentes/').replace(queryParameters: {
+      'mes': mes,
+      'min_puntaje': '$minPuntaje',
+      'page': '$pagina',
+      'page_size': '$tamanoPagina',
+    });
+    final json = await _enviar(() => _cliente.get(uri, headers: _cabeceras()));
+    return PaginaZonas.fromJson(json);
   }
 
   // ------------------------------------------------------------ internos --

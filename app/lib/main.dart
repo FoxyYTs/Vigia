@@ -8,6 +8,7 @@ import 'data/api/vigia_api.dart';
 import 'data/storage/almacen_tokens.dart';
 import 'providers/auth_provider.dart';
 import 'providers/focos_provider.dart';
+import 'providers/prediccion_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/mapa_screen.dart';
 import 'screens/panel_screen.dart';
@@ -32,6 +33,7 @@ class VigiaApp extends StatelessWidget {
         Provider<VigiaApi>.value(value: api),
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
         ChangeNotifierProvider(create: (_) => FocosProvider(api: api)),
+        ChangeNotifierProvider(create: (_) => PrediccionProvider(api: api)),
       ],
       child: MaterialApp(
         title: 'Vigía',
