@@ -65,8 +65,10 @@ class MotorAlertas:
             if existente:
                 existente.reportes.add(reporte)
                 return None
+            # Va al canal público: se publica la ubicación del satélite, no el
+            # pin del ciudadano, que aún no ha validado nadie.
             return self._crear(
-                Alerta.TipoDisparador.COINCIDENCIA_GEOGRAFICA, punto, foco=foco, disparador=reporte
+                Alerta.TipoDisparador.COINCIDENCIA_GEOGRAFICA, foco.ubicacion, foco=foco, disparador=reporte
             )
 
         existente = Alerta.objects.filter(

@@ -12,12 +12,14 @@ para que lleguen los mensajes de Telegram.
 
 import time
 
+from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
-from apps.alertas.models import Alerta
+from apps.alertas.models import Alerta, AlertaReporte
 from apps.alertas.motor import MotorAlertas
 from apps.reportes.models import ReporteCiudadano
 from apps.satelital.models import FocoIncendio
@@ -76,7 +78,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Listo. Para borrar: simular_alertas --limpiar"))
 
     def usuario(self, nombre, rol):
-        u, _ = Usuario.objects.get_or_create(username=PREFIJO + nombre, defaults={"rol": rol})
+        u, creado = Usuario.objects.get_or_create(username=PREFIJO + nombre, defaults={"rol": rol})
+        if creado:
+            u.set_unusable_password()
+            u.save(update_fields=["password"])
         return u
 
     def reporte(self, ciudadano, incendio):
@@ -96,18 +101,28 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def limpiar(self):
-        demo = Usuario.objects.filter(username__startswith=PREFIJO)
+        # El prefijo solo no basta: cualquiera puede registrarse como "demo_sim_x".
+        # Los de demo se crean sin contraseña usable, y eso no se logra registrándose.
+        demo = Usuario.objects.filter(
+            username__startswith=PREFIJO, password__startswith=UNUSABLE_PASSWORD_PREFIX
+        )
         reportes = ReporteCiudadano.objects.filter(ciudadano__in=demo)
         focos = FocoIncendio.objects.filter(satelite=SATELITE_DEMO)
-        # AlertaReporte protege al reporte: primero las alertas (y sus notificaciones en cascada).
-        alertas, _ = Alerta.objects.filter(reportes__in=reportes).distinct().delete()
-        alertas_foco, _ = Alerta.objects.filter(foco__in=focos).delete()
+        # Una alerta con algún reporte real no se borra; solo se le quitan los de demo.
+        reales = ReporteCiudadano.objects.exclude(ciudadano__in=demo)
+        alertas, _ = (
+            Alerta.objects.filter(Q(reportes__in=reportes) | Q(foco__in=focos))
+            .exclude(reportes__in=reales)
+            .distinct()
+            .delete()
+        )
+        AlertaReporte.objects.filter(reporte__in=reportes).delete()
         n_reportes, _ = reportes.delete()
         n_focos, _ = focos.delete()
         n_usuarios, _ = demo.delete()
         self.stdout.write(
             self.style.SUCCESS(
-                f"Borrado: {alertas + alertas_foco} objetos de alertas, {n_reportes} de reportes, "
+                f"Borrado: {alertas} objetos de alertas, {n_reportes} de reportes, "
                 f"{n_focos} de focos, {n_usuarios} de usuarios."
             )
         )

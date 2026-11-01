@@ -79,6 +79,8 @@ def test_reporte_a_9_km_de_un_foco_reciente_coincide(crear_foco, crear_reporte):
     reporte = crear_reporte(incendio=al_norte(9))
     alerta = motor.evaluar_reporte_nuevo(reporte)
     assert alerta.tipo_disparador == Tipo.COINCIDENCIA_GEOGRAFICA and alerta.foco == foco
+    # Se publica la ubicación del satélite, no el pin sin validar del ciudadano.
+    assert alerta.ubicacion == foco.ubicacion
     assert AlertaReporte.objects.get(alerta=alerta, reporte=reporte).es_disparador is True
 
 
