@@ -1,7 +1,7 @@
 """
 CorridaModeloML, ZonaRecurrente — ver Vigia-Modelo-Datos § Satelital/predicción
-(vault de Obsidian). `ModeloRecurrencia` (el servicio que las crea) se
-agrega después.
+(vault de Obsidian). `ModeloRecurrencia` (el servicio que las crea) está en
+modelo.py.
 
 Las zonas se guardan por corrida y no se sobrescriben en cada
 re-entrenamiento: permite comparar cómo evolucionan las zonas de riesgo.
@@ -17,6 +17,9 @@ class CorridaModeloML(models.Model):
     fecha_ejecucion = models.DateTimeField(default=timezone.now)
     version_modelo = models.CharField(max_length=50)
     notas = models.TextField(blank=True, default="")
+    # AUC, PR-AUC y precisión en el 5 % superior por horizonte y modelo,
+    # contra las bases (ver ModeloRecurrencia.entrenar).
+    metricas = models.JSONField(default=dict, blank=True)
 
     class Meta:
         verbose_name = "corrida del modelo"
@@ -30,6 +33,8 @@ class CorridaModeloML(models.Model):
 class ZonaRecurrente(models.Model):
     corrida = models.ForeignKey(CorridaModeloML, on_delete=models.CASCADE, related_name="zonas")
     area = models.MultiPolygonField(srid=4326)
+    # Primer día del mes que predice (cada corrida predice 3 meses).
+    mes_objetivo = models.DateField()
     puntaje_recurrencia = models.FloatField()
     cantidad_incendios_historicos = models.PositiveIntegerField()
     municipio = models.ForeignKey(
@@ -40,6 +45,7 @@ class ZonaRecurrente(models.Model):
         verbose_name = "zona recurrente"
         verbose_name_plural = "zonas recurrentes"
         ordering = ["-puntaje_recurrencia"]
+        indexes = [models.Index(fields=["corrida", "mes_objetivo", "-puntaje_recurrencia"])]
 
     def __str__(self):
         return f"Zona (puntaje {self.puntaje_recurrencia:.2f}) — corrida {self.corrida_id}"
