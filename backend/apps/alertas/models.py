@@ -1,7 +1,7 @@
 """
 Alerta, AlertaReporte — ver Vigia-Modelo-Datos § Reportes y alertas y
 Vigia-UML-Secuencia (vault de Obsidian). `MotorAlertas` (el servicio que
-las crea) se agrega después.
+las crea) está en motor.py.
 """
 
 from django.contrib.gis.db import models
