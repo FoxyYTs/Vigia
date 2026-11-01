@@ -62,6 +62,9 @@ Todo cuelga de `/api/`. Auth con JWT (`Authorization: Bearer <access>`); el toke
 | `GET zonas-recurrentes/meses/` | Anónimo | Meses que predice la corrida más reciente y sus métricas |
 | `GET incendios-reportados/` | Anónimo | Incendios forestales reportados a la UNGRD 2019–2024 (`anio`, `municipio` = código DANE) |
 | `GET incendios-reportados/por-municipio/` | Anónimo | Cantidad de incendios y hectáreas por municipio (`anio`) |
+| `GET historico/capa/` | Anónimo | Valor por municipio para el mapa (`indicador=incendios_ungrd\|deforestacion_ideam`, `anio`) |
+| `GET historico/capa/disponible/` | Anónimo | Años con datos de cada indicador |
+| `GET municipios/geometria/` | Anónimo | GeoJSON de los municipios simplificado a ~1 km (en caché) |
 | `POST reportes/` (multipart) | Ciudadano | Crea un reporte con foto y las dos ubicaciones |
 | `GET reportes/` | Ciudadano (los suyos) / Administrador (los de su jurisdicción) / Staff (todos, solo lectura) | `?estado=` |
 | `POST reportes/{id}/validar/`, `rechazar/` | Administrador | 409 si ya estaba resuelto |
@@ -104,7 +107,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
   municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
   y la jurisdicción de Cornare.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (186 tests de backend; la app tiene sus propias pruebas en `app/test/`).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (200 tests de backend; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
   JWT y panel (ver `app/README.md`). Faltan los reportes ciudadanos y el panel de administración.
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
@@ -115,9 +118,13 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   la recurrencia estacional). `python manage.py entrenar_modelo_recurrencia`; Celery Beat lo
   reentrena el día 2 de cada mes (~6 min, ~1,2 GB). API: `/api/zonas-recurrentes/?mes=AAAA-MM`
   y `/api/zonas-recurrentes/meses/`.
-- ✅ `ClienteUngrd` (I1c): 18.014 incendios forestales reportados a la UNGRD 2019–2024
-  (`python manage.py cargar_incendios_ungrd`).
-- ⬜ `ClienteIdeam`, panel de administración y generación de informes (I6),
+- ✅ Históricos (I1c):
+  - `cargar_incendios_ungrd`: 18.014 incendios forestales reportados a la UNGRD, 2019–2024.
+  - `cargar_deforestacion_ideam`: deforestación anual del IDEAM por municipio, 2019–2025, a
+    partir de los rasters oficiales del SMByC; los totales coinciden con la cifra oficial.
+  - `validar_modelo_ungrd`: backtest del modelo contra los incendios reportados (AUC ≈ 0,69;
+    el 82 % de los meses con reporte tuvo detección satelital).
+- ⬜ Panel de administración y generación de informes (I6),
   fotos de reportes (I5b), push FCM.
 
 ## Licencia
