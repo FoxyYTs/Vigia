@@ -16,6 +16,10 @@ Vigía ─┬─ Mapa Interactivo          /         sin cuenta
   Arranca en la fecha del último foco cargado (`GET /api/focos/ultimo/`) para que
   no quede vacío si la ingesta lleva días detenida. Se dibujan como máximo 5.000
   focos (páginas de 500 en paralelo); si hay más, el contador lo avisa.
+  La capa **Zonas de recurrencia** (interruptor en el panel de filtros) dibuja,
+  debajo de los focos, las celdas de ~11 km con probabilidad ≥ 30 % para uno de
+  los 3 meses que predice el modelo (`/api/zonas-recurrentes/`), en 4 tonos con
+  leyenda. No pide nada hasta que se activa.
 - **Iniciar Sesión:** validación del formulario en el cliente, mensajes de error
   en español (credenciales, límite de intentos, sin conexión) y tokens guardados
   con `flutter_secure_storage`. El access se renueva con el refresh al expirar.
@@ -111,3 +115,7 @@ flutter test
   focos dibujados y rango pedido al cambiar la ventana.
 - `test/screens/login_screen_test.dart`: validaciones del formulario, error de
   credenciales, login correcto y etiqueta accesible del botón de contraseña.
+- `test/providers/auth_provider_test.dart`: restaurar y renovar la sesión, cierre
+  ante 401 y la guarda `RequiereSesion` del panel.
+- `test/providers/prediccion_provider_test.dart`: carga perezosa de la capa de
+  predicción, paginación, cambio de mes, respuestas viejas y panel con leyenda.

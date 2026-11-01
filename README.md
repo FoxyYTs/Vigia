@@ -86,13 +86,22 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   (57 % de los focos caían fuera), así que se descartan al ingerir con un contorno aproximado
   (`apps/satelital/data/`, CC BY 4.0). `depurar_focos_fuera_de_colombia` limpia lo ya cargado.
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
-  verificado con login real.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (159 tests de backend; la app tiene sus propias pruebas en `app/test/`).
-- 🟡 App Flutter: Mapa Interactivo público e Iniciar Sesión con JWT (ver `app/README.md`).
+  verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
+  municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
+  y la jurisdicción de Cornare.
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (175 tests de backend; la app tiene sus propias pruebas en `app/test/`).
+- 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
+  JWT y panel (ver `app/README.md`). Faltan los reportes ciudadanos y el panel de administración.
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
   (canales público, privado e interno según la certeza de la alerta). Demo en vivo:
   `python manage.py simular_alertas` (y `--limpiar` para borrarla). El push (FCM) llega con la app móvil.
-- ⬜ `ClienteIdeam`, `ClienteUngrd`, `ModeloRecurrencia`.
+- ✅ `ModeloRecurrencia` (I2): probabilidad de detecciones por celda de 0,1° para los 3 meses
+  siguientes, con un gradient boosting por horizonte (AUC ≈ 0,89 en el último año, contra 0,86 de
+  la recurrencia estacional). `python manage.py entrenar_modelo_recurrencia`; Celery Beat lo
+  reentrena el día 2 de cada mes (~6 min, ~1,2 GB). API: `/api/zonas-recurrentes/?mes=AAAA-MM`
+  y `/api/zonas-recurrentes/meses/`.
+- ⬜ `ClienteIdeam`, `ClienteUngrd`, panel de administración y generación de informes (I6),
+  fotos de reportes (I5b), push FCM.
 
 ## Licencia
 
