@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import pytest
 from django.contrib.gis.geos import Point
@@ -7,7 +7,7 @@ from apps.satelital.models import FocoIncendio
 
 pytestmark = pytest.mark.django_db
 
-AHORA = datetime.now(timezone.utc)
+AHORA = datetime.now(UTC)
 
 
 def _foco(horas_atras=1, lon=-75.37, lat=6.15, fuente=FocoIncendio.Fuente.NASA_FIRMS):
@@ -49,13 +49,15 @@ def test_parametros_invalidos_devuelven_400(api, consulta):
 
 
 def test_filtro_por_fuente(api):
-    firms, inpe = _foco(), _foco(fuente=FocoIncendio.Fuente.INPE_QUEIMADAS)
+    _foco()  # uno de NASA FIRMS que el filtro debe dejar fuera
+    inpe = _foco(fuente=FocoIncendio.Fuente.INPE_QUEIMADAS)
     r = api.get("/api/focos/?fuente=INPE_QUEIMADAS")
     assert {f["id"] for f in r.data["results"]} == {inpe.id}
 
 
 def test_filtro_por_bbox(api):
-    dentro, fuera = _foco(lon=-75.4, lat=6.1), _foco(lon=-66.0, lat=10.0)
+    dentro = _foco(lon=-75.4, lat=6.1)
+    _foco(lon=-66.0, lat=10.0)  # fuera del bbox
     r = api.get("/api/focos/?bbox=-76,5,-75,7")
     assert {f["id"] for f in r.data["results"]} == {dentro.id}
 

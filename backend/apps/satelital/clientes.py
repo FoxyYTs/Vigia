@@ -8,7 +8,7 @@ import csv
 import io
 import logging
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, UTC
 
 import requests
 from django.conf import settings
@@ -116,7 +116,7 @@ def parsear_fila_firms(fila: dict, fuente: str) -> dict:
     hora, minuto = acq_time[:2], acq_time[2:]
     fecha_hora = datetime.strptime(
         f"{fila['acq_date']} {hora}:{minuto}", "%Y-%m-%d %H:%M"
-    ).replace(tzinfo=timezone.utc)
+    ).replace(tzinfo=UTC)
 
     return {
         "fuente": fuente,
@@ -248,7 +248,7 @@ def parsear_feature_inpe(feature: dict, fuente: str = FocoIncendio.Fuente.INPE_Q
     """
     props = feature["properties"]
     fecha_hora = datetime.strptime(props["data_hora_gmt"], "%Y-%m-%dT%H:%M:%SZ").replace(
-        tzinfo=timezone.utc
+        tzinfo=UTC
     )
     return {
         "fuente": fuente,
@@ -320,7 +320,7 @@ class ClienteInpeQueimadas(ClienteDatosExternos):
     def sincronizar(self, dias: int = 1) -> int:
         """Descarga los focos de Colombia de los últimos `dias` días y
         persiste los nuevos. Retorna la cantidad de focos nuevos."""
-        desde = datetime.now(timezone.utc) - timedelta(days=dias)
+        desde = datetime.now(UTC) - timedelta(days=dias)
         features = self._descargar(desde)
         antes = self._contar()
         self._insertar_masivo([parsear_feature_inpe(f) for f in features])

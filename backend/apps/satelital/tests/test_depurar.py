@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import pytest
 from django.contrib.gis.geos import Point
@@ -8,7 +8,7 @@ from apps.satelital.models import FocoIncendio
 
 pytestmark = pytest.mark.django_db
 
-FECHA = datetime(2026, 9, 1, tzinfo=timezone.utc)
+FECHA = datetime(2026, 9, 1, tzinfo=UTC)
 
 
 def _foco(lon, lat, fuente=FocoIncendio.Fuente.NASA_FIRMS):

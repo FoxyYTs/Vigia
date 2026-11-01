@@ -159,7 +159,6 @@ def test_validacion_manual_crea_alerta_con_el_reporte(reporte):
 
 
 def test_crear_alerta_programa_el_despacho(crear_foco, django_capture_on_commit_callbacks):
-    with patch("apps.alertas.motor.despachar_alerta") as tarea:
-        with django_capture_on_commit_callbacks(execute=True):
-            alerta = motor.evaluar_foco_nuevo(crear_foco())
+    with patch("apps.alertas.motor.despachar_alerta") as tarea, django_capture_on_commit_callbacks(execute=True):
+        alerta = motor.evaluar_foco_nuevo(crear_foco())
     tarea.delay.assert_called_once_with(alerta.pk)

@@ -16,7 +16,7 @@ Desarrollo individual (José Andrés Daza Gallego).
 - **Frontend / Móvil:** Flutter (web y móvil desde el mismo código)
 - **Infraestructura:** Docker Compose, Nginx, Cloudflare Tunnel
 - **Notificaciones:** Firebase Cloud Messaging, bot de Telegram (3 canales)
-- **Pruebas:** pytest
+- **Pruebas y calidad:** pytest (con PostGIS real) y ruff
 
 ## Estructura
 
@@ -58,15 +58,30 @@ Todo cuelga de `/api/`. Auth con JWT (`Authorization: Bearer <access>`); el toke
 | `GET municipios/` | Anónimo | Catálogo (`?departamento=`) |
 | `GET focos/` | Anónimo | Focos para el mapa: `desde`, `hasta` (48 h por defecto, máx. 31 días), `fuente`, `bbox` |
 | `GET focos/ultimo/` | Anónimo | Fecha del foco más reciente cargado (la app arranca el mapa ahí) |
-| `GET zonas-recurrentes/` | Anónimo | Zonas de la corrida más reciente del modelo (`min_puntaje`) |
+| `GET zonas-recurrentes/` | Anónimo | Zonas de la corrida más reciente del modelo para un mes (`mes=AAAA-MM`, por defecto el primero; `min_puntaje`) |
+| `GET zonas-recurrentes/meses/` | Anónimo | Meses que predice la corrida más reciente y sus métricas |
+| `GET incendios-reportados/` | Anónimo | Incendios forestales reportados a la UNGRD 2019–2024 (`anio`, `municipio` = código DANE) |
+| `GET incendios-reportados/por-municipio/` | Anónimo | Cantidad de incendios y hectáreas por municipio (`anio`) |
 | `POST reportes/` (multipart) | Ciudadano | Crea un reporte con foto y las dos ubicaciones |
-| `GET reportes/` | Ciudadano (los suyos) / Administrador y Staff (todos, Staff solo lectura) | `?estado=` |
+| `GET reportes/` | Ciudadano (los suyos) / Administrador (los de su jurisdicción) / Staff (todos, solo lectura) | `?estado=` |
 | `POST reportes/{id}/validar/`, `rechazar/` | Administrador | 409 si ya estaba resuelto |
 | `GET alertas/` | Autenticado | `?tipo=` |
 | `GET notificaciones/`, `POST notificaciones/{id}/marcar-leida/` | Autenticado | Solo las propias |
 
-Registro, login y creación de reportes tienen límite de intentos. Un administrador aún ve
-todos los reportes: el filtro por jurisdicción necesita la geometría de `Municipio`.
+Registro, login y creación de reportes tienen límite de intentos. Un administrador solo ve,
+valida y rechaza los reportes cuyo incendio cae en los municipios de su entidad (por ejemplo,
+Cornare: 26 municipios del oriente antioqueño). Si no tiene entidad, o si su entidad no tiene
+polígonos cargados, se trata como administrador nacional y ve todos.
+
+## Pruebas
+
+```bash
+docker compose run --rm -v "$PWD/backend:/app" --user "$(id -u):$(id -g)" -e HOME=/tmp backend \
+  sh -c "pip install --user -r requirements/local.txt && python -m pytest && python -m ruff check ."
+```
+
+La imagen trae solo las dependencias de producción, por eso se instalan las de desarrollo
+dentro del contenedor. La configuración de ruff está en `backend/pyproject.toml`.
 
 ## Ramas
 
@@ -89,7 +104,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
   municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
   y la jurisdicción de Cornare.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (175 tests de backend; la app tiene sus propias pruebas en `app/test/`).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (186 tests de backend; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
   JWT y panel (ver `app/README.md`). Faltan los reportes ciudadanos y el panel de administración.
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
@@ -100,7 +115,9 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   la recurrencia estacional). `python manage.py entrenar_modelo_recurrencia`; Celery Beat lo
   reentrena el día 2 de cada mes (~6 min, ~1,2 GB). API: `/api/zonas-recurrentes/?mes=AAAA-MM`
   y `/api/zonas-recurrentes/meses/`.
-- ⬜ `ClienteIdeam`, `ClienteUngrd`, panel de administración y generación de informes (I6),
+- ✅ `ClienteUngrd` (I1c): 18.014 incendios forestales reportados a la UNGRD 2019–2024
+  (`python manage.py cargar_incendios_ungrd`).
+- ⬜ `ClienteIdeam`, panel de administración y generación de informes (I6),
   fotos de reportes (I5b), push FCM.
 
 ## Licencia

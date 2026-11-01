@@ -2,7 +2,6 @@ import pytest
 
 from apps.alertas.models import Alerta
 from apps.notificaciones.models import Notificacion
-from apps.usuarios.models import Usuario
 
 pytestmark = pytest.mark.django_db
 

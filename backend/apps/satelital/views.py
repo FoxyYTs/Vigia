@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from datetime import timezone as dt_timezone
+from datetime import UTC
 
 from django.contrib.gis.geos import Polygon
 from django.db.models import Max
@@ -31,7 +31,7 @@ def _fecha(valor: str, nombre: str, fin_de_dia: bool = False):
             raise ValidationError({nombre: "Formato inválido, usar AAAA-MM-DD o ISO 8601."})
         resultado = datetime(dia.year, dia.month, dia.day) + (timedelta(days=1) if fin_de_dia else timedelta())
     if timezone.is_naive(resultado):
-        resultado = timezone.make_aware(resultado, dt_timezone.utc)
+        resultado = timezone.make_aware(resultado, UTC)
     return resultado
 
 
