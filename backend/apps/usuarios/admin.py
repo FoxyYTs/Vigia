@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.gis.admin import GISModelAdmin
 from django.contrib.auth.admin import UserAdmin
 
 from apps.usuarios.models import EntidadPublica, Municipio, Usuario
@@ -14,9 +15,9 @@ class UsuarioAdmin(UserAdmin):
 
 
 @admin.register(Municipio)
-class MunicipioAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "departamento")
-    search_fields = ("nombre", "departamento")
+class MunicipioAdmin(GISModelAdmin):
+    list_display = ("nombre", "departamento", "codigo_dane")
+    search_fields = ("nombre", "departamento", "codigo_dane")
 
 
 @admin.register(EntidadPublica)
