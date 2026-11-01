@@ -7,8 +7,9 @@ import 'package:provider/provider.dart';
 
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
+import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
-import 'panel_filtros.dart' show colorFuente, colorPuntaje;
+import 'panel_filtros.dart' show colorFuente, colorPuntaje, coloresHistorico;
 
 /// Rectángulo que contiene el territorio continental e insular de Colombia.
 final limitesColombia = LatLngBounds(const LatLng(-4.3, -79.2), const LatLng(13.6, -66.8));
@@ -29,6 +30,20 @@ class _MapaFocosState extends State<MapaFocos> {
 
   List<Foco>? _focosPrevios;
   List<CircleMarker<Foco>> _circulos = const [];
+  int? _versionHistorico;
+  List<Polygon> _municipios = const [];
+
+  List<Polygon> _poligonosHistoricos(HistoricoProvider h) {
+    if (h.version != _versionHistorico) {
+      _versionHistorico = h.version;
+      final colores = coloresHistorico(h.indicador);
+      _municipios = [
+        for (final (m, clase) in h.coloreados)
+          for (final anillo in m.anillos) Polygon(points: anillo, color: colores[clase].withValues(alpha: 0.6)),
+      ];
+    }
+    return _municipios;
+  }
 
   static double _radio(Foco f) {
     final frp = f.brilloFrp;
@@ -67,6 +82,7 @@ class _MapaFocosState extends State<MapaFocos> {
   Widget build(BuildContext context) {
     final p = context.watch<FocosProvider>();
     final zonas = context.watch<PrediccionProvider>().zonas;
+    final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
     final seleccionado = p.seleccionado;
 
     return Semantics(
@@ -88,6 +104,7 @@ class _MapaFocosState extends State<MapaFocos> {
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.foxyyts.vigia.vigia_app',
           ),
+          if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.
           if (zonas.isNotEmpty)
             PolygonLayer(
@@ -123,7 +140,7 @@ class _MapaFocosState extends State<MapaFocos> {
               ],
             ),
           const SimpleAttributionWidget(
-            source: Text('OpenStreetMap contributors · NASA FIRMS · INPE · Modelo Vigía'),
+            source: Text('OpenStreetMap contributors · NASA FIRMS · INPE · UNGRD · IDEAM · Modelo Vigía'),
           ),
         ],
       ),

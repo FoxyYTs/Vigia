@@ -110,3 +110,24 @@ def test_comando_resume_la_carga_por_anio(municipios, api_ungrd, capsys):
     salida = capsys.readouterr().out
     assert "Nuevos: 6. Total: 6. Sin municipio: 1." in salida
     assert "2023: 4" in salida
+
+
+def test_capa_historica_de_incendios_y_deforestacion(api, cargados):
+    from django.contrib.gis.geos import MultiPolygon, Polygon
+
+    from apps.historico.models import HistoricoDeforestacion
+
+    rionegro = Municipio.objects.get(codigo_dane="05615")
+    HistoricoDeforestacion.objects.create(
+        fuente="IDEAM", anio=2024, hectareas_afectadas=12.345, municipio=rionegro,
+        area=MultiPolygon(Polygon(((0, 0), (0, 1), (1, 1), (0, 0))), srid=4326),
+    )
+    incendios = api.get("/api/historico/capa/?indicador=incendios_ungrd&anio=2023").data
+    assert {f["codigo_dane"]: f["valor"] for f in incendios} == {"05615": 2, "85263": 1, "25151": 1}
+    defo = api.get("/api/historico/capa/?indicador=deforestacion_ideam&anio=2024").data
+    assert defo == [{"codigo_dane": "05615", "valor": 12.35}]
+    assert api.get("/api/historico/capa/?indicador=lluvia&anio=2024").status_code == 400
+    assert api.get("/api/historico/capa/?indicador=incendios_ungrd").status_code == 400
+    assert api.get("/api/historico/capa/disponible/").data == {
+        "incendios_ungrd": [2019, 2022, 2023], "deforestacion_ideam": [2024],
+    }

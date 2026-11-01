@@ -8,7 +8,7 @@ from apps.usuarios.models import Municipio, Usuario
 class MunicipioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Municipio
-        fields = ["id", "nombre", "departamento"]
+        fields = ["id", "nombre", "departamento", "codigo_dane"]
 
 
 class UsuarioSerializer(serializers.ModelSerializer):

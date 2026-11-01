@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:vigia_app/data/api/vigia_api.dart';
+import 'package:vigia_app/providers/historico_provider.dart';
 import 'package:vigia_app/providers/prediccion_provider.dart';
 import 'package:vigia_app/widgets/panel_filtros.dart';
 
@@ -134,7 +135,13 @@ void main() {
     final p = PrediccionProvider(api: _api());
     await t.pumpWidget(MaterialApp(
       home: Scaffold(
-        body: ChangeNotifierProvider.value(value: p, child: const SingleChildScrollView(child: PanelPrediccion())),
+        body: MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: p),
+            ChangeNotifierProvider(create: (_) => HistoricoProvider(api: _api())),
+          ],
+          child: const SingleChildScrollView(child: PanelPrediccion()),
+        ),
       ),
     ));
     expect(find.text('noviembre 2026'), findsNothing);
