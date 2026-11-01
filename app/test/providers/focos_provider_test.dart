@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -107,5 +108,69 @@ void main() {
     final ultima = pedidas.last.queryParameters;
     expect(ultima['desde'], '2026-09-17T00:20:00.000Z');
     expect(ultima['hasta'], '2026-09-24T00:20:00.000Z');
+  });
+
+  group('cambiarCorte', () {
+    test('un día anterior corta al final de ese día', () async {
+      final p = FocosProvider(api: _apiCon(10));
+      await p.inicializar();
+
+      p.cambiarCorte(DateTime(2026, 9, 20));
+
+      expect(p.corte, DateTime(2026, 9, 20, 23, 59, 59));
+    });
+
+    test('el día del último foco corta en ese foco, no al final del día', () async {
+      final p = FocosProvider(api: _apiCon(10));
+      await p.inicializar();
+      final ultimo = p.ultimoDisponible!.toLocal();
+
+      p.cambiarCorte(DateTime(ultimo.year, ultimo.month, ultimo.day));
+
+      expect(p.corte, p.ultimoDisponible);
+    });
+  });
+
+  test('una respuesta vieja no pisa la de una consulta más nueva', () async {
+    final lenta = Completer<void>();
+    var consultas = 0;
+    final api = VigiaApi(
+      baseUrl: Uri.parse('https://vigia.test/api/'),
+      cliente: MockClient((r) async {
+        if (r.url.path.endsWith('/ultimo/')) {
+          return http.Response(jsonEncode({'fecha_hora': '2026-09-24T00:20:00Z'}), 200);
+        }
+        final n = ++consultas;
+        if (n == 1) await lenta.future; // la primera consulta llega tarde
+        return http.Response(
+          jsonEncode({
+            'count': n,
+            'next': null,
+            'results': [
+              for (var i = 0; i < n; i++)
+                {'id': i, 'fuente': 'NASA_FIRMS', 'latitud': 4.0, 'longitud': -72.0, 'fecha_hora': '2026-09-23T10:00:00Z'},
+            ],
+          }),
+          200,
+        );
+      }),
+    );
+    final p = FocosProvider(api: api);
+    Future<void> hasta(bool Function() condicion) async {
+      while (!condicion()) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    final primera = p.inicializar();
+    await hasta(() => consultas == 1);
+    p.cambiarVentana(Ventana.d7);
+    await hasta(() => !p.cargando);
+    lenta.complete();
+    await primera;
+
+    expect(p.total, 2, reason: 'debe quedar la respuesta de la ventana de 7 días');
+    expect(p.focos, hasLength(2));
+    expect(p.cargando, isFalse);
   });
 }

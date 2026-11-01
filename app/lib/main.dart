@@ -45,7 +45,7 @@ class VigiaApp extends StatelessWidget {
           settings: ajustes,
           builder: (_) => switch (ajustes.name) {
             Rutas.login => const LoginScreen(),
-            Rutas.panel => const _RequiereSesion(child: PanelScreen()),
+            Rutas.panel => const RequiereSesion(child: PanelScreen()),
             _ => const MapaScreen(),
           },
         ),
@@ -55,8 +55,8 @@ class VigiaApp extends StatelessWidget {
 }
 
 /// El panel cuelga de "Iniciar Sesión": sin sesión se muestra el login.
-class _RequiereSesion extends StatelessWidget {
-  const _RequiereSesion({required this.child});
+class RequiereSesion extends StatelessWidget {
+  const RequiereSesion({super.key, required this.child});
 
   final Widget child;
 
