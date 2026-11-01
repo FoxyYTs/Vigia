@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
+from apps.alertas.motor import MotorAlertas
 from apps.reportes.models import ReporteCiudadano
 from apps.reportes.serializers import ReporteCiudadanoSerializer
 from apps.usuarios.permissions import EsAdministrador, EsCiudadano, EsStaff
@@ -45,7 +46,8 @@ class ReporteCiudadanoViewSet(
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(ciudadano=self.request.user)
+        reporte = serializer.save(ciudadano=self.request.user)
+        MotorAlertas().evaluar_reporte_nuevo(reporte)
 
     def _resolver(self, request, accion):
         reporte = self.get_object()
@@ -53,6 +55,8 @@ class ReporteCiudadanoViewSet(
             getattr(reporte, accion)(request.user)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_409_CONFLICT)
+        if accion == "validar":
+            MotorAlertas().evaluar_validacion_manual(reporte)
         return Response(self.get_serializer(reporte).data)
 
     @action(detail=True, methods=["post"])

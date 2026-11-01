@@ -87,10 +87,12 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   (`apps/satelital/data/`, CC BY 4.0). `depurar_focos_fuera_de_colombia` limpia lo ya cargado.
 - ✅ `apps/usuarios`: `Usuario`/`EntidadPublica`/`Municipio` — admin de Django registrado y
   verificado con login real.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (129 tests de backend; la app tiene sus propias pruebas en `app/test/`).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (159 tests de backend; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público e Iniciar Sesión con JWT (ver `app/README.md`).
-- ⬜ `ClienteIdeam`, `ClienteUngrd`, `MotorAlertas`, `ModeloRecurrencia`,
-  `Notificador`/`DespachadorNotificaciones`.
+- ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
+  (canales público, privado e interno según la certeza de la alerta). Demo en vivo:
+  `python manage.py simular_alertas` (y `--limpiar` para borrarla). El push (FCM) llega con la app móvil.
+- ⬜ `ClienteIdeam`, `ClienteUngrd`, `ModeloRecurrencia`.
 
 ## Licencia
 

@@ -1,6 +1,6 @@
 """
 Notificacion — ver Vigia-Modelo-Datos § Reportes y alertas (vault de Obsidian).
-Los servicios `Notificador*` y `DespachadorNotificaciones` se agregan después.
+Los servicios `Notificador*` y `DespachadorNotificaciones` están en despachador.py.
 
 Exclusivamente saliente (push / Telegram hacia el usuario). Telegram nunca es
 canal de entrada de reportes: un reporte sin cuenta autenticada rompería la
@@ -27,7 +27,7 @@ class Notificacion(models.Model):
         FALLIDO = "fallido", "Fallido"
 
     alerta = models.ForeignKey(Alerta, on_delete=models.CASCADE, related_name="notificaciones")
-    # null = canal público de Telegram, que no tiene una cuenta destinataria.
+    # null = canal de Telegram (público, privado o interno): va a un grupo, no a una cuenta.
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
