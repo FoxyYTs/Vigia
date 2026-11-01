@@ -10,6 +10,11 @@ from django.contrib.gis.db import models
 class Municipio(models.Model):
     nombre = models.CharField(max_length=100)
     departamento = models.CharField(max_length=100)
+    # DIVIPOLA. Nulos solo en filas creadas a mano antes de `cargar_municipios`.
+    codigo_dane = models.CharField(max_length=5, unique=True, null=True, blank=True)
+    # Polígono para asignar focos y zonas a un municipio (ver
+    # apps/usuarios/data/LICENCIA.md). Nulo si la fuente no lo trae.
+    geom = models.MultiPolygonField(srid=4326, null=True, blank=True)
 
     class Meta:
         constraints = [
