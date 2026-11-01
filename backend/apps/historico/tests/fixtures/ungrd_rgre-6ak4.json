@@ -1,0 +1,38 @@
+[
+ {
+  ":id": "row-8fzr-kxy6.6eps",
+  "fecha": "2023-01-28T00:00:00.000",
+  "departamento": "ANTIOQUIA",
+  "municipio": "RIONEGRO",
+  "evento": "INCENDIO FORESTAL",
+  "codificaci_n_segun_divipola": "05615",
+  "hectareas": "0"
+ },
+ {
+  ":id": "row-by6w-maan.4jbs",
+  "fecha": "2023-02-01T00:00:00.000",
+  "departamento": "ANTIOQUIA",
+  "municipio": "RIONEGRO",
+  "evento": "INCENDIO FORESTAL",
+  "codificaci_n_segun_divipola": "05615",
+  "hectareas": "0"
+ },
+ {
+  ":id": "row-uyam~f7b7~82v8",
+  "fecha": "2023-01-01T00:00:00.000",
+  "departamento": "CASANARE",
+  "municipio": "PORE",
+  "evento": "INCENDIO FORESTAL",
+  "codificaci_n_segun_divipola": "85263",
+  "hectareas": "500"
+ },
+ {
+  ":id": "row-bdzd.r96d~m3gj",
+  "fecha": "2023-01-01T00:00:00.000",
+  "departamento": "CUNDINAMARCA",
+  "municipio": "CAQUEZA",
+  "evento": "INCENDIO FORESTAL",
+  "codificaci_n_segun_divipola": "25151",
+  "hectareas": "1"
+ }
+]
