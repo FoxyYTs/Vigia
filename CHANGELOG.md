@@ -7,6 +7,11 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.4.2] — 2026-11-02 · Política de privacidad
+
+### Corregido
+- La política de privacidad decía que la cuenta se elimina desde la app, pero esa opción aún no existe: la eliminación se pide por correo. También aclara que el servicio es para mayores de 18 años, como se declaró en Play Store. Versión de la política: 2026-11-02.
+
 ## [0.4.1] — 2026-11-02 · Despliegue en servidor
 
 ### Agregado
@@ -76,6 +81,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.1...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.2...develop
+[0.4.2]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.2
 [0.4.1]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.1
 [0.4.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.0
