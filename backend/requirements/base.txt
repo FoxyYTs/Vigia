@@ -1,33 +1,32 @@
-# Ver Vigia.md § Stack Tecnológico (vault de Obsidian) — versiones exactas
-# se fijan al instalar por primera vez, no antes de tener un entorno real
-# donde probarlas.
+# Ver Vigia.md § Stack Tecnológico (vault de Obsidian). Versiones exactas
+# (Twelve-Factor II): se fijaron el 1-nov-2026 al pasar a Django 5.2 LTS.
+# Para actualizar, cambiar el número aquí y correr las pruebas.
 
-Django>=5.1,<5.2
-djangorestframework
-djangorestframework-simplejwt
-django-environ
-psycopg[binary]
-requests
+Django==5.2.18
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
+django-environ==0.14.0
+psycopg[binary]==3.3.6
+requests==2.34.2
 
 # Asíncrono / tareas programadas
-celery
-django-celery-beat
-redis
+celery==5.6.3
+django-celery-beat==2.9.0
+redis==8.1.0
 
 # Imágenes (ReporteCiudadano.foto usa ImageField)
-Pillow
+Pillow==13.0.0
 
 # Geoespacial (PostGIS) — requiere GDAL/GEOS/PROJ del sistema, ver
 # backend/Dockerfile
 # (django.contrib.gis viene con Django, no es un paquete pip aparte)
 
 # Aprendizaje automático — ModeloRecurrencia (ver Vigia-UML-Clases § Servicios)
-pandas
-scikit-learn
+pandas==3.1.0
+scikit-learn==1.9.1
 
-# Notificaciones
-python-telegram-bot
-firebase-admin
+# Notificaciones push (FCM, #43). Telegram usa requests, sin librería aparte.
+firebase-admin==7.7.0
 
 # Servidor de aplicación (producción)
-gunicorn
+gunicorn==26.2.0

@@ -1,0 +1,6 @@
+body { margin: 0; background: #F4F6F3; color: #1A1F1C; font: 16px/1.6 system-ui, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { color: #1B5E3A; line-height: 1.25; }
+h2 { margin-top: 2em; font-size: 1.15rem; }
+a { color: #1B5E3A; }
+.version { color: #404942; font-size: .9rem; }

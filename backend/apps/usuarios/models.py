@@ -56,6 +56,11 @@ class Usuario(AbstractUser):
     # GPS. Los superusuarios quedan como staff (UsuarioManager).
     rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.CIUDADANO)
 
+    # Autorización de tratamiento de datos (Ley 1581): qué versión de la
+    # política aceptó y cuándo. Vacío en cuentas creadas por el equipo.
+    politica_version = models.CharField(max_length=20, blank=True, default="")
+    politica_aceptada_en = models.DateTimeField(null=True, blank=True)
+
     objects = UsuarioManager()
 
     # Solo aplica a rol=ciudadano.
@@ -67,6 +72,18 @@ class Usuario(AbstractUser):
     entidad = models.ForeignKey(
         EntidadPublica, null=True, blank=True, on_delete=models.SET_NULL, related_name="administradores"
     )
+
+    def anonimizar(self) -> None:
+        """Derecho de supresión (Ley 1581): borra los datos personales y
+        desactiva la cuenta. No se borra la fila porque los reportes son
+        evidencia (ReporteCiudadano.ciudadano es PROTECT); quedan ligados a
+        una cuenta sin nombre, correo ni contraseña."""
+        self.username = f"eliminado-{self.pk}"
+        self.email = self.first_name = self.last_name = ""
+        self.municipio_residencia = None
+        self.is_active = False
+        self.set_unusable_password()
+        self.save()
 
     def es_ciudadano(self) -> bool:
         return self.rol == self.Rol.CIUDADANO

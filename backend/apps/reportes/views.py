@@ -1,5 +1,6 @@
 from django.contrib.gis.db.models import PointField
 from django.db.models import Exists, F, Func, OuterRef
+from django.http import Http404, HttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -71,6 +72,20 @@ class ReporteCiudadanoViewSet(
         if accion == "validar":
             MotorAlertas().evaluar_validacion_manual(reporte)
         return Response(self.get_serializer(reporte).data)
+
+    @action(detail=True, url_path="foto", url_name="foto")
+    def foto(self, request, pk=None):
+        """La foto (o `?miniatura=1`) con los mismos permisos que el reporte.
+        Nginx la entrega desde una ruta `internal` que no es accesible desde
+        afuera: /media/ ya no es público."""
+        reporte = self.get_object()
+        archivo = reporte.miniatura if request.query_params.get("miniatura") else reporte.foto
+        if not archivo:
+            raise Http404("La foto ya no está disponible.")
+        respuesta = HttpResponse(content_type="image/jpeg")
+        respuesta["X-Accel-Redirect"] = f"/protegido/media/{archivo.name}"
+        respuesta["Cache-Control"] = "private, max-age=3600"
+        return respuesta
 
     @action(detail=True, methods=["post"])
     def validar(self, request, pk=None):

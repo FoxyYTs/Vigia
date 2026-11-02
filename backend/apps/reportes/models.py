@@ -30,7 +30,14 @@ class ReporteCiudadano(models.Model):
         related_name="reportes",
         limit_choices_to={"rol": "ciudadano"},
     )
-    foto = models.ImageField(upload_to="reportes/%Y/%m/")  # obligatoria
+    # Obligatoria al crear (la exige el serializer). Se re-codifica sin EXIF
+    # (fotos.py) y se borra según la retención (tasks.py); la miniatura queda.
+    foto = models.ImageField(upload_to="reportes/%Y/%m/", null=True, blank=True)
+    miniatura = models.ImageField(upload_to="reportes/%Y/%m/", null=True, blank=True)
+    # Metadatos del EXIF original, privados (no salen por la API): sirven para
+    # contrastar el reporte con dónde y cuándo se tomó la foto.
+    exif_fecha = models.DateTimeField(null=True, blank=True)
+    exif_ubicacion = models.PointField(geography=True, srid=4326, null=True, blank=True)
     ubicacion_usuario = models.PointField(geography=True, srid=4326)
     ubicacion_incendio = models.PointField(geography=True, srid=4326)
     descripcion = models.TextField(blank=True, default="")
