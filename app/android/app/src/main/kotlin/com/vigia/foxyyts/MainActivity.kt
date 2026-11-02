@@ -1,4 +1,4 @@
-package com.foxyyts.vigia.vigia_app
+package com.vigia.foxyyts
 
 import io.flutter.embedding.android.FlutterActivity
 

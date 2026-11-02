@@ -102,7 +102,7 @@ class _MapaFocosState extends State<MapaFocos> {
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.foxyyts.vigia.vigia_app',
+            userAgentPackageName: 'com.vigia.foxyyts',
           ),
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.
