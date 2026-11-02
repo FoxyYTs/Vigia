@@ -1,0 +1,66 @@
+# Pruebas en cada PR y en cada push a develop/main: backend (pytest + ruff con
+# PostGIS real) y app (flutter analyze + flutter test).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: vigia
+          POSTGRES_USER: vigia
+          POSTGRES_PASSWORD: solo-para-ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vigia" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      DATABASE_URL: postgis://vigia:solo-para-ci@localhost:5432/vigia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+      - name: GDAL/GEOS para django.contrib.gis
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin
+      - name: Dependencias
+        run: pip install -r requirements/local.txt
+      - name: Clave secreta aleatoria (el backend rechaza las débiles)
+        run: echo "DJANGO_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(48))')" >> "$GITHUB_ENV"
+      - name: ruff
+        run: python -m ruff check .
+      - name: Migraciones al día
+        run: python manage.py makemigrations --check --dry-run
+      - name: pytest
+        run: python -m pytest -p no:cacheprovider
+
+  app:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
