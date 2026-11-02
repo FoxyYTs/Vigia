@@ -23,6 +23,7 @@ echo "==> Actualizando el código en $SERVIDOR:$DIR_REMOTO ($RAMA)"
 ssh "$SERVIDOR" "cd $DIR_REMOTO && git fetch --quiet origin && git checkout --quiet $RAMA && git pull --quiet --ff-only origin $RAMA && git log --oneline -1"
 
 echo "==> Copiando el build web"
+ssh "$SERVIDOR" "mkdir -p $DIR_REMOTO/app/build/web"
 rsync -az --delete "$RAIZ/app/build/web/" "$SERVIDOR:$DIR_REMOTO/app/build/web/"
 
 echo "==> Reconstruyendo y levantando los contenedores"
