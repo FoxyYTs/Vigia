@@ -7,6 +7,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Corregido
+- La sincronización de focos recupera los días perdidos tras una caída (hasta 30), en lugar de pedir siempre solo el último día. Los focos recuperados con más de 24 h no disparan alertas. En producción faltaban los focos del 20 al 30 de octubre, y por eso el mapa mostraba la misma cifra con 48 h que con 7 días.
+
 ## [0.4.2] — 2026-11-02 · Política de privacidad
 
 ### Corregido
