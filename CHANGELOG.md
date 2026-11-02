@@ -7,6 +7,13 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Agregado
+- App Android lista para Play Store (prueba interna). El identificador es `com.vigia.foxyyts`, con ícono adaptable de Vigía, firma de release con una clave de subida fuera del repo (`key.properties`) y, en release, la URL de producción por defecto.
+
+### Cambiado
+- Íconos de la app web y favicon con la marca de Vigía. La política de privacidad ya tiene el correo de contacto.
+- Android: `allowBackup="false"`.
+
 ## [0.4.0] — 2026-11-02 · Seguridad y Ley 1581
 
 ### Seguridad
