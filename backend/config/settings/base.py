@@ -7,10 +7,12 @@ credenciales aquí. Ver .env.example en la raíz del repo para las
 variables esperadas.
 """
 
+import hashlib
 from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -21,11 +23,27 @@ env = environ.Env()
 # — ahí las variables ya llegan inyectadas por `env_file:` de
 # docker-compose.yml. read_env() es solo para desarrollo local fuera de
 # Docker; por eso se guarda condicionado a que el archivo exista.
+# SHA-256 de claves que fueron públicas (el antiguo valor de .env.example,
+# visible en el historial del repo): con ellas cualquiera firma un JWT válido.
+CLAVES_COMPROMETIDAS = {"968f8b985b9934bc24827e8fefe319de3024c7c3a822eb7f0e5485ecb4215f3d"}
+
+
+def validar_secret_key(clave: str) -> None:
+    """Se niega a arrancar con una SECRET_KEY pública, corta o predecible."""
+    if hashlib.sha256(clave.encode()).hexdigest() in CLAVES_COMPROMETIDAS:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY es una clave pública conocida: genera una nueva.")
+    if len(clave) < 50 or len(set(clave)) < 5 or clave.startswith("django-insecure-"):
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY es débil: usa get_random_secret_key() (50+ caracteres aleatorios)."
+        )
+
+
 _dotenv_path = BASE_DIR.parent / ".env"
 if _dotenv_path.exists():
     environ.Env.read_env(_dotenv_path)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
+validar_secret_key(SECRET_KEY)
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
@@ -86,7 +104,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Base de datos — PostGIS (ver Vigia-Modelo-Datos § geography(Point,4326))
 DATABASES = {
-    "default": env.db("DATABASE_URL", default="postgis://vigia:vigia@db:5432/vigia"),
+    # Sin valor por defecto: una contraseña conocida no debe servir "por si acaso".
+    "default": env.db("DATABASE_URL"),
 }
 DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
