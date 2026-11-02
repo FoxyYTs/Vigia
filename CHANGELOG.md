@@ -7,6 +7,22 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.4.1] — 2026-11-02 · Despliegue en servidor
+
+### Agregado
+- Despliegue en el servidor (foxhomelab):
+  - `scripts/desplegar.sh`: compila la web, actualiza el código, hace `docker compose up` y verifica la URL pública;
+  - `scripts/respaldar_bd.sh`: `pg_dump` diario con 14 días de retención;
+  - guía en `DESPLIEGUE.md`.
+- `cloudflared` solo arranca con `COMPOSE_PROFILES=publico`, para que el portátil y el servidor no compartan el túnel. El puerto de Nginx se configura con `NGINX_PUERTO`.
+
+### Agregado
+- App Android lista para Play Store (prueba interna). El identificador es `com.vigia.foxyyts`, con ícono adaptable de Vigía, firma de release con una clave de subida fuera del repo (`key.properties`) y, en release, la URL de producción por defecto.
+
+### Cambiado
+- Íconos de la app web y favicon con la marca de Vigía. La política de privacidad ya tiene el correo de contacto.
+- Android: `allowBackup="false"`.
+
 ## [0.4.0] — 2026-11-02 · Seguridad y Ley 1581
 
 ### Seguridad
@@ -60,5 +76,6 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.1...develop
+[0.4.1]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.1
 [0.4.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.0
