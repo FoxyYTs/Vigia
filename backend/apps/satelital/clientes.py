@@ -178,7 +178,11 @@ class ClienteNasaFirms(ClienteDatosExternos):
         Descarga los focos de los últimos `dias` días (1 por defecto,
         acorde a Celery Beat cada 3h) y persiste los que sean nuevos —
         ver Vigia-UML-Secuencia § Detección Satelital Automática.
+        Con más de 5 días (recuperación tras una caída) se pide por ventanas.
         """
+        if dias > VENTANA_MAX_DIAS_FIRMS:
+            hoy = datetime.now(UTC).date()
+            return self.descargar_historico(hoy - timedelta(days=dias - 1), hoy, sensor=self.SENSOR)
         filas = self._descargar_csv(dias)
         nuevos = 0
         for datos in self._solo_colombia([parsear_fila_firms(f, self.FUENTE) for f in filas]):

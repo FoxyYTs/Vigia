@@ -4,9 +4,11 @@ Satelital Automática y Vigia-UML-Despliegue § Celery Beat.
 """
 
 import logging
+from datetime import timedelta
 
 from celery import shared_task
 from django.db.models import Max
+from django.utils import timezone
 
 from apps.alertas.motor import MotorAlertas
 from apps.satelital.clientes import ClienteInpeQueimadas, ClienteNasaFirms
@@ -19,6 +21,19 @@ FUENTES_TIEMPO_REAL = (
     ("NASA_FIRMS", ClienteNasaFirms),
     ("INPE_QUEIMADAS", ClienteInpeQueimadas),
 )
+
+# Tras una caída se recuperan los días perdidos, hasta este límite.
+MAX_DIAS_RECUPERACION = 30
+# Los focos recuperados de días atrás se guardan, pero no disparan alertas.
+ANTIGUEDAD_MAXIMA_ALERTA = timedelta(hours=24)
+
+
+def dias_a_sincronizar(fuente: str) -> int:
+    """Días desde el último foco de la fuente (1 si es reciente o no hay)."""
+    ultimo = FocoIncendio.objects.filter(fuente=fuente).aggregate(m=Max("fecha_hora"))["m"]
+    if ultimo is None:
+        return 1
+    return min(MAX_DIAS_RECUPERACION, (timezone.now() - ultimo).days + 1)
 
 
 @shared_task
@@ -36,13 +51,15 @@ def sincronizar_focos() -> dict:
     resultado = {}
     for nombre, clase in FUENTES_TIEMPO_REAL:
         try:
-            resultado[nombre] = clase().sincronizar()
+            resultado[nombre] = clase().sincronizar(dias=dias_a_sincronizar(clase.FUENTE))
         except Exception:
             logger.exception("Falló la sincronización de %s", nombre)
             resultado[nombre] = None
     motor = MotorAlertas()
     resultado["alertas"] = sum(
         motor.evaluar_foco_nuevo(foco) is not None
-        for foco in FocoIncendio.objects.filter(pk__gt=ultimo_pk).order_by("pk")
+        for foco in FocoIncendio.objects.filter(
+            pk__gt=ultimo_pk, fecha_hora__gte=timezone.now() - ANTIGUEDAD_MAXIMA_ALERTA
+        ).order_by("pk")
     )
     return resultado
