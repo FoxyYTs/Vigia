@@ -131,3 +131,9 @@ def test_capa_historica_de_incendios_y_deforestacion(api, cargados):
     assert api.get("/api/historico/capa/disponible/").data == {
         "incendios_ungrd": [2019, 2022, 2023], "deforestacion_ideam": [2024],
     }
+
+
+@pytest.mark.parametrize("anio", ["10000", "²⁰²⁴", "1800", "20a4"])
+def test_anio_invalido_da_400_y_no_500(api, anio):
+    assert api.get(f"/api/incendios-reportados/?anio={anio}").status_code == 400
+    assert api.get(f"/api/historico/capa/?indicador=incendios_ungrd&anio={anio}").status_code == 400

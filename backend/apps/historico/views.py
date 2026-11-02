@@ -1,3 +1,5 @@
+import re
+
 from django.db.models import Count, Sum
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -7,6 +9,14 @@ from rest_framework.response import Response
 
 from apps.historico.models import HistoricoDeforestacion, IncendioReportado
 from apps.historico.serializers import IncendioReportadoSerializer
+
+
+def _anio(texto: str) -> int:
+    """Año de 4 dígitos ASCII entre 1900 y 2100. `isdigit()` aceptaba "²" y
+    "10000", que terminaban en un error 500."""
+    if not re.fullmatch(r"[0-9]{4}", texto) or not 1900 <= int(texto) <= 2100:
+        raise ValidationError({"anio": "Debe ser un año, p. ej. 2024."})
+    return int(texto)
 
 
 class IncendioReportadoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -21,9 +31,7 @@ class IncendioReportadoViewSet(viewsets.ReadOnlyModelViewSet):
         qs = IncendioReportado.objects.select_related("municipio")
         params = self.request.query_params
         if anio := params.get("anio"):
-            if not anio.isdigit():
-                raise ValidationError({"anio": "Debe ser un año, p. ej. 2024."})
-            qs = qs.filter(fecha__year=int(anio))
+            qs = qs.filter(fecha__year=_anio(anio))
         if codigo := params.get("municipio"):
             qs = qs.filter(municipio__codigo_dane=codigo)
         return qs
@@ -70,11 +78,10 @@ def capa_historica(request):
     anio = request.query_params.get("anio", "")
     if indicador not in INDICADORES:
         raise ValidationError({"indicador": f"Uno de: {', '.join(INDICADORES)}."})
-    if not anio.isdigit():
-        raise ValidationError({"anio": "Debe ser un año, p. ej. 2024."})
+    anio = _anio(anio)
     return Response([
         {"codigo_dane": f["municipio__codigo_dane"], "valor": round(float(f["valor"]), 2)}
-        for f in INDICADORES[indicador](int(anio))
+        for f in INDICADORES[indicador](anio)
     ])
 
 

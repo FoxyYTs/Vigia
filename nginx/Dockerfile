@@ -7,6 +7,7 @@
 FROM nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY proxy_django.conf /etc/nginx/snippets/proxy_django.conf
 
 RUN mkdir -p /usr/share/nginx/html \
     && printf '%s\n' \

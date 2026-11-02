@@ -43,7 +43,10 @@ def test_rango_mayor_a_31_dias_se_rechaza(api):
     assert r.status_code == 400 and "desde" in r.data
 
 
-@pytest.mark.parametrize("consulta", ["desde=ayer", "fuente=OTRA", "bbox=1,2,3", "bbox=a,b,c,d"])
+@pytest.mark.parametrize(
+    "consulta",
+    ["desde=ayer", "fuente=OTRA", "bbox=1,2,3", "bbox=a,b,c,d", "bbox=nan,nan,nan,nan", "bbox=10,0,5,1"],
+)
 def test_parametros_invalidos_devuelven_400(api, consulta):
     assert api.get(f"/api/focos/?{consulta}").status_code == 400
 

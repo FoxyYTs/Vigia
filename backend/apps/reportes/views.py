@@ -31,6 +31,11 @@ class ReporteCiudadanoViewSet(
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "reporte"
 
+    def get_throttles(self):
+        # Solo crear reportes tiene límite: consultar y validar no, o un
+        # administrador quedaba bloqueado tras 30 consultas en una hora.
+        return super().get_throttles() if self.action == "create" else []
+
     def get_permissions(self):
         if self.action == "create":
             return [EsCiudadano()]

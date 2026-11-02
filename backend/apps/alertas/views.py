@@ -15,6 +15,10 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = Alerta.objects.select_related("municipio")
+        if self.request.user.es_ciudadano():
+            # La acumulación es una sospecha pendiente de validar: va solo a
+            # entidades y administradores (ver ruteo en despachador.py).
+            qs = qs.exclude(tipo_disparador=Alerta.TipoDisparador.ACUMULACION_REPORTES)
         if tipo := self.request.query_params.get("tipo"):
             qs = qs.filter(tipo_disparador=tipo)
         return qs

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     # Terceros
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "django_celery_beat",
     # Apps del dominio — ver Vigia-UML-Clases (vault) § Persistencia/Servicios
     "apps.usuarios",
@@ -137,18 +138,27 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "config.pagination.PaginacionEstandar",
     # Los límites por usuario/IP protegen registro, login y creación de
-    # reportes. El caché por defecto es local a cada proceso de gunicorn;
-    # para un límite global compartido, configurar CACHES con Redis.
+    # reportes. En producción el caché es Redis (límite global, ver
+    # production.py); en desarrollo y pruebas, memoria local.
     "DEFAULT_THROTTLE_RATES": {
         "registro": "20/hour",
         "login": "60/hour",
+        "refresco": "120/hour",
         "reporte": "30/hour",
     },
+    # Nginx reemplaza X-Forwarded-For por la IP real del cliente (tomada de
+    # CF-Connecting-IP): se confía en exactamente un proxy. Sin esto DRF usaba
+    # la cadena completa y cada X-Forwarded-For inventado era una "IP" nueva.
+    "NUM_PROXIES": 1,
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Cada renovación entrega un refresh nuevo y revoca el anterior: un
+    # refresh robado deja de servir en cuanto el dueño vuelve a usar la app.
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 # Celery (ver Vigia-UML-Despliegue § Redis "broker")

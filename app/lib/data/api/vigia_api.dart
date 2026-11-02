@@ -51,7 +51,9 @@ class VigiaApi {
     return Tokens.fromJson(json);
   }
 
-  Future<String> refrescarAcceso(String refresh) async {
+  /// Renueva la sesión. El backend rota el refresh (y revoca el anterior):
+  /// hay que guardar el que devuelve, no el que se mandó.
+  Future<Tokens> renovarSesion(String refresh) async {
     final json = await _enviar(
       () => _cliente.post(
         baseUrl.resolve('auth/token/refresh/'),
@@ -60,8 +62,17 @@ class VigiaApi {
       ),
       mensaje401: 'Tu sesión expiró. Inicia sesión de nuevo.',
     );
-    return json['access'] as String;
+    return Tokens(access: json['access'] as String, refresh: json['refresh'] as String? ?? refresh);
   }
+
+  /// Revoca el refresh en el servidor: aunque alguien lo haya copiado, deja de servir.
+  Future<void> revocarSesion(String refresh) => _enviar(
+        () => _cliente.post(
+          baseUrl.resolve('auth/logout/'),
+          headers: _cabeceras(),
+          body: jsonEncode({'refresh': refresh}),
+        ),
+      );
 
   Future<Usuario> obtenerPerfil(String access) async {
     final json = await _enviar(
