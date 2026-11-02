@@ -140,7 +140,7 @@ class _MapaFocosState extends State<MapaFocos> {
               ],
             ),
           const SimpleAttributionWidget(
-            source: Text('OpenStreetMap contributors · NASA FIRMS · INPE · UNGRD · IDEAM · Modelo Vigía'),
+            source: Text('© OpenStreetMap contributors · NASA FIRMS · INPE · UNGRD · IDEAM (CC BY-SA) · geoBoundaries/DANE (CC BY) · Modelo Vigía'),
           ),
         ],
       ),

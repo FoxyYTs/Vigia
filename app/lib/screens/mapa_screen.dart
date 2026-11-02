@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/focos_provider.dart';
+import '../data/models/foco.dart';
 import '../widgets/detalle_foco.dart';
+import '../widgets/formato.dart';
 import '../widgets/mapa_focos.dart';
 import '../widgets/panel_filtros.dart';
 import '../widgets/vigia_marca.dart';
@@ -32,6 +34,28 @@ class _MapaScreenState extends State<MapaScreen> {
     });
   }
 
+  void _zoom(double delta) => _mapa.move(_mapa.camera.center, _mapa.camera.zoom + delta);
+
+  /// Alternativa textual al mapa (WCAG 1.1.1 y 2.1.1): los focos como lista
+  /// navegable con teclado y lector de pantalla. Elegir uno lo selecciona y
+  /// centra el mapa en él.
+  void _abrirLista(FocosProvider p) => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (contexto) => SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.75,
+          child: ListaFocos(
+            focos: p.focos,
+            onElegir: (foco) {
+              Navigator.pop(contexto);
+              p.seleccionar(foco);
+              _mapa.move(foco.posicion, 10);
+            },
+          ),
+        ),
+      );
+
   void _centrar() => _mapa.fitCamera(
         CameraFit.bounds(bounds: limitesColombia, padding: const EdgeInsets.all(24)),
       );
@@ -56,10 +80,22 @@ class _MapaScreenState extends State<MapaScreen> {
         MapaFocos(controller: _mapa),
         if (p.cargando)
           const Positioned(top: 0, left: 0, right: 0, child: LinearProgressIndicator(minHeight: 3)),
+        // Controles accesibles por teclado y lector de pantalla (#33): el mapa
+        // solo se manejaba con gestos y tocando círculos de 4–10 px.
         Positioned(
           top: 12,
           right: 12,
-          child: _BotonMapa(icono: Icons.center_focus_strong, texto: 'Centrar en Colombia', onPressed: _centrar),
+          child: Column(
+            children: [
+              _BotonMapa(icono: Icons.center_focus_strong, texto: 'Centrar en Colombia', onPressed: _centrar),
+              const SizedBox(height: 8),
+              _BotonMapa(icono: Icons.add, texto: 'Acercar', onPressed: () => _zoom(1)),
+              const SizedBox(height: 8),
+              _BotonMapa(icono: Icons.remove, texto: 'Alejar', onPressed: () => _zoom(-1)),
+              const SizedBox(height: 8),
+              _BotonMapa(icono: Icons.list_alt, texto: 'Lista de focos', onPressed: () => _abrirLista(p)),
+            ],
+          ),
         ),
         if (!ancho)
           Positioned(top: 12, left: 12, child: _ChipContador(total: p.total, cargando: p.cargando)),
@@ -254,4 +290,49 @@ class _AvisoVacio extends StatelessWidget {
           ),
         ),
       );
+}
+
+
+/// Focos del rango actual como lista, del más reciente al más antiguo.
+class ListaFocos extends StatelessWidget {
+  const ListaFocos({super.key, required this.focos, required this.onElegir});
+
+  final List<Foco> focos;
+  final ValueChanged<Foco> onElegir;
+
+  @override
+  Widget build(BuildContext context) {
+    if (focos.isEmpty) {
+      return const Center(child: Text('No hay focos en el rango seleccionado.'));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Semantics(
+            header: true,
+            child: Text('${Formato.entero(focos.length)} focos', style: Theme.of(context).textTheme.titleMedium),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: focos.length,
+            itemBuilder: (_, i) {
+              final f = focos[i];
+              return ListTile(
+                leading: Icon(Icons.local_fire_department, color: colorFuente(f.fuente)),
+                title: Text('${f.fuente?.etiqueta ?? 'Fuente desconocida'} · ${Formato.fechaHora(f.fechaHora)}'),
+                subtitle: Text(
+                  '${Formato.coordenada(f.posicion.latitude, latitud: true)}, '
+                  '${Formato.coordenada(f.posicion.longitude, latitud: false)} · confianza ${f.confianzaLegible.toLowerCase()}',
+                ),
+                onTap: () => onElegir(f),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }

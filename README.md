@@ -127,6 +127,20 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ⬜ Panel de administración y generación de informes (I6),
   fotos de reportes (I5b), push FCM.
 
+## Versiones y cambios
+
+Ver [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog + SemVer). Las versiones publicadas son
+etiquetas `vX.Y.Z` sobre `main`. El CI (`.github/workflows/ci.yml`) corre pytest, ruff,
+`flutter analyze` y `flutter test` en cada PR.
+
+## Datos de terceros
+
+Las teselas del mapa son de OpenStreetMap (© OpenStreetMap contributors, ODbL). En producción
+con tráfico real conviene usar un proveedor de teselas propio o de pago, por la
+[política de uso de tile.openstreetmap.org](https://operations.osmfoundation.org/policies/tiles/).
+Las licencias de los demás datos están en `backend/apps/*/data/LICENCIA.md` y en
+`backend/apps/historico/LICENCIA.md`.
+
 ## Licencia
 
 [GPL v3](LICENSE). Cualquiera puede usar y modificar este código; las versiones derivadas que

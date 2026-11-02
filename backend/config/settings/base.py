@@ -161,6 +161,19 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
+# Logs a la consola (Twelve-Factor XI): Docker los recoge con `docker compose logs`.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"simple": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"}},
+    "handlers": {"consola": {"class": "logging.StreamHandler", "formatter": "simple"}},
+    "root": {"handlers": ["consola"], "level": env("LOG_LEVEL", default="INFO")},
+    "loggers": {
+        # Los 4xx/5xx de Django van como WARNING/ERROR; el detalle de SQL no.
+        "django.db.backends": {"level": "WARNING"},
+    },
+}
+
 # Celery (ver Vigia-UML-Despliegue § Redis "broker")
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://redis:6379/0")
