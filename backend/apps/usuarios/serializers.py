@@ -8,7 +8,7 @@ from apps.usuarios.models import Municipio, Usuario
 
 # Versión de la política de tratamiento de datos publicada en /privacidad.html.
 # Cambiarla cuando cambie el texto, para saber qué aceptó cada usuario.
-POLITICA_VERSION = "2026-11-01"
+POLITICA_VERSION = "2026-11-02"
 
 
 class MunicipioSerializer(serializers.ModelSerializer):
