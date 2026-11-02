@@ -93,10 +93,10 @@ services:
     restart: unless-stopped
     # Solo accesible en localhost — cloudflared llega por la red interna
     # de Docker (nginx:80), no por este puerto. Publicado en 127.0.0.1
-    # únicamente para poder probar sin pasar por el túnel durante
-    # desarrollo local.
+    # únicamente para probar sin pasar por el túnel. En el servidor el 8080
+    # lo usa Pi-hole: allí NGINX_PUERTO=127.0.0.1:8090 (ver DESPLIEGUE.md).
     ports:
-      - "127.0.0.1:8080:80"
+      - "${NGINX_PUERTO:-127.0.0.1:8080}:80"
     depends_on:
       - backend
     volumes:
@@ -111,11 +111,15 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:2025.11.1
     restart: unless-stopped
+    # Solo arranca con COMPOSE_PROFILES=publico (el servidor). Si el portátil
+    # también corriera este túnel, Cloudflare repartiría el tráfico de
+    # vigia.foxyyts.qzz.io entre los dos.
+    profiles: ["publico"]
     # El token va por variable de entorno y no en `command`: así no aparece en
     # `ps` ni en `docker inspect … Args`.
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?falta CLOUDFLARE_TUNNEL_TOKEN en .env}
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
       - nginx
 
