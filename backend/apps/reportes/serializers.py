@@ -1,6 +1,8 @@
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
+from apps.satelital.geografia import esta_en_colombia
+
 from apps.reportes.models import ReporteCiudadano
 
 TAMANO_MAXIMO_FOTO = 5 * 1024 * 1024  # 5 MB
@@ -56,6 +58,15 @@ class ReporteCiudadanoSerializer(serializers.ModelSerializer):
 
     def get_distancia_reportada_km(self, obj):
         return round(obj.distancia_reportada(), 3)
+
+    descripcion = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+
+    def validate(self, datos):
+        # Un reporte fuera de Colombia no le sirve a ninguna entidad y permitiría
+        # disparar alertas en cualquier parte del mundo.
+        if not esta_en_colombia(datos["longitud_incendio"], datos["latitud_incendio"]):
+            raise serializers.ValidationError({"latitud_incendio": "El incendio debe estar en Colombia."})
+        return datos
 
     def validate_foto(self, foto):
         if foto.size > TAMANO_MAXIMO_FOTO:

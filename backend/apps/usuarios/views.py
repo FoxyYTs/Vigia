@@ -7,7 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
-from rest_framework_simplejwt.views import TokenObtainPairView
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView, TokenRefreshView
 
 from apps.usuarios.models import Municipio
 from apps.usuarios.serializers import (
@@ -25,10 +27,28 @@ class RegistroView(generics.CreateAPIView):
     throttle_scope = "registro"
 
 
+@method_decorator(never_cache, name="dispatch")
 class TokenView(TokenObtainPairView):
     serializer_class = TokenVigiaSerializer
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
+
+
+@method_decorator(never_cache, name="dispatch")
+class RefrescoView(TokenRefreshView):
+    """Con ROTATE_REFRESH_TOKENS devuelve también un refresh nuevo."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "refresco"
+
+
+@method_decorator(never_cache, name="dispatch")
+class CerrarSesionView(TokenBlacklistView):
+    """Revoca el refresh: después de cerrar sesión ya no sirve aunque alguien
+    lo haya copiado."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "refresco"
 
 
 class YoView(generics.RetrieveAPIView):

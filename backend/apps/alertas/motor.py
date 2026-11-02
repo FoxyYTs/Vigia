@@ -30,6 +30,9 @@ VENTANA_FOCO_ACTIVO = timedelta(hours=24)
 RADIO_ACUMULACION_KM = 5
 VENTANA_ACUMULACION = timedelta(hours=1)
 UMBRAL_CIUDADANOS = 3
+# Una cuenta recién creada no cuenta para la acumulación: sin esto, tres
+# cuentas falsas creadas en un minuto disparaban una alerta a las entidades.
+ANTIGUEDAD_MINIMA_CUENTA = timedelta(hours=24)
 
 
 class MotorAlertas:
@@ -83,6 +86,7 @@ class MotorAlertas:
         cercanos = ReporteCiudadano.objects.filter(
             ubicacion_incendio__distance_lte=(punto, D(km=RADIO_ACUMULACION_KM)),
             fecha_creacion__gte=ahora - VENTANA_ACUMULACION,
+            ciudadano__date_joined__lte=ahora - ANTIGUEDAD_MINIMA_CUENTA,
         ).exclude(estado=ReporteCiudadano.Estado.RECHAZADO)
         if cercanos.values("ciudadano").distinct().count() < UMBRAL_CIUDADANOS:
             return None

@@ -254,3 +254,11 @@ def test_inpe_sincronizar_pagina_hasta_agotar():
     responses.add(responses.GET, re.compile(r"https://wfs\.test/wfs.*startIndex=40.*"), body=pagina2)
 
     assert cliente.sincronizar(dias=1) == 71
+
+
+@responses.activate
+def test_la_map_key_no_aparece_en_los_errores():
+    responses.add(responses.GET, re.compile(r"https://firms\.modaps\.eosdis\.nasa\.gov/.*"), status=500)
+    with pytest.raises(Exception) as e:
+        ClienteNasaFirms(map_key="CLAVESECRETA123").sincronizar()
+    assert "CLAVESECRETA123" not in str(e.value) and "***" in str(e.value)

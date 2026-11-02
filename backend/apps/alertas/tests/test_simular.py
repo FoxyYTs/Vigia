@@ -35,3 +35,12 @@ def test_limpiar_no_toca_a_un_usuario_real_con_el_prefijo_demo(crear_reporte):
     assert ReporteCiudadano.objects.filter(pk=suyo.pk).exists()
     assert list(Alerta.objects.all()) == [acumulacion]
     assert list(acumulacion.reportes.all()) == [suyo]
+
+
+def test_con_telegram_configurado_exige_forzar(settings):
+    from django.core.management import CommandError
+
+    settings.TELEGRAM_BOT_TOKEN = "123:abc"
+    with pytest.raises(CommandError, match="--forzar"):
+        call_command("simular_alertas", pausa=0)
+    assert not Alerta.objects.exists()

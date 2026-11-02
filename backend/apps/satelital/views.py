@@ -68,6 +68,8 @@ class FocoIncendioViewSet(viewsets.ReadOnlyModelViewSet):
                 oeste, sur, este, norte = (float(v) for v in bbox.split(","))
             except ValueError:
                 raise ValidationError({"bbox": "Formato: oeste,sur,este,norte (4 números)."}) from None
+            if not (-180 <= oeste < este <= 180 and -90 <= sur < norte <= 90):  # también descarta nan/inf
+                raise ValidationError({"bbox": "Fuera de rango: oeste < este (−180 a 180), sur < norte (−90 a 90)."})
             qs = qs.filter(ubicacion__intersects=Polygon.from_bbox((oeste, sur, este, norte)))
 
         return qs.order_by("-fecha_hora")

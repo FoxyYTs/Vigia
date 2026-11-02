@@ -156,8 +156,13 @@ class ClienteNasaFirms(ClienteDatosExternos):
     def _descargar_csv(
         self, dias: int, fecha: date | None = None, sensor: str | None = None
     ) -> list[dict]:
-        respuesta = self.session.get(self._url(dias, fecha, sensor), timeout=60)
-        respuesta.raise_for_status()
+        try:
+            respuesta = self.session.get(self._url(dias, fecha, sensor), timeout=60)
+            respuesta.raise_for_status()
+        except requests.RequestException as e:
+            # El mensaje de requests incluye la URL, y la URL lleva la MAP_KEY.
+            mensaje = str(e).replace(self.map_key, "***") if self.map_key else str(e)
+            raise requests.RequestException(mensaje) from None
         if respuesta.text.strip() == "Invalid API call.":
             # Confirmado contra la API real: este mensaje de texto plano
             # es como FIRMS reporta un MAP_KEY o parámetro inválido — no

@@ -176,3 +176,15 @@ def test_administrador_sin_entidad_ve_todos(api_como, crear_reporte, jurisdiccio
     nacional = Usuario.objects.create_user("nacional", password="clave-segura-5", rol=Usuario.Rol.ADMINISTRADOR)
     crear_reporte(), crear_reporte(incendio=PORE)
     assert len(api_como(nacional).get("/api/reportes/").data["results"]) == 2
+
+
+def test_incendio_fuera_de_colombia_se_rechaza(api_como, ciudadano, imagen_png):
+    # Caracas: el motor no debe recibir reportes de otro país.
+    datos = _datos(imagen_png, latitud_incendio=10.48, longitud_incendio=-66.9)
+    r = api_como(ciudadano).post("/api/reportes/", datos, format="multipart")
+    assert r.status_code == 400 and "latitud_incendio" in r.data
+
+
+def test_consultar_reportes_no_consume_el_limite(api_como, administrador):
+    cliente = api_como(administrador)
+    assert all(cliente.get("/api/reportes/").status_code == 200 for _ in range(35))

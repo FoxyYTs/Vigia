@@ -11,10 +11,12 @@ para que lleguen los mensajes de Telegram.
 """
 
 import time
+from datetime import timedelta
 
 from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
+from django.conf import settings
 from django.contrib.gis.geos import Point
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -40,10 +42,19 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--limpiar", action="store_true", help="Borra los datos de demo.")
         parser.add_argument("--pausa", type=float, default=3, help="Segundos entre escenarios.")
+        parser.add_argument(
+            "--forzar", action="store_true",
+            help="Simular aunque Telegram esté configurado (las alertas de prueba llegan a los canales reales).",
+        )
 
-    def handle(self, *args, limpiar=False, pausa=3, **opciones):
+    def handle(self, *args, limpiar=False, pausa=3, forzar=False, **opciones):
         if limpiar:
             return self.limpiar()
+        if settings.TELEGRAM_BOT_TOKEN and not forzar:
+            raise CommandError(
+                "Telegram está configurado: las alertas de prueba llegarían a los canales reales, "
+                "incluido el público. Usa --forzar si es a propósito (p. ej. una demo)."
+            )
         motor = MotorAlertas()
         ciudadanos = [self.usuario(f"ciudadano{i}", Usuario.Rol.CIUDADANO) for i in range(1, 4)]
         admin = self.usuario("admin", Usuario.Rol.ADMINISTRADOR)
@@ -78,7 +89,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Listo. Para borrar: simular_alertas --limpiar"))
 
     def usuario(self, nombre, rol):
-        u, creado = Usuario.objects.get_or_create(username=PREFIJO + nombre, defaults={"rol": rol})
+        # date_joined en el pasado: las cuentas nuevas no cuentan para la acumulación.
+        u, creado = Usuario.objects.get_or_create(
+            username=PREFIJO + nombre, defaults={"rol": rol, "date_joined": timezone.now() - timedelta(days=2)}
+        )
         if creado:
             u.set_unusable_password()
             u.save(update_fields=["password"])

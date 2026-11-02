@@ -3,7 +3,7 @@ Municipio, EntidadPublica, Usuario — ver Vigia-Modelo-Datos § Catálogo/Ident
 (vault de Obsidian).
 """
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.contrib.gis.db import models
 
 
@@ -37,19 +37,26 @@ class EntidadPublica(models.Model):
         return self.nombre
 
 
+class UsuarioManager(UserManager):
+    def create_superuser(self, username, email=None, password=None, **extra):
+        # createsuperuser no pregunta el rol: quien crea un superusuario es del
+        # equipo de desarrollo.
+        extra.setdefault("rol", Usuario.Rol.STAFF)
+        return super().create_superuser(username, email, password, **extra)
+
+
 class Usuario(AbstractUser):
     class Rol(models.TextChoices):
         CIUDADANO = "ciudadano", "Ciudadano"
         ADMINISTRADOR = "administrador", "Administrador"
         STAFF = "staff", "Staff"
 
-    # default=STAFF (no CIUDADANO): sin esto, un superusuario creado con
-    # createsuperuser queda con rol='' — encontrado probando de verdad
-    # (createsuperuser no falla, pero es_administrador()/es_staff() daban
-    # False los dos). Quien crea un superusuario es por definición del
-    # equipo de desarrollo; los flujos de registro de ciudadano/admin
-    # deben fijar el rol explícitamente de todas formas.
-    rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.STAFF)
+    # Por defecto el rol con menos privilegios: antes era STAFF, y un usuario
+    # creado en el admin sin elegir rol podía leer todos los reportes con su
+    # GPS. Los superusuarios quedan como staff (UsuarioManager).
+    rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.CIUDADANO)
+
+    objects = UsuarioManager()
 
     # Solo aplica a rol=ciudadano.
     municipio_residencia = models.ForeignKey(

@@ -36,3 +36,13 @@ def test_filtro_por_tipo(api_como, ciudadano, alerta, reporte):
 
 def test_alertas_no_se_crean_por_la_api(api_como, administrador):
     assert api_como(administrador).post("/api/alertas/", {}).status_code == 405
+
+
+def test_el_ciudadano_no_ve_acumulaciones_sin_confirmar(api_como, ciudadano, administrador, foco):
+    from apps.alertas.models import Alerta
+
+    for tipo in (Alerta.TipoDisparador.ACUMULACION_REPORTES, Alerta.TipoDisparador.DETECCION_SATELITAL):
+        Alerta.objects.create(tipo_disparador=tipo, ubicacion=foco.ubicacion, foco=foco)
+    tipos = lambda u: {a["tipo_disparador"] for a in api_como(u).get("/api/alertas/").data["results"]}  # noqa: E731
+    assert tipos(ciudadano) == {"deteccion_satelital"}
+    assert tipos(administrador) == {"deteccion_satelital", "acumulacion_reportes"}

@@ -6,8 +6,12 @@ from apps.usuarios.models import Municipio, Usuario
 pytestmark = pytest.mark.django_db
 
 
-def test_rol_por_defecto_es_staff():
-    assert Usuario.objects.create_user("x", password="clave-segura-9").es_staff()
+def test_rol_por_defecto_es_el_de_menos_privilegios():
+    assert Usuario.objects.create_user("x", password="clave-segura-9").es_ciudadano()
+
+
+def test_superusuario_queda_como_staff():
+    assert Usuario.objects.create_superuser("root", "r@vigia.test", "clave-segura-9").es_staff()
 
 
 def test_metodos_de_rol(ciudadano, administrador, staff):

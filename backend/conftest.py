@@ -87,6 +87,9 @@ def _aislar_efectos_laterales(settings, tmp_path):
     subidas en un directorio temporal, no en backend/media."""
     cache.clear()
     settings.MEDIA_ROOT = tmp_path / "media"
+    # Ninguna prueba debe llegar a los canales reales de Telegram aunque el
+    # .env del portátil tenga el token.
+    settings.TELEGRAM_BOT_TOKEN = ""
 
 
 @pytest.fixture

@@ -158,4 +158,76 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
+
+  group('rotación y revocación', () {
+    test('al renovar se guarda el refresh nuevo que entrega el servidor', () async {
+      final almacen = await _almacenCon(vencido, 'r-viejo');
+      final auth = AuthProvider(api: _api(() => _json({'access': jwtFalso(), 'refresh': 'r-nuevo'})), almacen: almacen);
+
+      await auth.restaurar();
+
+      expect((await almacen.leer())!.refresh, 'r-nuevo');
+    });
+
+    test('sin conexión al restaurar se conserva la sesión', () async {
+      final almacen = await _almacenCon(vencido);
+      final api = VigiaApi(
+        baseUrl: Uri.parse('https://vigia.test/api/'),
+        cliente: MockClient((_) async => throw http.ClientException('sin red')),
+      );
+      final auth = AuthProvider(api: api, almacen: almacen);
+
+      await auth.restaurar();
+
+      expect(auth.estado, EstadoSesion.autenticada);
+      expect(await almacen.leer(), isNotNull);
+    });
+
+    test('un error de red al pedir el token no cierra la sesión', () async {
+      var caido = false;
+      final almacen = await _almacenCon(vencido);
+      final api = VigiaApi(
+        baseUrl: Uri.parse('https://vigia.test/api/'),
+        cliente: MockClient((_) async {
+          if (caido) throw http.ClientException('sin red');
+          return _json({'access': vencido, 'refresh': 'r2'});
+        }),
+      );
+      final auth = AuthProvider(api: api, almacen: almacen);
+      await auth.restaurar();
+      caido = true;
+
+      await expectLater(auth.accessToken(), throwsA(isA<ApiException>()));
+      expect(auth.estado, EstadoSesion.autenticada);
+    });
+
+    test('dos llamadas simultáneas renuevan una sola vez', () async {
+      var renovaciones = 0;
+      final respuestas = [_json({'access': vencido, 'refresh': 'r1'})];
+      final almacen = await _almacenCon(vencido);
+      final auth = AuthProvider(
+        api: _api(() {
+          renovaciones++;
+          return respuestas.isNotEmpty ? respuestas.removeAt(0) : _json({'access': jwtFalso(), 'refresh': 'r2'});
+        }),
+        almacen: almacen,
+      );
+      await auth.restaurar();
+      renovaciones = 0;
+
+      await Future.wait([auth.accessToken(), auth.accessToken()]);
+
+      expect(renovaciones, 1);
+    });
+
+    test('cerrar sesión revoca el refresh en el servidor', () async {
+      final pedidas = <String>[];
+      final auth = AuthProvider(api: _api(() => _json({}), pedidas: pedidas), almacen: await _almacenCon(jwtFalso()));
+      await auth.restaurar();
+
+      await auth.cerrarSesion();
+
+      expect(pedidas.last, endsWith('auth/logout/'));
+    });
+  });
 }

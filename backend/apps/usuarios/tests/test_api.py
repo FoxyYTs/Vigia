@@ -108,3 +108,40 @@ def test_geometria_de_municipios_es_geojson_simplificado(api, municipio):
     anillo = f["geometry"]["coordinates"][0][0]
     assert f["geometry"]["type"] == "MultiPolygon" and len(anillo) < 20
     assert api.get("/api/municipios/").data[0]["codigo_dane"] == "05615"
+
+
+def test_refresh_rota_y_logout_revoca(api, ciudadano):
+    tokens = api.post("/api/auth/token/", {"username": "ciudadano1", "password": "clave-segura-1"}).data
+    renovado = api.post("/api/auth/token/refresh/", {"refresh": tokens["refresh"]})
+    assert renovado.status_code == 200 and renovado.data["refresh"] != tokens["refresh"]
+    # El refresh viejo quedó revocado al rotar.
+    assert api.post("/api/auth/token/refresh/", {"refresh": tokens["refresh"]}).status_code == 401
+
+    assert api.post("/api/auth/logout/", {"refresh": renovado.data["refresh"]}).status_code == 200
+    assert api.post("/api/auth/token/refresh/", {"refresh": renovado.data["refresh"]}).status_code == 401
+
+
+def test_login_no_se_cachea(api, ciudadano):
+    r = api.post("/api/auth/token/", {"username": "ciudadano1", "password": "clave-segura-1"})
+    assert "no-cache" in r["Cache-Control"] or "no-store" in r["Cache-Control"]
+
+
+def test_x_forwarded_for_inventado_no_evade_el_limite(api, settings):
+    settings.REST_FRAMEWORK = {**settings.REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {
+        **settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"], "login": "2/hour"}}
+    from rest_framework.settings import api_settings
+    from rest_framework.throttling import ScopedRateThrottle
+
+    api_settings.reload()
+    ScopedRateThrottle.THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
+    try:
+        codigos = [
+            # Nginx reescribe X-Forwarded-For con la IP real: aquí es siempre la misma.
+            api.post("/api/auth/token/", {"username": "x", "password": "y"},
+                     HTTP_X_FORWARDED_FOR=f"10.0.0.{i}, 203.0.113.7").status_code
+            for i in range(3)
+        ]
+    finally:
+        api_settings.reload()
+        ScopedRateThrottle.THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
+    assert codigos[-1] == 429

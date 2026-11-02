@@ -39,7 +39,11 @@ def crear_foco(db):
 @pytest.fixture
 def ciudadanos(db):
     return [
-        Usuario.objects.create_user(f"vecino{i}", password="clave-segura-x", rol=Usuario.Rol.CIUDADANO)
+        # Cuentas con más de 24 h: las nuevas no cuentan para la acumulación.
+        Usuario.objects.create_user(
+            f"vecino{i}", password="clave-segura-x", rol=Usuario.Rol.CIUDADANO,
+            date_joined=timezone.now() - timedelta(days=2),
+        )
         for i in range(4)
     ]
 
@@ -162,3 +166,12 @@ def test_crear_alerta_programa_el_despacho(crear_foco, django_capture_on_commit_
     with patch("apps.alertas.motor.despachar_alerta") as tarea, django_capture_on_commit_callbacks(execute=True):
         alerta = motor.evaluar_foco_nuevo(crear_foco())
     tarea.delay.assert_called_once_with(alerta.pk)
+
+
+def test_cuentas_recien_creadas_no_disparan_acumulacion(crear_reporte):
+    nuevas = [
+        Usuario.objects.create_user(f"nueva{i}", password="clave-segura-x", rol=Usuario.Rol.CIUDADANO)
+        for i in range(3)
+    ]
+    resultados = [motor.evaluar_reporte_nuevo(crear_reporte(ciudadano=c)) for c in nuevas]
+    assert resultados == [None, None, None]
