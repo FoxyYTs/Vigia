@@ -78,6 +78,19 @@ class Usuario(AbstractUser):
         desactiva la cuenta. No se borra la fila porque los reportes son
         evidencia (ReporteCiudadano.ciudadano es PROTECT); quedan ligados a
         una cuenta sin nombre, correo ni contraseña."""
+        # Los reportes se conservan como evidencia del incidente, pero sin nada
+        # que apunte a la persona: ni dónde estaba, ni el EXIF, ni su texto,
+        # ni la foto completa (queda la miniatura).
+        for reporte in self.reportes.all():
+            if reporte.foto:
+                reporte.foto.delete(save=False)
+            reporte.foto = None
+            reporte.ubicacion_usuario = reporte.ubicacion_incendio
+            reporte.exif_ubicacion = reporte.exif_fecha = None
+            reporte.descripcion = ""
+            reporte.save(
+                update_fields=["foto", "ubicacion_usuario", "exif_ubicacion", "exif_fecha", "descripcion"]
+            )
         self.username = f"eliminado-{self.pk}"
         self.email = self.first_name = self.last_name = ""
         self.municipio_residencia = None

@@ -105,3 +105,14 @@ def test_retencion_por_estado(crear_reporte, estado, dias, se_borra):
     reporte.refresh_from_db()
     assert bool(reporte.foto) is not se_borra and reporte.miniatura  # la miniatura siempre queda
     assert os.path.exists(ruta) is not se_borra
+
+
+def test_imagen_demasiado_grande_o_de_16_bits_se_rechaza():
+    grande = io.BytesIO()
+    Image.new("L", (5000, 4000)).save(grande, format="PNG")
+    with pytest.raises(fotos.FotoInvalida, match="demasiado grande"):
+        fotos.procesar(SimpleUploadedFile("g.png", grande.getvalue()))
+    profunda = io.BytesIO()
+    Image.new("I;16", (10, 10)).save(profunda, format="PNG")
+    with pytest.raises(fotos.FotoInvalida):
+        fotos.procesar(SimpleUploadedFile("p.png", profunda.getvalue()))

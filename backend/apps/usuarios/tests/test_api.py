@@ -177,7 +177,9 @@ def test_eliminar_cuenta_anonimiza_y_revoca(api, ciudadano, crear_reporte):
     ciudadano.refresh_from_db()
     assert ciudadano.username.startswith("eliminado-") and ciudadano.email == ""
     assert not ciudadano.is_active and not ciudadano.has_usable_password()
-    reporte.refresh_from_db()  # el reporte se conserva como evidencia
+    reporte.refresh_from_db()  # el reporte se conserva como evidencia, sin datos de la persona
+    assert reporte.ubicacion_usuario == reporte.ubicacion_incendio
+    assert reporte.descripcion == "" and reporte.exif_ubicacion is None and not reporte.foto
     api.credentials()
     assert api.post("/api/auth/token/refresh/", {"refresh": tokens["refresh"]}).status_code == 401
     assert api.post("/api/auth/token/", {"username": "ciudadano1", "password": "clave-segura-1"}).status_code == 401

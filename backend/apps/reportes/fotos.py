@@ -19,7 +19,8 @@ from django.utils import timezone
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 FORMATOS = {"JPEG", "PNG", "WEBP"}
-MAX_PIXELES = 40_000_000  # ~ 7.700 × 5.200: más que cualquier cámara de celular
+MAX_PIXELES = 16_000_000  # ~ 4.900 × 3.300: cubre las fotos de celular comprimidas por la app
+MODOS = {"RGB", "RGBA", "L", "LA", "P", "CMYK"}  # sin modos de 16/32 bits por canal
 LADO_FOTO = 1600
 LADO_MINIATURA = 320
 
@@ -42,10 +43,15 @@ def procesar(archivo) -> tuple[ContentFile, ContentFile, dict]:
         raise FotoInvalida("El archivo no es una imagen válida.") from e
     if imagen.format not in FORMATOS:
         raise FotoInvalida("La foto debe ser JPG, PNG o WebP.")
-    if imagen.width * imagen.height > MAX_PIXELES:
-        raise FotoInvalida("La foto tiene demasiados píxeles.")
+    if imagen.width * imagen.height > MAX_PIXELES or imagen.mode not in MODOS:
+        raise FotoInvalida("La foto es demasiado grande o tiene un formato de color no soportado.")
 
     metadatos = _metadatos(imagen)
+    # Reducir antes de decodificar del todo: con JPEG, draft() decodifica ya a
+    # menor escala, y thumbnail() deja de trabajar sobre la imagen completa.
+    # Así una foto grande no infla la memoria con copias intermedias.
+    imagen.draft("RGB", (LADO_FOTO, LADO_FOTO))
+    imagen.thumbnail((LADO_FOTO, LADO_FOTO))
     limpia = ImageOps.exif_transpose(imagen).convert("RGB")  # respeta la orientación sin copiar el EXIF
     nombre = uuid.uuid4().hex
     return (
