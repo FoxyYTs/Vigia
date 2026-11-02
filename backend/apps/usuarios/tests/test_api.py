@@ -4,7 +4,9 @@ from apps.usuarios.models import Usuario
 
 pytestmark = pytest.mark.django_db
 
-REGISTRO = {"username": "maria", "email": "maria@example.com", "password": "una-clave-larga-987"}
+REGISTRO = {
+    "username": "maria", "email": "maria@example.com", "password": "una-clave-larga-987", "acepto_politica": True,
+}
 
 
 def test_registro_crea_un_ciudadano(api, municipio):
@@ -145,3 +147,39 @@ def test_x_forwarded_for_inventado_no_evade_el_limite(api, settings):
         api_settings.reload()
         ScopedRateThrottle.THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
     assert codigos[-1] == 429
+
+
+@pytest.mark.parametrize("acepto", [False, None])
+def test_registro_exige_aceptar_la_politica(api, acepto):
+    datos = {**REGISTRO, "acepto_politica": acepto} if acepto is not None else {
+        k: v for k, v in REGISTRO.items() if k != "acepto_politica"
+    }
+    r = api.post("/api/auth/registro/", datos)
+    assert r.status_code == 400 and "acepto_politica" in r.data
+
+
+def test_registro_guarda_la_version_aceptada(api):
+    from apps.usuarios.models import Usuario
+    from apps.usuarios.serializers import POLITICA_VERSION
+
+    assert api.post("/api/auth/registro/", REGISTRO).status_code == 201
+    maria = Usuario.objects.get(username="maria")
+    assert maria.politica_version == POLITICA_VERSION and maria.politica_aceptada_en is not None
+
+
+def test_eliminar_cuenta_anonimiza_y_revoca(api, ciudadano, crear_reporte):
+    reporte = crear_reporte()
+    tokens = api.post("/api/auth/token/", {"username": "ciudadano1", "password": "clave-segura-1"}).data
+    api.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+
+    assert api.delete("/api/auth/yo/").status_code == 204
+
+    ciudadano.refresh_from_db()
+    assert ciudadano.username.startswith("eliminado-") and ciudadano.email == ""
+    assert not ciudadano.is_active and not ciudadano.has_usable_password()
+    reporte.refresh_from_db()  # el reporte se conserva como evidencia, sin datos de la persona
+    assert reporte.ubicacion_usuario is None and reporte.distancia_reportada() is None
+    assert reporte.descripcion == "" and reporte.exif_ubicacion is None and not reporte.foto
+    api.credentials()
+    assert api.post("/api/auth/token/refresh/", {"refresh": tokens["refresh"]}).status_code == 401
+    assert api.post("/api/auth/token/", {"username": "ciudadano1", "password": "clave-segura-1"}).status_code == 401

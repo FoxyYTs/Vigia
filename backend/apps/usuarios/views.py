@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView, TokenRefreshView
 
 from apps.usuarios.models import Municipio
@@ -51,12 +52,21 @@ class CerrarSesionView(TokenBlacklistView):
     throttle_scope = "refresco"
 
 
-class YoView(generics.RetrieveAPIView):
+class YoView(generics.RetrieveDestroyAPIView):
+    """GET: perfil. DELETE: elimina la cuenta (anonimiza los datos personales
+    y revoca las sesiones abiertas)."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = UsuarioSerializer
 
     def get_object(self):
         return self.request.user
+
+    def perform_destroy(self, usuario):
+        for token in OutstandingToken.objects.filter(user=usuario):
+            BlacklistedToken.objects.get_or_create(token=token)
+        usuario.anonimizar()
+
 
 
 class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):

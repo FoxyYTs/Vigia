@@ -1,9 +1,9 @@
 -r base.txt
 
-pytest
-pytest-django
-pytest-cov
-factory-boy
-django-debug-toolbar
-responses
-ruff
+pytest==9.2.0
+pytest-django==4.14.0
+pytest-cov==7.1.0
+factory-boy==3.3.3
+django-debug-toolbar==8.0.0
+responses==0.26.3
+ruff==0.17.3

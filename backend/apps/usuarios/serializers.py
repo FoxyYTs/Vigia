@@ -1,8 +1,14 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.usuarios.models import Municipio, Usuario
+
+
+# Versión de la política de tratamiento de datos publicada en /privacidad.html.
+# Cambiarla cuando cambie el texto, para saber qué aceptó cada usuario.
+POLITICA_VERSION = "2026-11-01"
 
 
 class MunicipioSerializer(serializers.ModelSerializer):
@@ -24,10 +30,19 @@ class RegistroSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
     email = serializers.EmailField(required=True)
+    acepto_politica = serializers.BooleanField(
+        write_only=True, help_text=f"Aceptación de la política de tratamiento de datos (versión {POLITICA_VERSION})."
+    )
 
     class Meta:
         model = Usuario
-        fields = ["id", "username", "email", "password", "municipio_residencia"]
+        fields = ["id", "username", "email", "password", "municipio_residencia", "acepto_politica"]
+
+    def validate_acepto_politica(self, valor):
+        # Ley 1581: la autorización debe ser expresa; no hay casilla marcada por defecto.
+        if valor is not True:
+            raise serializers.ValidationError("Debes aceptar la política de tratamiento de datos.")
+        return valor
 
     def validate_email(self, valor):
         if Usuario.objects.filter(email__iexact=valor).exists():
@@ -41,7 +56,10 @@ class RegistroSerializer(serializers.ModelSerializer):
         return datos
 
     def create(self, datos):
-        return Usuario.objects.create_user(rol=Usuario.Rol.CIUDADANO, **datos)
+        datos.pop("acepto_politica")
+        return Usuario.objects.create_user(
+            rol=Usuario.Rol.CIUDADANO, politica_version=POLITICA_VERSION, politica_aceptada_en=timezone.now(), **datos
+        )
 
 
 class TokenVigiaSerializer(TokenObtainPairSerializer):

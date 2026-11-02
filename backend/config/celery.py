@@ -28,6 +28,11 @@ app.conf.beat_schedule = {
         "schedule": crontab(minute=0, hour="*/3"),
     },
     # Día 2: el mes anterior ya está completo y la ingesta del día 1 terminó.
+    # Retención de fotos de reportes (Ley 1581): a diario, de madrugada.
+    "purgar-fotos-reportes": {
+        "task": "apps.reportes.tasks.purgar_fotos_reportes",
+        "schedule": crontab(minute=30, hour=3),
+    },
     "reentrenar-modelo-recurrencia": {
         "task": "apps.prediccion.tasks.ejecutar_corrida",
         "schedule": crontab(minute=0, hour=4, day_of_month=2),
