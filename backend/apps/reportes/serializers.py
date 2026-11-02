@@ -75,13 +75,14 @@ class ReporteCiudadanoSerializer(serializers.ModelSerializer):
         usuario = getattr(self.context.get("request"), "user", None)
         if usuario is None or not (usuario.es_administrador() or usuario.pk == obj.ciudadano_id):
             return None
-        return _punto(obj.ubicacion_usuario)
+        return _punto(obj.ubicacion_usuario) if obj.ubicacion_usuario else None
 
     def get_ubicacion_incendio(self, obj):
         return _punto(obj.ubicacion_incendio)
 
     def get_distancia_reportada_km(self, obj):
-        return round(obj.distancia_reportada(), 3)
+        distancia = obj.distancia_reportada()
+        return None if distancia is None else round(distancia, 3)
 
     descripcion = serializers.CharField(required=False, allow_blank=True, max_length=2000)
 

@@ -38,7 +38,9 @@ class ReporteCiudadano(models.Model):
     # contrastar el reporte con dónde y cuándo se tomó la foto.
     exif_fecha = models.DateTimeField(null=True, blank=True)
     exif_ubicacion = models.PointField(geography=True, srid=4326, null=True, blank=True)
-    ubicacion_usuario = models.PointField(geography=True, srid=4326)
+    # Nula solo cuando el ciudadano eliminó su cuenta (Usuario.anonimizar): no
+    # se inventa un valor, porque la distancia es una señal contra el fraude.
+    ubicacion_usuario = models.PointField(geography=True, srid=4326, null=True, blank=True)
     ubicacion_incendio = models.PointField(geography=True, srid=4326)
     descripcion = models.TextField(blank=True, default="")
     estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
@@ -81,10 +83,12 @@ class ReporteCiudadano(models.Model):
     def rechazar(self, admin) -> None:
         self._resolver(admin, self.Estado.RECHAZADO)
 
-    def distancia_reportada(self) -> float:
+    def distancia_reportada(self) -> float | None:
         """Distancia en km entre dónde estaba el ciudadano y dónde dice que
         está el incendio (fórmula de haversine, sin base de datos)."""
         a, b = self.ubicacion_usuario, self.ubicacion_incendio
+        if a is None:
+            return None  # cuenta eliminada: no hay ubicación del ciudadano
         lat1, lon1, lat2, lon2 = map(radians, (a.y, a.x, b.y, b.x))
         h = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
         return 2 * RADIO_TIERRA_KM * asin(sqrt(h))

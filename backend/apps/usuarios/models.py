@@ -85,7 +85,7 @@ class Usuario(AbstractUser):
             if reporte.foto:
                 reporte.foto.delete(save=False)
             reporte.foto = None
-            reporte.ubicacion_usuario = reporte.ubicacion_incendio
+            reporte.ubicacion_usuario = None  # no se inventa: la distancia queda "sin dato"
             reporte.exif_ubicacion = reporte.exif_fecha = None
             reporte.descripcion = ""
             reporte.save(
