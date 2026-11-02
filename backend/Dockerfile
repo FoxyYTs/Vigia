@@ -8,16 +8,15 @@ FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# GDAL/GEOS/PROJ — requeridos por django.contrib.gis (PostGIS) y por
-# psycopg para compilar contra libpq.
+# GDAL/GEOS/PROJ para django.contrib.gis (PostGIS) y gosu para bajar a un
+# usuario sin privilegios. Sin compiladores: todas las dependencias de Python
+# instalan ruedas precompiladas (psycopg[binary] trae su propia libpq), así
+# que la imagen no lleva gcc ni cabeceras de desarrollo.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gdal-bin \
-        libgdal-dev \
-        libgeos-dev \
-        libpq-dev \
-        build-essential \
-        gcc \
-    && rm -rf /var/lib/apt/lists/*
+        gosu \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --create-home --uid 1000 vigia
 
 WORKDIR /app
 
@@ -26,8 +25,9 @@ ARG REQUIREMENTS_FILE=requirements/production.txt
 RUN pip install --no-cache-dir -r ${REQUIREMENTS_FILE}
 
 COPY . .
+RUN mkdir -p /app/staticfiles /app/media && chown -R vigia:vigia /app
 
-RUN useradd --create-home vigia
-USER vigia
-
+# Arranca como root solo para ajustar los volúmenes y después corre como
+# `vigia` (ver docker-entrypoint.sh).
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]

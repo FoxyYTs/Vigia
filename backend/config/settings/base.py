@@ -7,17 +7,43 @@ credenciales aquí. Ver .env.example en la raíz del repo para las
 variables esperadas.
 """
 
+import hashlib
 from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env()
-environ.Env.read_env(BASE_DIR.parent / ".env")
+
+# El build context del Dockerfile es solo backend/ (ver Vigia-UML-Despliegue),
+# así que dentro del contenedor no existe un .env físico en BASE_DIR.parent
+# — ahí las variables ya llegan inyectadas por `env_file:` de
+# docker-compose.yml. read_env() es solo para desarrollo local fuera de
+# Docker; por eso se guarda condicionado a que el archivo exista.
+# SHA-256 de claves que fueron públicas (el antiguo valor de .env.example,
+# visible en el historial del repo): con ellas cualquiera firma un JWT válido.
+CLAVES_COMPROMETIDAS = {"968f8b985b9934bc24827e8fefe319de3024c7c3a822eb7f0e5485ecb4215f3d"}
+
+
+def validar_secret_key(clave: str) -> None:
+    """Se niega a arrancar con una SECRET_KEY pública, corta o predecible."""
+    if hashlib.sha256(clave.encode()).hexdigest() in CLAVES_COMPROMETIDAS:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY es una clave pública conocida: genera una nueva.")
+    if len(clave) < 50 or len(set(clave)) < 5 or clave.startswith("django-insecure-"):
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY es débil: usa get_random_secret_key() (50+ caracteres aleatorios)."
+        )
+
+
+_dotenv_path = BASE_DIR.parent / ".env"
+if _dotenv_path.exists():
+    environ.Env.read_env(_dotenv_path)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
+validar_secret_key(SECRET_KEY)
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
@@ -34,6 +60,7 @@ INSTALLED_APPS = [
     # Terceros
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "django_celery_beat",
     # Apps del dominio — ver Vigia-UML-Clases (vault) § Persistencia/Servicios
     "apps.usuarios",
@@ -78,7 +105,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Base de datos — PostGIS (ver Vigia-Modelo-Datos § geography(Point,4326))
 DATABASES = {
-    "default": env.db("DATABASE_URL", default="postgis://vigia:vigia@db:5432/vigia"),
+    # Sin valor por defecto: una contraseña conocida no debe servir "por si acaso".
+    "default": env.db("DATABASE_URL"),
 }
 DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
@@ -106,14 +134,44 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    ),
+    # Cerrado por defecto: cada vista pública declara AllowAny explícitamente.
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_PAGINATION_CLASS": "config.pagination.PaginacionEstandar",
+    # Los límites por usuario/IP protegen registro, login y creación de
+    # reportes. En producción el caché es Redis (límite global, ver
+    # production.py); en desarrollo y pruebas, memoria local.
+    "DEFAULT_THROTTLE_RATES": {
+        "registro": "20/hour",
+        "login": "60/hour",
+        "refresco": "120/hour",
+        "reporte": "30/hour",
+    },
+    # Nginx reemplaza X-Forwarded-For por la IP real del cliente (tomada de
+    # CF-Connecting-IP): se confía en exactamente un proxy. Sin esto DRF usaba
+    # la cadena completa y cada X-Forwarded-For inventado era una "IP" nueva.
+    "NUM_PROXIES": 1,
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Cada renovación entrega un refresh nuevo y revoca el anterior: un
+    # refresh robado deja de servir en cuanto el dueño vuelve a usar la app.
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+# Logs a la consola (Twelve-Factor XI): Docker los recoge con `docker compose logs`.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"simple": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"}},
+    "handlers": {"consola": {"class": "logging.StreamHandler", "formatter": "simple"}},
+    "root": {"handlers": ["consola"], "level": env("LOG_LEVEL", default="INFO")},
+    "loggers": {
+        # Los 4xx/5xx de Django van como WARNING/ERROR; el detalle de SQL no.
+        "django.db.backends": {"level": "WARNING"},
+    },
 }
 
 # Celery (ver Vigia-UML-Despliegue § Redis "broker")
@@ -124,11 +182,16 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
-# Credenciales de integraciones externas — ver Vigia-Roadmap-Desarrollo
-# § Bloqueante "Credenciales de las APIs externas" (siguiente ítem del
-# roadmap, todavía sin resolver).
+# Credenciales e integraciones externas — ver Vigia-Credenciales-APIs
+# (vault de Obsidian) para el proceso de registro de cada una y el
+# formato exacto de uso (MAP_KEY en la URL, X-App-Token como header, etc.)
 NASA_FIRMS_MAP_KEY = env("NASA_FIRMS_MAP_KEY", default="")
+INPE_QUEIMADAS_WFS_URL = env(
+    "INPE_QUEIMADAS_WFS_URL",
+    default="https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/wfs",
+)
 UNGRD_SOCRATA_APP_TOKEN = env("UNGRD_SOCRATA_APP_TOKEN", default="")
+UNGRD_SOCRATA_APP_SECRET = env("UNGRD_SOCRATA_APP_SECRET", default="")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CANAL_PUBLICO_ID = env("TELEGRAM_CANAL_PUBLICO_ID", default="")
 TELEGRAM_CANAL_PRIVADO_ID = env("TELEGRAM_CANAL_PRIVADO_ID", default="")

@@ -1,5 +1,6 @@
 """
-ExportadorDatos (sin persistencia, generación al vuelo) + estadísticas del panel admin — ver Vigia-Modelo-Datos § Decisiones
+ExportadorDatos (sin persistencia, generación al vuelo) + estadísticas del panel admin —
+ver Vigia-Modelo-Datos § Decisiones
 
 Estructura de repo — pendiente de implementación (objetivo específico 3).
 No agregar campos aquí sin revisar primero la nota correspondiente en el

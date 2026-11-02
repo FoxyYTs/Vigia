@@ -1,0 +1,461 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../core/theme/vigia_theme.dart';
+import '../data/models/foco.dart';
+import '../data/models/historico.dart';
+import '../providers/focos_provider.dart';
+import '../providers/historico_provider.dart';
+import '../providers/prediccion_provider.dart';
+import 'formato.dart';
+
+/// Filtros, contador y leyenda del Mapa Interactivo. Se usa como panel
+/// lateral en escritorio y dentro de una hoja inferior en móvil.
+class PanelFiltros extends StatelessWidget {
+  const PanelFiltros({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<FocosProvider>();
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const _Titulo('Rango temporal'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final v in Ventana.values)
+              ChoiceChip(
+                label: Text(v.etiqueta),
+                selected: p.ventana == v,
+                onSelected: (_) => p.cambiarVentana(v),
+                selectedColor: VigiaColors.bosqueClaro,
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _SelectorCorte(p),
+        const SizedBox(height: 20),
+        const _Titulo('Fuente satelital'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: const Text('Todas'),
+              selected: p.fuente == null,
+              onSelected: (_) => p.cambiarFuente(null),
+              selectedColor: VigiaColors.bosqueClaro,
+            ),
+            for (final f in FuenteSatelital.values)
+              ChoiceChip(
+                avatar: _Punto(colorFuente(f)),
+                label: Text(f.etiqueta),
+                selected: p.fuente == f,
+                onSelected: (_) => p.cambiarFuente(f),
+                selectedColor: VigiaColors.bosqueClaro,
+              ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        const PanelPrediccion(),
+        const SizedBox(height: 20),
+        const PanelHistorico(),
+        const SizedBox(height: 20),
+        const ContadorFocos(),
+        const SizedBox(height: 20),
+        const Leyenda(),
+      ],
+    );
+  }
+}
+
+Color colorFuente(FuenteSatelital? f) =>
+    f == FuenteSatelital.inpeQueimadas ? VigiaColors.inpe : VigiaColors.firms;
+
+/// Tramos de probabilidad de la capa de predicción (de menor a mayor).
+const tramosPuntaje = [
+  (0.3, '30 – 50 %', Color(0xFFF2C14E)),
+  (0.5, '50 – 70 %', Color(0xFFE8833A)),
+  (0.7, '70 – 85 %', Color(0xFFC8432B)),
+  (0.85, 'Más de 85 %', Color(0xFF7A1C1C)),
+];
+
+Color colorPuntaje(double puntaje) =>
+    tramosPuntaje.lastWhere((t) => puntaje >= t.$1, orElse: () => tramosPuntaje.first).$3;
+
+const _nombresMes = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
+/// "2027-01" → "enero 2027".
+String nombreMes(String aaaaMm) {
+  final [anio, mes] = aaaaMm.split('-');
+  return '${_nombresMes[int.parse(mes) - 1]} $anio';
+}
+
+/// Interruptor, selector de mes y leyenda de las zonas de recurrencia.
+class PanelPrediccion extends StatelessWidget {
+  const PanelPrediccion({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<PrediccionProvider>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Titulo('Predicción'),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Zonas de recurrencia'),
+          subtitle: const Text('Dónde suele haber fuego en el mes elegido'),
+          value: p.visible,
+          onChanged: (v) {
+            // Una sola capa de contexto a la vez, para que el mapa siga legible.
+            if (v) context.read<HistoricoProvider>().mostrar(false);
+            p.mostrar(v);
+          },
+        ),
+        if (p.visible) ...[
+          if (p.meses.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final m in p.meses)
+                  ChoiceChip(
+                    label: Text(nombreMes(m)),
+                    selected: p.mes == m,
+                    onSelected: (_) => p.cambiarMes(m),
+                    selectedColor: VigiaColors.bosqueClaro,
+                  ),
+              ],
+            ),
+          if (p.cargando) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
+          if (p.error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(p.error!, style: const TextStyle(color: VigiaColors.error)),
+            ),
+          const SizedBox(height: 12),
+          for (final (_, etiqueta, color) in tramosPuntaje.reversed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Container(width: 14, height: 14, color: color.withValues(alpha: 0.7)),
+                  const SizedBox(width: 10),
+                  Text('Probabilidad $etiqueta'),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            'Probabilidad de detecciones satelitales según el historial 2019–hoy, en celdas de ~11 km. '
+            'No es un pronóstico del clima.'
+            '${p.fechaModelo == null ? '' : ' Modelo actualizado el ${Formato.fecha(p.fechaModelo!)}.'}',
+            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Cinco tonos de menor a mayor por indicador (siempre con leyenda).
+List<Color> coloresHistorico(IndicadorHistorico i) => switch (i) {
+      IndicadorHistorico.incendiosUngrd => const [
+          Color(0xFFFDE0C5), Color(0xFFFBB585), Color(0xFFF4845F), Color(0xFFD9480F), Color(0xFF8A2A0A),
+        ],
+      IndicadorHistorico.deforestacionIdeam => const [
+          Color(0xFFE9E4C9), Color(0xFFCBBE8A), Color(0xFFA68B4E), Color(0xFF7A5A2B), Color(0xFF4A3215),
+        ],
+    };
+
+/// Rango de cada clase de la leyenda: "Hasta 2", "3 – 6", "Más de 12"…
+/// Los incendios son conteos: la clase siguiente empieza en el corte + 1.
+List<String> etiquetasClases(List<double> cortes, IndicadorHistorico indicador) {
+  String n(double v) => Formato.entero(v.round());
+  final paso = indicador == IndicadorHistorico.incendiosUngrd ? 1 : 0;
+  final u = indicador.unidad;
+  if (cortes.isEmpty) return ['Con datos'];
+  return [
+    for (var i = 0; i <= cortes.length; i++)
+      if (i == 0)
+        'Hasta ${n(cortes[0])} $u'
+      else if (i == cortes.length)
+        'Más de ${n(cortes.last)} $u'
+      else if (cortes[i - 1] + paso == cortes[i])
+        '${n(cortes[i])} $u'
+      else
+        '${n(cortes[i - 1] + paso)} – ${n(cortes[i])} $u',
+  ];
+}
+
+/// Interruptor, indicador, año y leyenda de la capa por municipio.
+class PanelHistorico extends StatelessWidget {
+  const PanelHistorico({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = context.watch<HistoricoProvider>();
+    final colores = coloresHistorico(h.indicador);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Titulo('Histórico'),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Histórico por municipio'),
+          subtitle: const Text('Incendios reportados y deforestación por año'),
+          value: h.visible,
+          onChanged: (v) {
+            if (v) context.read<PrediccionProvider>().mostrar(false);
+            h.mostrar(v);
+          },
+        ),
+        if (h.visible) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final i in IndicadorHistorico.values)
+                ChoiceChip(
+                  label: Text('${i.etiqueta} (${i.fuente})'),
+                  selected: h.indicador == i,
+                  onSelected: (_) => h.cambiarIndicador(i),
+                  selectedColor: VigiaColors.bosqueClaro,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final a in h.anios)
+                ChoiceChip(
+                  label: Text('$a'),
+                  selected: h.anio == a,
+                  onSelected: (_) => h.cambiarAnio(a),
+                  selectedColor: VigiaColors.bosqueClaro,
+                ),
+            ],
+          ),
+          if (h.cargando) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator()),
+          if (h.error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(h.error!, style: const TextStyle(color: VigiaColors.error)),
+            ),
+          const SizedBox(height: 12),
+          for (final (i, etiqueta) in etiquetasClases(h.cortes, h.indicador).indexed.toList().reversed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Container(width: 14, height: 14, color: colores[i].withValues(alpha: 0.8)),
+                  const SizedBox(width: 10),
+                  Text(etiqueta),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            h.indicador == IndicadorHistorico.incendiosUngrd
+                ? 'Incendios forestales reportados a la UNGRD (2019–2024). Son reportes de emergencias: '
+                    'un municipio sin color puede tener incendios que no se reportaron.'
+                : 'Hectáreas de bosque natural deforestadas en el año, según el monitoreo del IDEAM (SMByC).',
+            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SelectorCorte extends StatelessWidget {
+  const _SelectorCorte(this.p);
+
+  final FocosProvider p;
+
+  @override
+  Widget build(BuildContext context) {
+    final corte = p.corte;
+    final desde = p.desde;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          onPressed: corte == null
+              ? null
+              : () async {
+                  final dia = await showDatePicker(
+                    context: context,
+                    initialDate: corte.toLocal(),
+                    firstDate: DateTime(2018, 4, 1),
+                    lastDate: DateTime.now(),
+                    helpText: 'Fecha de corte',
+                    cancelText: 'Cancelar',
+                    confirmText: 'Aplicar',
+                  );
+                  if (dia != null) p.cambiarCorte(dia);
+                },
+          icon: const Icon(Icons.event_outlined),
+          label: Text(corte == null ? 'Fecha de corte' : 'Hasta ${Formato.fecha(corte)}'),
+        ),
+        if (corte != null && desde != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Del ${Formato.fechaHora(desde)} al ${Formato.fechaHora(corte)}',
+              style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class ContadorFocos extends StatelessWidget {
+  const ContadorFocos({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<FocosProvider>();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Semantics(
+          liveRegion: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('FOCOS DETECTADOS',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+              const SizedBox(height: 8),
+              if (p.cargando && p.focos.isEmpty)
+                const LinearProgressIndicator()
+              else
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                      text: Formato.entero(p.total),
+                      style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
+                    ),
+                    const TextSpan(text: '  focos', style: TextStyle(color: VigiaColors.textoSecundario)),
+                  ]),
+                ),
+              const Text('en el rango seleccionado', style: TextStyle(color: VigiaColors.textoSecundario)),
+              if (p.truncado) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Se dibujan los ${Formato.entero(p.focos.length)} más recientes. '
+                  'Acota el rango para ver el resto.',
+                  style: const TextStyle(fontSize: 12, color: VigiaColors.fuego, fontWeight: FontWeight.w600),
+                ),
+              ],
+              const SizedBox(height: 12),
+              for (final f in FuenteSatelital.values)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      _Punto(colorFuente(f)),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(f.etiqueta)),
+                      Text(Formato.entero(p.contarPorFuente(f)),
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              if (p.ultimoDisponible != null) ...[
+                const Divider(height: 20),
+                Text(
+                  'Último foco cargado: ${Formato.fechaHora(p.ultimoDisponible!)}',
+                  style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class Leyenda extends StatelessWidget {
+  const Leyenda({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Titulo('Leyenda'),
+        for (final (f, detalle) in const [
+          (FuenteSatelital.nasaFirms, 'VIIRS (NOAA-20, NOAA-21, Suomi NPP)'),
+          (FuenteSatelital.inpeQueimadas, 'Programa Queimadas, INPE (Brasil)'),
+        ])
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                _Punto(colorFuente(f), tamano: 14),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(f.etiqueta, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(detalle, style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const Text(
+          'El tamaño del círculo crece con la potencia radiativa del fuego (FRP).',
+          style: TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+        ),
+      ],
+    );
+  }
+}
+
+class _Titulo extends StatelessWidget {
+  const _Titulo(this.texto);
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Semantics(
+          header: true,
+          child: Text(texto.toUpperCase(),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+        ),
+      );
+}
+
+class _Punto extends StatelessWidget {
+  const _Punto(this.color, {this.tamano = 10});
+
+  final Color color;
+  final double tamano;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: tamano,
+        height: tamano,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 1.5),
+        ),
+      );
+}
