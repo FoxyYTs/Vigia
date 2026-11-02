@@ -16,6 +16,7 @@ import json
 import re
 from datetime import date, UTC
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import responses
@@ -108,6 +109,14 @@ def test_sincronizar_persiste_focos_nuevos():
     assert 0 < FOCOS_DENTRO < 524  # el CSV sí trae focos de otros países
     assert nuevos == FOCOS_DENTRO
     assert FocoIncendio.objects.count() == FOCOS_DENTRO
+
+
+def test_sincronizar_mas_de_5_dias_pide_por_ventanas():
+    cliente = ClienteNasaFirms(map_key="clave-de-prueba")
+    with patch.object(cliente, "descargar_historico", return_value=7) as historico:
+        assert cliente.sincronizar(dias=12) == 7
+    desde, hasta = historico.call_args.args
+    assert (hasta - desde).days == 11 and historico.call_args.kwargs == {"sensor": cliente.SENSOR}
 
 
 @pytest.mark.django_db

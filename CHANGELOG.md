@@ -7,6 +7,16 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.4.3] — 2026-11-02 · Pulido
+
+### Corregido
+- `desplegar.sh` crea `app/build/web` en el servidor antes del rsync (#58).
+- La atribución del mapa ya no repite "©" ni se corta en pantallas angostas: ahora es plegable, con una entrada por fuente.
+- La sincronización de focos recupera los días perdidos tras una caída (hasta 30), en lugar de pedir siempre solo el último día. Los focos recuperados con más de 24 h no disparan alertas. En producción faltaban los focos del 20 al 30 de octubre, y por eso el mapa mostraba la misma cifra con 48 h que con 7 días (#61).
+
+### Cambiado
+- README: estado actualizado (producción, app Android en prueba interna, 241 tests).
+
 ## [0.4.2] — 2026-11-02 · Política de privacidad
 
 ### Corregido
@@ -81,7 +91,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.2...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.3...develop
+[0.4.3]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.3
 [0.4.2]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.2
 [0.4.1]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.1
 [0.4.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.0

@@ -139,8 +139,18 @@ class _MapaFocosState extends State<MapaFocos> {
                 ),
               ],
             ),
-          const SimpleAttributionWidget(
-            source: Text('© OpenStreetMap contributors · NASA FIRMS · INPE · UNGRD · IDEAM (CC BY-SA) · geoBoundaries/DANE (CC BY) · Modelo Vigía'),
+          // Plegable: en pantallas angostas la línea completa se cortaba.
+          const RichAttributionWidget(
+            alignment: AttributionAlignment.bottomLeft,
+            attributions: [
+              TextSourceAttribution('OpenStreetMap contributors'),
+              TextSourceAttribution('NASA FIRMS', prependCopyright: false),
+              TextSourceAttribution('INPE', prependCopyright: false),
+              TextSourceAttribution('UNGRD', prependCopyright: false),
+              TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
+              TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
+              TextSourceAttribution('Modelo Vigía', prependCopyright: false),
+            ],
           ),
         ],
       ),
