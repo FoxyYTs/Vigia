@@ -65,4 +65,4 @@ día del despliegue.
 
 ## Pendientes de configuración (panel de Cloudflare)
 
-- **Access** sobre `vigia.foxyyts.qzz.io/admin/`, igual que en SGI (política "Solo Foxy").
+- ✅ **Access** sobre `vigia.foxyyts.qzz.io/admin/` (configurado el 2-nov-2026).
