@@ -98,7 +98,8 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ✅ `apps/satelital`: `FocoIncendio` + `ClienteNasaFirms` (tiempo real e histórico) +
   `ClienteInpeQueimadas` (WFS, capa `bdqueimadas2:focos` filtrada por Colombia). Probados contra las
   APIs reales; 20/20 tests con Postgres real. La tarea de Celery `sincronizar_focos` corre cada 3 h
-  y cada fuente falla de forma aislada.
+  y cada fuente falla de forma aislada; tras una caída recupera los días perdidos (hasta 30) sin
+  disparar alertas por focos viejos.
 - ✅ Histórico: `python manage.py cargar_historico_firms` (VIIRS NOAA-20, 2018-04 → hoy, idempotente).
 - ✅ Filtro de Colombia: FIRMS se consulta con un rectángulo que incluye países vecinos y mar
   (57 % de los focos caían fuera), así que se descartan al ingerir con un contorno aproximado
@@ -107,7 +108,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
   municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
   y la jurisdicción de Cornare.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (200 tests de backend; la app tiene sus propias pruebas en `app/test/`).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (241 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
   JWT y panel (ver `app/README.md`). Faltan los reportes ciudadanos y el panel de administración.
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
@@ -116,7 +117,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ✅ `ModeloRecurrencia` (I2): probabilidad de detecciones por celda de 0,1° para los 3 meses
   siguientes, con un gradient boosting por horizonte (AUC ≈ 0,89 en el último año, contra 0,86 de
   la recurrencia estacional). `python manage.py entrenar_modelo_recurrencia`; Celery Beat lo
-  reentrena el día 2 de cada mes (~6 min, ~1,2 GB). API: `/api/zonas-recurrentes/?mes=AAAA-MM`
+  reentrena el día 2 de cada mes (~15 min en el servidor, ~1,2 GB). API: `/api/zonas-recurrentes/?mes=AAAA-MM`
   y `/api/zonas-recurrentes/meses/`.
 - ✅ Históricos (I1c):
   - `cargar_incendios_ungrd`: 18.014 incendios forestales reportados a la UNGRD, 2019–2024.
@@ -124,6 +125,9 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
     partir de los rasters oficiales del SMByC; los totales coinciden con la cifra oficial.
   - `validar_modelo_ungrd`: backtest del modelo contra los incendios reportados (AUC ≈ 0,69;
     el 82 % de los meses con reporte tuvo detección satelital).
+- ✅ Producción en `https://vigia.foxyyts.qzz.io` (servidor propio con Docker Compose y túnel de
+  Cloudflare, respaldo diario de la base). Ver [`DESPLIEGUE.md`](DESPLIEGUE.md).
+- 🟡 App Android `com.vigia.foxyyts` en prueba interna de Play Store.
 - ⬜ Panel de administración y generación de informes (I6),
   fotos de reportes (I5b), push FCM.
 
