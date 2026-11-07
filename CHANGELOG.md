@@ -101,7 +101,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.3...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.4...develop
+[0.4.4]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.4
 [0.4.3]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.3
 [0.4.2]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.2
 [0.4.1]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.1
