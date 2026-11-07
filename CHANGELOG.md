@@ -7,6 +7,11 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.4.5] — 2026-11-07 · Hotfix de Celery
+
+### Corregido
+- `celery-worker` y `celery-beat` no arrancaban en producción: kombu 5.7 importa `packaging` sin declararlo. Ahora está en `requirements/base.txt`.
+
 ## [0.4.4] — 2026-11-07 · Mensajes de Telegram
 
 ### Cambiado
@@ -101,7 +106,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.4...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.5...develop
+[0.4.5]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.5
 [0.4.4]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.4
 [0.4.3]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.3
 [0.4.2]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.2
