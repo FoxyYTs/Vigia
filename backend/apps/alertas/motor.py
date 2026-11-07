@@ -17,6 +17,7 @@ from apps.alertas.models import Alerta, AlertaReporte
 from apps.notificaciones.tasks import despachar_alerta
 from apps.reportes.models import ReporteCiudadano
 from apps.satelital.models import FocoIncendio
+from apps.usuarios.models import Municipio
 
 # Detección satelital: un foco no crea alerta si ya hay otra satelital
 # cerca y reciente (decisión de José, 31-oct-2026) — evita una alerta por
@@ -104,7 +105,8 @@ class MotorAlertas:
 
     @transaction.atomic
     def _crear(self, tipo, ubicacion, foco=None, disparador=None, corroboran=()) -> Alerta:
-        alerta = Alerta.objects.create(tipo_disparador=tipo, ubicacion=ubicacion, foco=foco)
+        municipio = Municipio.objects.filter(geom__contains=ubicacion).first()
+        alerta = Alerta.objects.create(tipo_disparador=tipo, ubicacion=ubicacion, foco=foco, municipio=municipio)
         if disparador:
             AlertaReporte.objects.create(alerta=alerta, reporte=disparador, es_disparador=True)
         AlertaReporte.objects.bulk_create(

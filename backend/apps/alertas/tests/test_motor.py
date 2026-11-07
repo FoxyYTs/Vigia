@@ -2,14 +2,14 @@ from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import MultiPolygon, Point, Polygon
 from django.utils import timezone
 
 from apps.alertas.models import Alerta, AlertaReporte
 from apps.alertas.motor import MotorAlertas
 from apps.reportes.models import ReporteCiudadano
 from apps.satelital.models import FocoIncendio
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Municipio, Usuario
 from conftest import RIONEGRO
 
 pytestmark = pytest.mark.django_db
@@ -49,6 +49,19 @@ def ciudadanos(db):
 
 
 # --- Detección satelital ---
+
+
+def test_la_alerta_guarda_el_municipio_que_contiene_el_foco(crear_foco):
+    x, y = RIONEGRO.x, RIONEGRO.y
+    caja = Polygon.from_bbox((x - 0.1, y - 0.1, x + 0.1, y + 0.1))
+    caja.srid = 4326
+    rionegro = Municipio.objects.create(nombre="Rionegro", departamento="Antioquia", geom=MultiPolygon(caja, srid=4326))
+    assert motor.evaluar_foco_nuevo(crear_foco()).municipio == rionegro
+
+
+def test_alerta_fuera_de_todo_municipio_queda_sin_municipio(crear_foco):
+    assert motor.evaluar_foco_nuevo(crear_foco()).municipio is None
+
 
 
 def test_foco_nuevo_crea_alerta_satelital(crear_foco):

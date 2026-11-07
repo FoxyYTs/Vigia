@@ -7,6 +7,7 @@ from apps.alertas.models import Alerta
 from apps.notificaciones.despachador import DespachadorNotificaciones, NotificadorTelegram
 from apps.notificaciones.models import Notificacion
 from apps.notificaciones.tasks import despachar_alerta
+from apps.usuarios.models import Municipio
 
 pytestmark = pytest.mark.django_db
 
@@ -74,7 +75,44 @@ def test_telegram_envia_el_mensaje_al_canal(crear_alerta):
     url, cuerpo = post.call_args.args[0], post.call_args.kwargs["json"]
     assert url == "https://api.telegram.org/bot123:abc/sendMessage"
     assert cuerpo["chat_id"] == "@privado"
-    assert "Detección satelital" in cuerpo["text"] and "openstreetmap.org" in cuerpo["text"]
+    assert cuerpo["parse_mode"] == "HTML"
+    assert cuerpo["link_preview_options"] == {"is_disabled": True}
+    assert "Posible incendio" in cuerpo["text"] and "openstreetmap.org" in cuerpo["text"]
+
+
+def test_mensaje_es_legible_para_una_deteccion(crear_alerta, foco, municipio):
+    foco.satelite = "N20"
+    foco.save()
+    alerta = crear_alerta(Tipo.DETECCION_SATELITAL)
+    alerta.municipio = municipio
+    texto = NotificadorTelegram.mensaje(alerta)
+    assert "Sin confirmar en terreno" in texto
+    assert "📍 Rionegro, Antioquia" in texto
+    # El foco de la fixture es de las 12:00 UTC: la hora de la detección, no la de la alerta.
+    assert "Detectado: 01/09/2026 07:00 (hora de Colombia)" in texto
+    assert "Satélite: NOAA-20 (NASA FIRMS)" in texto
+    assert "Confianza: media" in texto
+    assert "mlat=6.15520&amp;mlon=-75.37370" in texto
+
+
+def test_mensaje_sin_municipio_ni_datos_del_satelite(crear_alerta, foco):
+    foco.confianza = ""
+    foco.save()
+    texto = NotificadorTelegram.mensaje(crear_alerta(Tipo.DETECCION_SATELITAL))
+    assert "📍" not in texto and "Confianza" not in texto
+    assert "Satélite: NASA FIRMS" in texto
+
+
+def test_mensaje_escapa_el_nombre_del_municipio(crear_alerta):
+    alerta = crear_alerta(Tipo.DETECCION_SATELITAL)
+    alerta.municipio = Municipio(nombre="San <Andrés>", departamento="Archipiélago & Cía")
+    texto = NotificadorTelegram.mensaje(alerta)
+    assert "San &lt;Andrés&gt;, Archipiélago &amp; Cía" in texto
+
+
+def test_mensaje_de_un_reporte_usa_la_fecha_de_la_alerta(reporte):
+    alerta = Alerta.objects.create(tipo_disparador=Tipo.VALIDACION_MANUAL, ubicacion=reporte.ubicacion_incendio)
+    assert "Reportado:" in NotificadorTelegram.mensaje(alerta)
 
 
 def test_telegram_caido_no_rompe_el_despacho(crear_alerta):

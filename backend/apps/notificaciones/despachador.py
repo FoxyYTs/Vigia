@@ -10,9 +10,11 @@ Ruteo por certeza (decisión de José, 31-oct-2026):
 """
 
 import logging
+from html import escape
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 
 from apps.alertas.models import Alerta
 from apps.notificaciones.models import Notificacion
@@ -27,6 +29,31 @@ RUTEO = {
     Tipo.VALIDACION_MANUAL: [Canal.TELEGRAM_PUBLICO, Canal.TELEGRAM_PRIVADO],
     Tipo.ACUMULACION_REPORTES: [Canal.TELEGRAM_PRIVADO, Canal.TELEGRAM_INTERNO],
 }
+
+TITULOS = {
+    Tipo.DETECCION_SATELITAL: "🛰️ Posible incendio detectado por satélite",
+    Tipo.COINCIDENCIA_GEOGRAFICA: "🔥 Incendio probable: satélite y ciudadanos coinciden",
+    Tipo.VALIDACION_MANUAL: "🔥 Incendio confirmado por revisión manual",
+    Tipo.ACUMULACION_REPORTES: "👥 Varios ciudadanos reportan un incendio",
+}
+AVISOS = {
+    Tipo.DETECCION_SATELITAL: "Sin confirmar en terreno.",
+    Tipo.ACUMULACION_REPORTES: "Sin confirmar: pendiente de revisión.",
+}
+# Códigos de FIRMS y de INPE (en INPE, M-M y M-T son los pasos de mañana y tarde).
+SATELITES = {
+    "N": "Suomi NPP",
+    "N20": "NOAA-20",
+    "N21": "NOAA-21",
+    "NPP-375": "Suomi NPP",
+    "NPP-375D": "Suomi NPP",
+    "AQUA_M-M": "Aqua",
+    "AQUA_M-T": "Aqua",
+    "TERRA_M-M": "Terra",
+    "TERRA_M-T": "Terra",
+}
+# VIIRS: l, n, h. MODIS es numérico e INPE no la trae: esos casos no se muestran.
+CONFIANZA = {"l": "baja", "n": "media", "h": "alta"}
 
 
 class Notificador:
@@ -45,7 +72,13 @@ class NotificadorTelegram(Notificador):
         try:
             r = requests.post(
                 self.URL.format(token=token),
-                json={"chat_id": destino, "text": self.mensaje(alerta)},
+                json={
+                    "chat_id": destino,
+                    "text": self.mensaje(alerta),
+                    "parse_mode": "HTML",
+                    # Sin esto, cada alerta trae la tarjeta genérica de OpenStreetMap.
+                    "link_preview_options": {"is_disabled": True},
+                },
                 timeout=10,
             )
         except requests.RequestException:
@@ -59,16 +92,26 @@ class NotificadorTelegram(Notificador):
     @staticmethod
     def mensaje(alerta: Alerta) -> str:
         lon, lat = alerta.ubicacion.x, alerta.ubicacion.y
-        lineas = [
-            f"🔥 Vigía — {alerta.get_tipo_disparador_display()}",
-            f"Fecha: {alerta.fecha_creacion:%Y-%m-%d %H:%M} UTC",
-            f"Ubicación: {lat:.4f}, {lon:.4f}",
-        ]
-        if alerta.foco:
-            lineas.append(f"Fuente: {alerta.foco.get_fuente_display()} {alerta.foco.satelite}".rstrip())
+        foco = alerta.foco
+        lineas = [f"<b>{TITULOS[alerta.tipo_disparador]}</b>"]
+        if aviso := AVISOS.get(alerta.tipo_disparador):
+            lineas.append(aviso)
+        lineas.append("")
+        if alerta.municipio:
+            lineas.append(f"📍 {escape(alerta.municipio.nombre)}, {escape(alerta.municipio.departamento)}")
+        # La alerta se crea cuando llega el lote, horas después del paso del satélite.
+        momento = timezone.localtime(foco.fecha_hora if foco else alerta.fecha_creacion)
+        lineas.append(f"🕒 {'Detectado' if foco else 'Reportado'}: {momento:%d/%m/%Y %H:%M} (hora de Colombia)")
+        if foco:
+            satelite = SATELITES.get(foco.satelite, foco.satelite)
+            origen = f"{escape(satelite)} ({foco.get_fuente_display()})" if satelite else foco.get_fuente_display()
+            lineas.append(f"📡 Satélite: {origen}")
+            if confianza := CONFIANZA.get(foco.confianza):
+                lineas.append(f"📊 Confianza: {confianza}")
         if n := alerta.reportes.count():
-            lineas.append(f"Reportes ciudadanos: {n}")
-        lineas.append(f"Mapa: https://www.openstreetmap.org/?mlat={lat:.5f}&mlon={lon:.5f}#map=13/{lat:.5f}/{lon:.5f}")
+            lineas.append(f"👥 Reportes ciudadanos: {n}")
+        mapa = f"https://www.openstreetmap.org/?mlat={lat:.5f}&mlon={lon:.5f}#map=13/{lat:.5f}/{lon:.5f}"
+        lineas.append(f'🗺️ <a href="{escape(mapa)}">Ver en el mapa</a> ({lat:.4f}, {lon:.4f})')
         return "\n".join(lineas)
 
 
