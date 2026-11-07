@@ -7,6 +7,16 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.4.4] — 2026-11-07 · Mensajes de Telegram
+
+### Cambiado
+- Mensajes de Telegram más legibles: título según la certeza de la alerta, municipio, nombre real del satélite, confianza, enlace "Ver en el mapa" y sin la tarjeta de OpenStreetMap.
+
+### Corregido
+- Las alertas muestran la hora de detección en hora de Colombia; antes era la hora de creación de la alerta, en UTC.
+- `MotorAlertas` guarda el municipio de la alerta, que siempre quedaba vacío.
+- El despacho se limita a 15 alertas por minuto: los lotes grandes recibían 429 de Telegram y gastaban los reintentos.
+
 ## [0.4.3] — 2026-11-02 · Pulido
 
 ### Corregido
@@ -91,7 +101,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.3...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.4...develop
+[0.4.4]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.4
 [0.4.3]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.3
 [0.4.2]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.2
 [0.4.1]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.1
