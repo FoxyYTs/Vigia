@@ -108,7 +108,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
   municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
   y la jurisdicción de Cornare.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (241 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (247 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
   JWT y panel (ver `app/README.md`). Faltan los reportes ciudadanos y el panel de administración.
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram

@@ -8,11 +8,13 @@ from apps.notificaciones.despachador import DespachadorNotificaciones
 from apps.notificaciones.models import Notificacion
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+# Telegram admite unos 20 mensajes por minuto en un mismo canal; un lote de
+# alertas lo superaba y respondía 429.
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, rate_limit="15/m")
 def despachar_alerta(self, alerta_id: int) -> int:
     """Envía la alerta por sus canales; reintenta si algún envío falló.
     Retorna cuántas notificaciones quedaron enviadas en este intento."""
-    alerta = Alerta.objects.select_related("foco").get(pk=alerta_id)
+    alerta = Alerta.objects.select_related("foco", "municipio").get(pk=alerta_id)
     notificaciones = DespachadorNotificaciones().despachar(alerta)
     fallo = any(n.estado == Notificacion.Estado.FALLIDO for n in notificaciones)
     # Sin token no tiene sentido reintentar: solo llenaría la tabla de fallidos.
