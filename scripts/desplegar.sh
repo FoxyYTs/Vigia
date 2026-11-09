@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Despliega Vigía en el servidor (foxhomelab) desde el portátil:
+# Despliega Vigía en el servidor desde el portátil:
 #   1. compila la app web (el servidor no tiene el SDK de Flutter),
 #   2. actualiza el código del servidor a la rama indicada (por defecto main),
 #   3. copia el build web con rsync,
@@ -9,7 +9,7 @@
 set -euo pipefail
 
 RAMA="${1:-main}"
-SERVIDOR="${VIGIA_SERVIDOR:-foxyyts@172.27.0.2}"
+SERVIDOR="${VIGIA_SERVIDOR:?Definir VIGIA_SERVIDOR=usuario@servidor (ver DESPLIEGUE.md)}"
 DIR_REMOTO="${VIGIA_DIR_REMOTO:-Vigia}"
 URL_PUBLICA="${VIGIA_URL:-https://vigia.foxyyts.qzz.io}"
 FLUTTER="${FLUTTER:-$HOME/development/flutter/bin/flutter}"
