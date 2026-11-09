@@ -7,6 +7,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Seguridad
+- La guía de despliegue, los scripts y los comentarios ya no publican el usuario, la IP ni otros detalles del servidor. `scripts/desplegar.sh` exige `VIGIA_SERVIDOR`.
+
 ## [0.4.5] — 2026-11-07 · Hotfix de Celery
 
 ### Corregido
@@ -40,7 +43,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 ## [0.4.1] — 2026-11-02 · Despliegue en servidor
 
 ### Agregado
-- Despliegue en el servidor (foxhomelab):
+- Despliegue en el servidor:
   - `scripts/desplegar.sh`: compila la web, actualiza el código, hace `docker compose up` y verifica la URL pública;
   - `scripts/respaldar_bd.sh`: `pg_dump` diario con 14 días de retención;
   - guía en `DESPLIEGUE.md`.

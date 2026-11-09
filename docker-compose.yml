@@ -93,8 +93,8 @@ services:
     restart: unless-stopped
     # Solo accesible en localhost — cloudflared llega por la red interna
     # de Docker (nginx:80), no por este puerto. Publicado en 127.0.0.1
-    # únicamente para probar sin pasar por el túnel. En el servidor el 8080
-    # lo usa Pi-hole: allí NGINX_PUERTO=127.0.0.1:8090 (ver DESPLIEGUE.md).
+    # únicamente para probar sin pasar por el túnel. Si el 8080 está
+    # ocupado en el equipo, cambiar NGINX_PUERTO (ver DESPLIEGUE.md).
     ports:
       - "${NGINX_PUERTO:-127.0.0.1:8080}:80"
     depends_on:
