@@ -28,8 +28,13 @@ Vigía ─┬─ Mapa Interactivo          /         sin cuenta
   en español (credenciales, límite de intentos, sin conexión) y tokens guardados
   con `flutter_secure_storage`. El access se renueva con el refresh al expirar.
 - **Panel (bloques "Gestionar X"):** "Gestionar Usuario" muestra el perfil real
-  (`GET /api/auth/yo/`); los demás bloques están marcados como próximo
-  incremento. Desde aquí se cierra la sesión.
+  (`GET /api/auth/yo/`) y "Gestionar Reportar Focos de Incendios" abre los
+  reportes; los demás bloques están marcados como próximo incremento. Desde
+  aquí se cierra la sesión.
+- **Reportes ciudadanos (`/reportes`):** el ciudadano toma la foto solo con la
+  cámara (`image_picker`), la app toma su GPS (`geolocator`) y él pone el pin
+  del incendio; ve sus reportes y su estado. El administrador ve la miniatura
+  (descargada con el token) y valida o rechaza; Staff solo lee.
 
 ## Estructura
 
@@ -41,7 +46,7 @@ lib/
 ├── data/models/                DTO de los serializers (Foco, Usuario, JWT)
 ├── data/storage/               almacenamiento de tokens (seguro / memoria)
 ├── providers/                  AuthProvider, FocosProvider (provider)
-├── screens/                    login, mapa, panel y rutas
+├── screens/                    login, mapa, panel, reportes y rutas
 └── widgets/                    mapa, filtros, detalle, marca
 design/                         capturas de Stitch e IDs (design/README.md)
 ```
@@ -119,6 +124,9 @@ flutter test
   focos dibujados y rango pedido al cambiar la ventana.
 - `test/screens/login_screen_test.dart`: validaciones del formulario, error de
   credenciales, login correcto y etiqueta accesible del botón de contraseña.
+- `test/screens/reportes_screen_test.dart`: acciones por rol (validar solo el
+  administrador, crear solo el ciudadano), multipart del nuevo reporte y error
+  de la API en el formulario.
 - `test/providers/auth_provider_test.dart`: restaurar y renovar la sesión, cierre
   ante 401 y la guarda `RequiereSesion` del panel.
 - `test/providers/prediccion_provider_test.dart`: carga perezosa de la capa de
