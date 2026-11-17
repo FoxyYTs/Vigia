@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
 import '../models/foco.dart';
 import '../models/historico.dart';
+import '../models/reporte.dart';
 import '../models/usuario.dart';
 import '../models/zona.dart';
 
@@ -162,6 +165,70 @@ class VigiaApi {
     );
     final lista = await _enviarLista(() => _cliente.get(uri, headers: _cabeceras()));
     return {for (final f in lista) f['codigo_dane'] as String: (f['valor'] as num).toDouble()};
+  }
+
+  // ------------------------------------------------------------ reportes --
+
+  /// Crea un reporte ciudadano (multipart). [foto] son los bytes JPEG de la
+  /// cámara; el backend la re-codifica sin EXIF y genera la miniatura.
+  Future<Reporte> crearReporte(
+    String access, {
+    required List<int> foto,
+    required LatLng ubicacionUsuario,
+    required LatLng ubicacionIncendio,
+    String descripcion = '',
+  }) async {
+    final peticion = http.MultipartRequest('POST', baseUrl.resolve('reportes/'))
+      ..headers.addAll({'Accept': 'application/json', 'Authorization': 'Bearer $access'})
+      ..fields.addAll({
+        'latitud_usuario': '${ubicacionUsuario.latitude}',
+        'longitud_usuario': '${ubicacionUsuario.longitude}',
+        'latitud_incendio': '${ubicacionIncendio.latitude}',
+        'longitud_incendio': '${ubicacionIncendio.longitude}',
+        'descripcion': descripcion,
+      })
+      ..files.add(http.MultipartFile.fromBytes('foto', foto, filename: 'reporte.jpg'));
+    final json = await _enviar(() async => http.Response.fromStream(await _cliente.send(peticion)));
+    return Reporte.fromJson(json);
+  }
+
+  /// Ciudadano: los suyos. Administrador: los de su jurisdicción. Staff: todos.
+  Future<List<Reporte>> listarReportes(String access, {EstadoReporte? estado}) async {
+    final uri = baseUrl.resolve('reportes/').replace(queryParameters: {
+      if (estado != null) 'estado': estado.valorApi,
+      'page_size': '$tamanoPaginaMaximo',
+    });
+    final json = await _enviar(() => _cliente.get(uri, headers: _cabeceras(access)));
+    return [for (final r in json['results'] as List) Reporte.fromJson(r as Map<String, dynamic>)];
+  }
+
+  /// Valida o rechaza un reporte pendiente (solo administradores).
+  Future<Reporte> resolverReporte(String access, int id, {required bool validar}) async {
+    final json = await _enviar(
+      () => _cliente.post(
+        baseUrl.resolve('reportes/$id/${validar ? 'validar' : 'rechazar'}/'),
+        headers: _cabeceras(access),
+      ),
+    );
+    return Reporte.fromJson(json);
+  }
+
+  /// La foto está protegida por sesión: se descarga con el token en vez de
+  /// pasar la URL a `Image.network`, que en web no manda cabeceras.
+  /// Solo se usa la ruta de [url]: detrás de Nginx/Cloudflare el backend la
+  /// arma con otro host o esquema, y la API siempre vive en [baseUrl].
+  Future<Uint8List> descargarFoto(String access, String url) async {
+    final ruta = Uri.parse(url);
+    final http.Response respuesta;
+    try {
+      respuesta = await _cliente.get(baseUrl.replace(path: ruta.path, query: ruta.query), headers: {'Authorization': 'Bearer $access'}).timeout(timeout);
+    } on Exception {
+      throw const ApiException('No se pudo descargar la foto.');
+    }
+    if (respuesta.statusCode != 200) {
+      throw ApiException('La foto ya no está disponible.', status: respuesta.statusCode);
+    }
+    return respuesta.bodyBytes;
   }
 
   // ------------------------------------------------------------ internos --

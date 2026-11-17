@@ -13,6 +13,7 @@ import 'providers/prediccion_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/mapa_screen.dart';
 import 'screens/panel_screen.dart';
+import 'screens/reportes_screen.dart';
 import 'screens/rutas.dart';
 
 void main() {
@@ -50,6 +51,7 @@ class VigiaApp extends StatelessWidget {
           builder: (_) => switch (ajustes.name) {
             Rutas.login => const LoginScreen(),
             Rutas.panel => const RequiereSesion(child: PanelScreen()),
+            Rutas.reportes => const RequiereSesion(child: ReportesScreen()),
             _ => const MapaScreen(),
           },
         ),
