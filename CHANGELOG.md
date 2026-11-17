@@ -7,6 +7,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.5.0] — 2026-11-17 · Reportes ciudadanos (I5)
+
 ### Agregado
 - App: "Gestionar Reportar Focos de Incendios" (I5, #15). El ciudadano toma la foto con la cámara (sin galería), la app guarda su ubicación GPS y él pone el pin del incendio en el mapa; ve sus reportes y su estado. El administrador ve los de su jurisdicción con la miniatura y los valida o rechaza. Staff, solo lectura.
 - Android: permisos de ubicación para el reporte ciudadano.
@@ -116,7 +118,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.4.5...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.5.0...develop
+[0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0
 [0.4.5]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.5
 [0.4.4]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.4
 [0.4.3]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.3
