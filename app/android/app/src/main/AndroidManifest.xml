@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- La app consume la API REST de Vigía y las teselas del mapa. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Reportes ciudadanos: ubicación de quien reporta (señal contra fraude). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
         android:label="Vigía"
         android:name="${applicationName}"

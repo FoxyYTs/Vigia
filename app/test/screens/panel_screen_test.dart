@@ -50,6 +50,6 @@ void main() {
     }
     // Perfil real en Gestionar Usuario; el resto rotulado como pendiente.
     expect(find.text('ana@vigia.test'), findsOneWidget);
-    expect(find.byType(ProximoIncremento), findsNWidgets(6));
+    expect(find.byType(ProximoIncremento), findsNWidgets(5));
   });
 }

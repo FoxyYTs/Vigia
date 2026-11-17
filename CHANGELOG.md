@@ -7,6 +7,13 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Agregado
+- App: "Gestionar Reportar Focos de Incendios" (I5, #15). El ciudadano toma la foto con la cámara (sin galería), la app guarda su ubicación GPS y él pone el pin del incendio en el mapa; ve sus reportes y su estado. El administrador ve los de su jurisdicción con la miniatura y los valida o rechaza. Staff, solo lectura.
+- Android: permisos de ubicación para el reporte ciudadano.
+
+### Corregido
+- La CSP de Nginx bloqueaba la lectura de la foto en la web (`blob:` en `connect-src`).
+
 ### Seguridad
 - La guía de despliegue, los scripts y los comentarios ya no publican el usuario, la IP ni otros detalles del servidor. `scripts/desplegar.sh` exige `VIGIA_SERVIDOR`.
 
