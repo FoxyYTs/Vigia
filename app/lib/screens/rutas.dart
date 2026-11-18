@@ -4,6 +4,7 @@
 /// Vigía ─┬─ Mapa Interactivo            (/       público)
 ///        └─ Iniciar Sesión              (/login)
 ///             └─ Gestionar X (panel)     (/panel  requiere sesión)
+///                  ├─ Usuario → Permisos (/permisos)
 ///                  ├─ Reportar Focos     (/reportes)
 ///                  ├─ Estadísticas       (/estadisticas)
 ///                  ├─ Históricos         (/historicos)
@@ -21,4 +22,5 @@ class Rutas {
   static const informes = '/informes';
   static const historicos = '/historicos';
   static const botTelegram = '/bot-telegram';
+  static const permisos = '/permisos';
 }

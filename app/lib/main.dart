@@ -17,6 +17,7 @@ import 'screens/informes_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/mapa_screen.dart';
 import 'screens/panel_screen.dart';
+import 'screens/permisos_screen.dart';
 import 'screens/reportes_screen.dart';
 import 'screens/rutas.dart';
 
@@ -59,6 +60,7 @@ class VigiaApp extends StatelessWidget {
             Rutas.estadisticas => const RequiereSesion(gestion: true, child: EstadisticasScreen()),
             Rutas.historicos => const RequiereSesion(gestion: true, child: HistoricosScreen()),
             Rutas.botTelegram => const RequiereSesion(gestion: true, child: BotTelegramScreen()),
+            Rutas.permisos => const RequiereSesion(gestion: true, child: PermisosScreen()),
             Rutas.informes => const RequiereSesion(gestion: true, child: InformesScreen()),
             _ => const MapaScreen(),
           },

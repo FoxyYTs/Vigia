@@ -37,7 +37,12 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
     return context.read<VigiaApi>().resumenHistoricos(access);
   }
 
-  void _recargar() => setState(() => _datos = _cargar());
+  void _recargar() {
+    final datos = _cargar();
+    setState(() {
+      _datos = datos;
+    });
+  }
 
   Future<void> _actualizarUngrd() async {
     final mensajero = ScaffoldMessenger.of(context);
