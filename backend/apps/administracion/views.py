@@ -2,6 +2,8 @@ from datetime import timedelta
 
 from django.http import HttpResponse
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -28,6 +30,7 @@ class PeriodoSerializer(serializers.Serializer):
         return {"desde": desde, "hasta": hasta}
 
 
+@extend_schema(parameters=[PeriodoSerializer], responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
 def estadisticas_view(request):
@@ -65,6 +68,10 @@ TIPOS_MIME = {
 }
 
 
+@extend_schema(
+    parameters=[InformeSerializer],
+    responses={(200, tipo.split(";")[0]): OpenApiTypes.BINARY for tipo in TIPOS_MIME.values()},
+)
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
 def informe_view(request):

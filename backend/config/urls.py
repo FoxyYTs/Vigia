@@ -6,6 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerSplitView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -17,6 +18,10 @@ urlpatterns = [
     path("api/", include("apps.prediccion.urls")),
     path("api/", include("apps.historico.urls")),
     path("api/", include("apps.administracion.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Split: el script de arranque va en un archivo aparte, así lo admite la
+    # CSP de Nginx (script-src 'self', sin inline).
+    path("api/docs/", SpectacularSwaggerSplitView.as_view(url_name="schema"), name="docs"),
 ]
 
 if settings.DEBUG:

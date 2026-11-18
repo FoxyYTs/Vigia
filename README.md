@@ -138,6 +138,14 @@ Ver [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog + SemVer). Las versiones pu
 etiquetas `vX.Y.Z` sobre `main`. El CI (`.github/workflows/ci.yml`) corre pytest, ruff,
 `flutter analyze` y `flutter test` en cada PR.
 
+## API de datos abiertos
+
+La documentación OpenAPI está en `/api/docs/` (Swagger UI) y el esquema en `/api/schema/`
+(en producción: <https://vigia.foxyyts.qzz.io/api/docs/>). Los focos de calor, las zonas
+recurrentes, los incendios reportados a la UNGRD y la capa histórica se consultan sin sesión,
+con un límite de 2.000 consultas por hora por IP. Quien los reutilice debe citar la fuente
+original: la tabla de fuentes y licencias está en la misma documentación.
+
 ## Datos de terceros
 
 Las teselas del mapa son de OpenStreetMap (© OpenStreetMap contributors, ODbL). En producción

@@ -63,13 +63,13 @@ class ReporteCiudadanoSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         return request.build_absolute_uri(url) if request else url
 
-    def get_foto_url(self, obj):
+    def get_foto_url(self, obj) -> str | None:
         return self._url_foto(obj)
 
-    def get_miniatura_url(self, obj):
+    def get_miniatura_url(self, obj) -> str | None:
         return self._url_foto(obj, miniatura=True)
 
-    def get_ubicacion_usuario(self, obj):
+    def get_ubicacion_usuario(self, obj) -> dict | None:
         # Dónde estaba el ciudadano es dato personal: solo lo ven él y los
         # administradores (que ya están limitados a su jurisdicción), no Staff.
         usuario = getattr(self.context.get("request"), "user", None)
@@ -77,10 +77,10 @@ class ReporteCiudadanoSerializer(serializers.ModelSerializer):
             return None
         return _punto(obj.ubicacion_usuario) if obj.ubicacion_usuario else None
 
-    def get_ubicacion_incendio(self, obj):
+    def get_ubicacion_incendio(self, obj) -> dict:
         return _punto(obj.ubicacion_incendio)
 
-    def get_distancia_reportada_km(self, obj):
+    def get_distancia_reportada_km(self, obj) -> float | None:
         distancia = obj.distancia_reportada()
         return None if distancia is None else round(distancia, 3)
 

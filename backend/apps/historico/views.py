@@ -2,7 +2,9 @@ import re
 
 from django.db.models import Count, Max, Min, Sum
 from django.db.models.functions import ExtractYear
-from rest_framework import status, viewsets
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -73,6 +75,15 @@ INDICADORES = {
 }
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter("indicador", enum=list(INDICADORES), required=True),
+        OpenApiParameter("anio", int, required=True),
+    ],
+    responses=inline_serializer(
+        "ValorMunicipio", {"codigo_dane": serializers.CharField(), "valor": serializers.FloatField()}, many=True
+    ),
+)
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def capa_historica(request):
@@ -89,6 +100,12 @@ def capa_historica(request):
     ])
 
 
+@extend_schema(
+    responses=inline_serializer(
+        "AniosDisponibles",
+        {indicador: serializers.ListField(child=serializers.IntegerField()) for indicador in INDICADORES},
+    )
+)
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def capa_historica_disponible(request):
@@ -103,6 +120,7 @@ def capa_historica_disponible(request):
     })
 
 
+@extend_schema(responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
 def resumen_historicos(request):
@@ -138,6 +156,7 @@ def resumen_historicos(request):
     })
 
 
+@extend_schema(request=None, responses={202: inline_serializer("Encolada", {"detail": serializers.CharField()})})
 @api_view(["POST"])
 @permission_classes([EsStaff])
 def sincronizar_ungrd_view(request):
