@@ -14,6 +14,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - App: "Gestionar Informes" en el panel. Descarga el archivo en el navegador o lo abre en la hoja de compartir de Android (share_plus).
 - API: `GET /api/historico/resumen/` (administradores y staff) con lo cargado de cada fuente histórica por año: incendios reportados a la UNGRD (cantidad, hectáreas y los que quedaron sin municipio), deforestación del IDEAM (municipios y hectáreas) y detecciones de NASA FIRMS. `POST /api/historico/ungrd/sincronizar/` (solo staff) encola la tarea `sincronizar_ungrd`.
 - App: "Gestionar Históricos" en el panel, con una tabla por fuente y el botón para actualizar la UNGRD (staff).
+- API: `GET /api/bot-telegram/` (administradores y staff) con el estado del bot (getMe), qué alertas recibe cada canal, los envíos y fallos de los últimos 7 días y los 20 envíos más recientes, sin exponer el token ni los ids de los chats. `POST /api/bot-telegram/probar/` (solo staff) manda un mensaje de prueba a un canal.
+- App: "Gestionar Bot de Telegram" en el panel, con una tarjeta por canal y el botón de prueba (staff).
 
 ### Corregido
 - Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.

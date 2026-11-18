@@ -60,3 +60,11 @@ class Conteo {
         for (final f in filas as List) Conteo((f as Map<String, dynamic>)[campo] as String?, f['cantidad'] as int),
       ];
 }
+
+/// Etiqueta de cada `Alerta.TipoDisparador` del backend.
+const tiposAlerta = {
+  'deteccion_satelital': 'Detección satelital',
+  'coincidencia_geografica': 'Coincidencia geográfica',
+  'acumulacion_reportes': 'Acumulación de reportes',
+  'validacion_manual': 'Validación manual',
+};

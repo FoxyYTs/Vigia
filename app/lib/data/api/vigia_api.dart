@@ -276,6 +276,19 @@ class VigiaApi {
   Future<void> sincronizarUngrd(String access) =>
       _enviar(() => _cliente.post(baseUrl.resolve('historico/ungrd/sincronizar/'), headers: _cabeceras(access)));
 
+  // ---------------------------------------------------------- bot telegram --
+
+  /// Estado del bot y de sus tres canales (sin token ni ids de chat).
+  Future<Map<String, dynamic>> estadoBot(String access) =>
+      _enviar(() => _cliente.get(baseUrl.resolve('bot-telegram/'), headers: _cabeceras(access)));
+
+  /// Mensaje de prueba al [canal] (`telegram_publico|privado|interno`; solo staff).
+  Future<void> probarCanal(String access, String canal) => _enviar(() => _cliente.post(
+        baseUrl.resolve('bot-telegram/probar/'),
+        headers: _cabeceras(access),
+        body: jsonEncode({'canal': canal}),
+      ));
+
   // ------------------------------------------------------------ internos --
 
   Map<String, String> _cabeceras([String? access]) => {

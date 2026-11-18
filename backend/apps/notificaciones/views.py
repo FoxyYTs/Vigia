@@ -1,11 +1,20 @@
+from datetime import timedelta
+from html import escape
+
+import requests
+from django.conf import settings
+from django.db.models import Count, Max, Q
 from django.utils import timezone
-from rest_framework import mixins, viewsets
-from rest_framework.decorators import action
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.notificaciones.despachador import RUTEO, DespachadorNotificaciones, NotificadorTelegram
 from apps.notificaciones.models import Notificacion
 from apps.notificaciones.serializers import NotificacionSerializer
+from apps.usuarios.permissions import EsAdministrador, EsStaff
 
 
 class NotificacionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -25,3 +34,80 @@ class NotificacionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             n.fecha_lectura = timezone.now()
             n.save(update_fields=["estado", "fecha_lectura"])
         return Response(self.get_serializer(n).data)
+
+
+def _bot():
+    """Nombre del bot según Telegram (getMe), o None si el token falta o no sirve."""
+    if not settings.TELEGRAM_BOT_TOKEN:
+        return None
+    try:
+        r = requests.get(f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/getMe", timeout=5)
+        return r.json()["result"]["username"] if r.ok else None
+    except (requests.RequestException, ValueError, KeyError):
+        return None
+
+
+@api_view(["GET"])
+@permission_classes([EsAdministrador | EsStaff])
+def estado_bot(request):
+    """"Gestionar Bot de Telegram": si el bot responde, qué alertas recibe cada
+    canal y cómo van los envíos. Nunca expone el token ni los ids de los chats."""
+    desde = timezone.now() - timedelta(days=7)
+    telegram = Notificacion.objects.exclude(canal=Notificacion.Canal.PUSH_APP)
+    envios = {
+        f["canal"]: f
+        for f in telegram.values("canal").annotate(
+            enviados=Count("id", filter=Q(estado=Notificacion.Estado.ENVIADO, fecha_envio__gte=desde)),
+            fallidos=Count("id", filter=Q(estado=Notificacion.Estado.FALLIDO, fecha_envio__gte=desde)),
+            ultimo=Max("fecha_envio", filter=Q(estado=Notificacion.Estado.ENVIADO)),
+        )
+    }
+    canales = []
+    for canal, ajuste in DespachadorNotificaciones.DESTINOS.items():
+        e = envios.get(canal, {})
+        canales.append({
+            "canal": canal,
+            "nombre": Notificacion.Canal(canal).label,
+            "configurado": bool(getattr(settings, ajuste)),
+            "alertas": [tipo for tipo, destinos in RUTEO.items() if canal in destinos],
+            "enviados_7d": e.get("enviados", 0),
+            "fallidos_7d": e.get("fallidos", 0),
+            "ultimo_envio": e.get("ultimo"),
+        })
+    recientes = telegram.select_related("alerta__municipio")[:20]
+    return Response({
+        "bot": _bot(),
+        "token_configurado": bool(settings.TELEGRAM_BOT_TOKEN),
+        "canales": canales,
+        "recientes": [
+            {
+                "fecha_envio": n.fecha_envio,
+                "canal": n.canal,
+                "estado": n.estado,
+                "tipo_alerta": n.alerta.tipo_disparador,
+                "municipio": n.alerta.municipio.nombre if n.alerta.municipio else None,
+            }
+            for n in recientes
+        ],
+    })
+
+
+@api_view(["POST"])
+@permission_classes([EsStaff])
+def probar_canal(request):
+    """Envía un mensaje de prueba al canal `canal` para comprobar que el bot
+    puede publicar ahí. No crea una Notificacion: no hay alerta detrás."""
+    canal = request.data.get("canal")
+    if canal not in DespachadorNotificaciones.DESTINOS:
+        raise ValidationError({"canal": f"Uno de: {', '.join(DespachadorNotificaciones.DESTINOS)}."})
+    destino = getattr(settings, DespachadorNotificaciones.DESTINOS[canal])
+    texto = (
+        "🧪 <b>Mensaje de prueba de Vigía</b>\n"
+        f"Enviado por {escape(request.user.username)} desde Gestionar Bot de Telegram."
+    )
+    if not NotificadorTelegram().enviar_texto(destino, texto, f"la prueba del canal {canal}"):
+        return Response(
+            {"detail": "Telegram no aceptó el mensaje: revisa el token y el id del canal."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+    return Response({"detail": "Mensaje de prueba enviado."})

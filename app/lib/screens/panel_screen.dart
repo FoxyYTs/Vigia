@@ -7,6 +7,7 @@ import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
+import 'bot_telegram_screen.dart';
 import 'estadisticas_screen.dart';
 import 'historicos_screen.dart';
 import 'informes_screen.dart';
@@ -15,8 +16,8 @@ import 'rutas.dart';
 
 /// Bloques "Gestionar X" que cuelgan de "Iniciar Sesión" en el mapa de
 /// navegación. "Gestionar Usuario" (perfil de `/api/auth/yo/`), "Reportar
-/// Focos", "Estadísticas", "Históricos" e "Informes" ya funcionan; los demás se habilitan
-/// en los incrementos siguientes. El ciudadano solo ve los bloques que puede
+/// Focos", "Estadísticas", "Históricos", "Informes" y "Bot de Telegram" ya
+/// funcionan; "Gestionar Permisos" se habilita en el siguiente incremento. El ciudadano solo ve los bloques que puede
 /// usar: los de gestión son para administradores y staff.
 class PanelScreen extends StatelessWidget {
   const PanelScreen({super.key});
@@ -26,7 +27,7 @@ class PanelScreen extends StatelessWidget {
     (Icons.query_stats, EstadisticasScreen.titulo, 'Estadísticas de incidentes por región y periodo.', Rutas.estadisticas, true),
     (Icons.history, HistoricosScreen.titulo, 'Históricos de deforestación (IDEAM, UNGRD) e incendios (FIRMS).', Rutas.historicos, true),
     (Icons.description_outlined, InformesScreen.titulo, 'Informes de apoyo a la decisión en CSV, Excel y PDF.', Rutas.informes, true),
-    (Icons.send_outlined, 'Gestionar Bot de Telegram', 'Canales público, privado e interno de alertas.', null, true),
+    (Icons.send_outlined, BotTelegramScreen.titulo, 'Canales público, privado e interno de alertas.', Rutas.botTelegram, true),
   ];
 
   @override
