@@ -5,7 +5,8 @@
 ///        └─ Iniciar Sesión              (/login)
 ///             └─ Gestionar X (panel)     (/panel  requiere sesión)
 ///                  ├─ Reportar Focos     (/reportes)
-///                  └─ Estadísticas       (/estadisticas)
+///                  ├─ Estadísticas       (/estadisticas)
+///                  └─ Informes           (/informes)
 /// ```
 class Rutas {
   const Rutas._();
@@ -15,4 +16,5 @@ class Rutas {
   static const panel = '/panel';
   static const reportes = '/reportes';
   static const estadisticas = '/estadisticas';
+  static const informes = '/informes';
 }

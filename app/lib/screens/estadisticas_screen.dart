@@ -232,8 +232,8 @@ class _Barras extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (dias.isEmpty) return const Text('Sin detecciones.', style: TextStyle(color: VigiaColors.textoSecundario));
-    final maximo = dias.map((d) => d.cantidad).reduce((a, b) => a > b ? a : b);
+    final maximo = dias.fold(0, (m, d) => d.cantidad > m ? d.cantidad : m);
+    if (maximo == 0) return const Text('Sin detecciones.', style: TextStyle(color: VigiaColors.textoSecundario));
     final pico = dias.firstWhere((d) => d.cantidad == maximo);
     return Semantics(
       label: 'Máximo de ${Formato.entero(maximo)} detecciones el ${Formato.fecha(DateTime.parse(pico.clave!))}',

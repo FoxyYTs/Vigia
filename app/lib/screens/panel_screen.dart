@@ -8,13 +8,14 @@ import '../providers/auth_provider.dart';
 import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
 import 'estadisticas_screen.dart';
+import 'informes_screen.dart';
 import 'reportes_screen.dart';
 import 'rutas.dart';
 
 /// Bloques "Gestionar X" que cuelgan de "Iniciar Sesión" en el mapa de
 /// navegación. "Gestionar Usuario" (perfil de `/api/auth/yo/`), "Reportar
-/// Focos" y "Estadísticas" ya funcionan; los demás se habilitan en los
-/// incrementos siguientes.
+/// Focos", "Estadísticas" e "Informes" ya funcionan; los demás se habilitan
+/// en los incrementos siguientes.
 class PanelScreen extends StatelessWidget {
   const PanelScreen({super.key});
 
@@ -22,7 +23,7 @@ class PanelScreen extends StatelessWidget {
     (Icons.add_a_photo_outlined, ReportesScreen.titulo, 'Reporte con foto tomada en el momento y ubicación del incendio.', Rutas.reportes),
     (Icons.query_stats, EstadisticasScreen.titulo, 'Estadísticas de incidentes por región y periodo.', Rutas.estadisticas),
     (Icons.history, 'Gestionar Históricos', 'Históricos de deforestación (IDEAM, UNGRD) e incendios (FIRMS).', null),
-    (Icons.description_outlined, 'Gestionar Informes', 'Informes de apoyo a la decisión en CSV, Excel y PDF.', null),
+    (Icons.description_outlined, InformesScreen.titulo, 'Informes de apoyo a la decisión en CSV, Excel y PDF.', Rutas.informes),
     (Icons.send_outlined, 'Gestionar Bot de Telegram', 'Canales público, privado e interno de alertas.', null),
   ];
 

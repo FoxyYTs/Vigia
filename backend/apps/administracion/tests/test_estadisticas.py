@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import date, datetime, UTC
 
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
@@ -67,9 +67,10 @@ def test_staff_ve_todo_el_pais(api_como, staff, datos):
         {"clave": "Antioquia", "cantidad": 3},
         {"clave": "Norte de Santander", "cantidad": 3},
     ]
-    assert [(str(d["dia"]), d["cantidad"]) for d in focos["por_dia"]] == [
-        ("2026-09-02", 2), ("2026-09-03", 1), ("2026-09-15", 2), ("2026-09-30", 1),
-    ]
+    por_dia = {str(d["dia"]): d["cantidad"] for d in focos["por_dia"] if d["cantidad"]}
+    assert por_dia == {"2026-09-02": 2, "2026-09-03": 1, "2026-09-15": 2, "2026-09-30": 1}
+    # Los días sin focos también van, con 0, para que el gráfico no junte días.
+    assert len(focos["por_dia"]) == 30 and focos["por_dia"][0] == {"dia": date(2026, 9, 1), "cantidad": 0}
     assert r.data["alertas"]["total"] == 2
     assert r.data["reportes"]["total"] == 2
 
