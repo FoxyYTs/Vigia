@@ -1,7 +1,8 @@
 import re
 
-from django.db.models import Count, Sum
-from rest_framework import viewsets
+from django.db.models import Count, Max, Min, Sum
+from django.db.models.functions import ExtractYear
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -9,6 +10,9 @@ from rest_framework.response import Response
 
 from apps.historico.models import HistoricoDeforestacion, IncendioReportado
 from apps.historico.serializers import IncendioReportadoSerializer
+from apps.historico.tasks import sincronizar_ungrd
+from apps.satelital.models import FocoIncendio
+from apps.usuarios.permissions import EsAdministrador, EsStaff
 
 
 def _anio(texto: str) -> int:
@@ -97,3 +101,46 @@ def capa_historica_disponible(request):
             HistoricoDeforestacion.objects.order_by("anio").values_list("anio", flat=True).distinct()
         ),
     })
+
+
+@api_view(["GET"])
+@permission_classes([EsAdministrador | EsStaff])
+def resumen_historicos(request):
+    """"Gestionar Históricos": qué hay cargado de cada fuente, por año. Son
+    datos nacionales y públicos, así que no se limitan por jurisdicción."""
+    ungrd = IncendioReportado.objects
+    fechas = ungrd.aggregate(desde=Min("fecha"), hasta=Max("fecha"))
+    firms = FocoIncendio.objects.filter(fuente=FocoIncendio.Fuente.NASA_FIRMS)
+    return Response({
+        "ungrd": {
+            "total": ungrd.count(),
+            "sin_municipio": ungrd.filter(municipio=None).count(),
+            **fechas,
+            "por_anio": list(
+                ungrd.annotate(anio=ExtractYear("fecha")).values("anio")
+                .annotate(cantidad=Count("id"), hectareas=Sum("hectareas")).order_by("anio")
+            ),
+        },
+        "ideam": {
+            "por_anio": list(
+                HistoricoDeforestacion.objects.values("anio")
+                .annotate(municipios=Count("municipio", distinct=True), hectareas=Sum("hectareas_afectadas"))
+                .order_by("anio")
+            ),
+        },
+        "firms": {
+            "total": firms.count(),
+            "por_anio": list(
+                firms.annotate(anio=ExtractYear("fecha_hora")).values("anio")
+                .annotate(cantidad=Count("id")).order_by("anio")
+            ),
+        },
+    })
+
+
+@api_view(["POST"])
+@permission_classes([EsStaff])
+def sincronizar_ungrd_view(request):
+    """Descarga en segundo plano los incendios nuevos de la UNGRD (datos.gov.co)."""
+    sincronizar_ungrd.delay()
+    return Response({"detail": "Actualización de la UNGRD en curso."}, status=status.HTTP_202_ACCEPTED)

@@ -12,6 +12,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - App: "Gestionar Estadísticas" en el panel, con periodos de 7, 30, 90 y 365 días.
 - API: `GET /api/informes/?formato=pdf|xlsx|csv&desde=&hasta=` (`ExportadorDatos`, UC8) con los mismos permisos y jurisdicción que las estadísticas. PDF: informe de apoyo a la decisión (resumen, hasta un año). Excel: hoja de resumen y detalle de focos, alertas y reportes. CSV: detalle de un conjunto (`conjunto=focos|alertas|reportes`). El detalle admite hasta 92 días. Los reportes salen sin el usuario que reportó, y el texto que empieza por `=`, `+`, `-` o `@` se neutraliza para que Excel no lo ejecute como fórmula.
 - App: "Gestionar Informes" en el panel. Descarga el archivo en el navegador o lo abre en la hoja de compartir de Android (share_plus).
+- API: `GET /api/historico/resumen/` (administradores y staff) con lo cargado de cada fuente histórica por año: incendios reportados a la UNGRD (cantidad, hectáreas y los que quedaron sin municipio), deforestación del IDEAM (municipios y hectáreas) y detecciones de NASA FIRMS. `POST /api/historico/ungrd/sincronizar/` (solo staff) encola la tarea `sincronizar_ungrd`.
+- App: "Gestionar Históricos" en el panel, con una tabla por fuente y el botón para actualizar la UNGRD (staff).
 
 ### Corregido
 - Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.
