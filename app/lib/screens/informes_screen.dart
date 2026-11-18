@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -65,7 +66,8 @@ class _InformesScreenState extends State<InformesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text(InformesScreen.titulo)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        // Centrado y con ancho máximo en pantallas anchas.
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 800) / 2)),
         children: [
           const Text('Periodo (hasta hoy)', style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),

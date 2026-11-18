@@ -15,6 +15,9 @@ enum Rol {
 
   static Rol desdeApi(String? valor) =>
       values.firstWhere((r) => r.valorApi == valor, orElse: () => Rol.desconocido);
+
+  /// Administra Vigía (estadísticas, informes, históricos, bot, permisos).
+  bool get gestiona => this == administrador || this == staff;
 }
 
 /// Par de tokens de simplejwt.

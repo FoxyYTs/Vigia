@@ -152,6 +152,21 @@ void main() {
       expect(find.text('PANEL'), findsOneWidget);
     });
 
+    testWidgets('las páginas de gestión no se abren como ciudadano, pero sí como staff', (t) async {
+      final api = _api(() => _json({}));
+      for (final (rol, ve) in [('ciudadano', false), ('staff', true)]) {
+        final auth = AuthProvider(api: api, almacen: await _almacenCon(jwtFalso(rol: rol)));
+        await auth.restaurar();
+        await t.pumpWidget(MultiProvider(
+          providers: [Provider.value(value: api), ChangeNotifierProvider.value(value: auth)],
+          child: MaterialApp(key: ValueKey(rol), home: const RequiereSesion(gestion: true, child: Text('INFORMES'))),
+        ));
+
+        expect(find.text('INFORMES'), ve ? findsOneWidget : findsNothing, reason: rol);
+        expect(find.text('No tienes permiso para ver esta página.'), ve ? findsNothing : findsOneWidget, reason: rol);
+      }
+    });
+
     testWidgets('mientras verifica muestra un indicador de carga', (t) async {
       final api = _api(() => _json({}));
       await montar(t, AuthProvider(api: api, almacen: AlmacenTokensMemoria()), api);

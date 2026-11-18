@@ -15,6 +15,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ### Corregido
 - Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.
+- Estadísticas: nuevo diseño en tarjetas (totales, gráfico por día con fechas y secciones en dos columnas), con ancho máximo en pantallas anchas.
+- El ciudadano ya no ve ni abre los bloques de gestión (estadísticas, informes, históricos, bot y permisos).
 
 ## [0.5.0] — 2026-11-17 · Reportes ciudadanos (I5)
 

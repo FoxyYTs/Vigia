@@ -54,8 +54,8 @@ class VigiaApp extends StatelessWidget {
             Rutas.login => const LoginScreen(),
             Rutas.panel => const RequiereSesion(child: PanelScreen()),
             Rutas.reportes => const RequiereSesion(child: ReportesScreen()),
-            Rutas.estadisticas => const RequiereSesion(child: EstadisticasScreen()),
-            Rutas.informes => const RequiereSesion(child: InformesScreen()),
+            Rutas.estadisticas => const RequiereSesion(gestion: true, child: EstadisticasScreen()),
+            Rutas.informes => const RequiereSesion(gestion: true, child: InformesScreen()),
             _ => const MapaScreen(),
           },
         ),
@@ -66,8 +66,10 @@ class VigiaApp extends StatelessWidget {
 
 /// El panel cuelga de "Iniciar Sesión": sin sesión se muestra el login.
 class RequiereSesion extends StatelessWidget {
-  const RequiereSesion({super.key, required this.child});
+  const RequiereSesion({super.key, this.gestion = false, required this.child});
 
+  /// Solo para administradores y staff (el ciudadano ni ve el bloque).
+  final bool gestion;
   final Widget child;
 
   @override
@@ -76,6 +78,10 @@ class RequiereSesion extends StatelessWidget {
     return switch (auth.estado) {
       EstadoSesion.verificando => const Scaffold(body: Center(child: CircularProgressIndicator())),
       EstadoSesion.anonima => const LoginScreen(),
+      EstadoSesion.autenticada when gestion && !auth.rol.gestiona => Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: Text('No tienes permiso para ver esta página.')),
+        ),
       EstadoSesion.autenticada => child,
     };
   }
