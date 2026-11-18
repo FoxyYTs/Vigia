@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Respaldo diario de la base de datos de Vigía (corre en el servidor por cron).
 # Guarda un pg_dump comprimido y conserva los últimos 14 días.
-#   crontab:  30 2 * * *  $HOME/Vigia/scripts/respaldar_bd.sh >> $HOME/backups/vigia/respaldo.log 2>&1
+#   crontab (una vez al día):  $HOME/Vigia/scripts/respaldar_bd.sh >> "$HOME/respaldo.log" 2>&1
 set -euo pipefail
 
 DIR_VIGIA="${DIR_VIGIA:-$HOME/Vigia}"

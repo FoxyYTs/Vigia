@@ -4,6 +4,7 @@
 /// Vigía ─┬─ Mapa Interactivo            (/       público)
 ///        └─ Iniciar Sesión              (/login)
 ///             └─ Gestionar X (panel)     (/panel  requiere sesión)
+///                  └─ Reportar Focos     (/reportes)
 /// ```
 class Rutas {
   const Rutas._();
@@ -11,4 +12,5 @@ class Rutas {
   static const mapa = '/';
   static const login = '/login';
   static const panel = '/panel';
+  static const reportes = '/reportes';
 }

@@ -110,7 +110,8 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   y la jurisdicción de Cornare.
 - ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (247 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
 - 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
-  JWT y panel (ver `app/README.md`). Faltan los reportes ciudadanos y el panel de administración.
+  JWT, panel y reportes ciudadanos (foto con cámara, GPS y pin; validación por el administrador).
+  Ver `app/README.md`. Falta el panel de administración (I6).
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
   (canales público, privado e interno según la certeza de la alerta). Demo en vivo:
   `python manage.py simular_alertas` (y `--limpiar` para borrarla). El push (FCM) llega con la app móvil.

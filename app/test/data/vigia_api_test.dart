@@ -157,4 +157,18 @@ void main() {
     expect(enviada.headers['Authorization'], 'Bearer tok');
     expect(usuario.rol, Rol.staff);
   });
+
+  test('descargarFoto pide la ruta a la API aunque el backend devuelva otro host', () async {
+    late http.Request enviada;
+    final api = _api((r) async {
+      enviada = r;
+      return http.Response.bytes([1, 2, 3], 200);
+    });
+
+    final bytes = await api.descargarFoto('tok', 'http://localhost/api/reportes/7/foto/?miniatura=1');
+
+    expect(enviada.url.toString(), 'https://vigia.test/api/reportes/7/foto/?miniatura=1');
+    expect(enviada.headers['Authorization'], 'Bearer tok');
+    expect(bytes, [1, 2, 3]);
+  });
 }

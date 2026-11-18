@@ -7,21 +7,21 @@ import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
+import 'reportes_screen.dart';
 import 'rutas.dart';
 
 /// Bloques "Gestionar X" que cuelgan de "Iniciar Sesión" en el mapa de
-/// navegación. En este incremento solo "Gestionar Usuario" muestra datos
-/// reales (el perfil de `/api/auth/yo/`); los demás se habilitan en los
-/// incrementos siguientes del cronograma.
+/// navegación. "Gestionar Usuario" (perfil de `/api/auth/yo/`) y "Reportar
+/// Focos" ya funcionan; los demás se habilitan en los incrementos siguientes.
 class PanelScreen extends StatelessWidget {
   const PanelScreen({super.key});
 
   static const _bloques = [
-    (Icons.add_a_photo_outlined, 'Gestionar Reportar Focos de Incendios', 'Reporte con foto tomada en el momento y ubicación del incendio.'),
-    (Icons.query_stats, 'Gestionar Estadísticas', 'Estadísticas de incidentes por región y periodo.'),
-    (Icons.history, 'Gestionar Históricos', 'Históricos de deforestación (IDEAM, UNGRD) e incendios (FIRMS).'),
-    (Icons.description_outlined, 'Gestionar Informes', 'Informes de apoyo a la decisión en CSV, Excel y PDF.'),
-    (Icons.send_outlined, 'Gestionar Bot de Telegram', 'Canales público, privado e interno de alertas.'),
+    (Icons.add_a_photo_outlined, ReportesScreen.titulo, 'Reporte con foto tomada en el momento y ubicación del incendio.', Rutas.reportes),
+    (Icons.query_stats, 'Gestionar Estadísticas', 'Estadísticas de incidentes por región y periodo.', null),
+    (Icons.history, 'Gestionar Históricos', 'Históricos de deforestación (IDEAM, UNGRD) e incendios (FIRMS).', null),
+    (Icons.description_outlined, 'Gestionar Informes', 'Informes de apoyo a la decisión en CSV, Excel y PDF.', null),
+    (Icons.send_outlined, 'Gestionar Bot de Telegram', 'Canales público, privado e interno de alertas.', null),
   ];
 
   @override
@@ -80,8 +80,8 @@ class PanelScreen extends StatelessWidget {
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      for (final (icono, titulo, detalle) in _bloques)
-                        SizedBox(width: 340, child: _BloquePendiente(icono, titulo, detalle)),
+                      for (final (icono, titulo, detalle, ruta) in _bloques)
+                        SizedBox(width: 340, child: _Bloque(icono, titulo, detalle, ruta)),
                     ],
                   ),
                 ],
@@ -197,32 +197,39 @@ class _Dato extends StatelessWidget {
       );
 }
 
-class _BloquePendiente extends StatelessWidget {
-  const _BloquePendiente(this.icono, this.titulo, this.detalle);
+/// Bloque "Gestionar X": abre su pantalla si ya tiene [ruta]; si no, queda
+/// rotulado como próximo incremento.
+class _Bloque extends StatelessWidget {
+  const _Bloque(this.icono, this.titulo, this.detalle, this.ruta);
 
   final IconData icono;
   final String titulo;
   final String detalle;
+  final String? ruta;
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icono, color: VigiaColors.textoSecundario),
-                  const Spacer(),
-                  const ProximoIncremento(),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-              const SizedBox(height: 4),
-              Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
-            ],
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: ruta == null ? null : () => Navigator.of(context).pushNamed(ruta!),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icono, color: ruta == null ? VigiaColors.textoSecundario : VigiaColors.bosque),
+                    const Spacer(),
+                    if (ruta == null) const ProximoIncremento() else const Icon(Icons.arrow_forward),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+              ],
+            ),
           ),
         ),
       );
