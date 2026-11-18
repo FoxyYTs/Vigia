@@ -266,6 +266,16 @@ class VigiaApi {
     return (bytes: r.bodyBytes, nombre: nombre ?? 'vigia-informe.$formato');
   }
 
+  // ------------------------------------------------------------ historicos --
+
+  /// Qué hay cargado de cada fuente histórica (UNGRD, IDEAM y FIRMS), por año.
+  Future<Map<String, dynamic>> resumenHistoricos(String access) =>
+      _enviar(() => _cliente.get(baseUrl.resolve('historico/resumen/'), headers: _cabeceras(access)));
+
+  /// Encola la descarga de los incendios nuevos de la UNGRD (solo staff).
+  Future<void> sincronizarUngrd(String access) =>
+      _enviar(() => _cliente.post(baseUrl.resolve('historico/ungrd/sincronizar/'), headers: _cabeceras(access)));
+
   // ------------------------------------------------------------ internos --
 
   Map<String, String> _cabeceras([String? access]) => {

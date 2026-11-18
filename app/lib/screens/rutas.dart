@@ -6,6 +6,7 @@
 ///             └─ Gestionar X (panel)     (/panel  requiere sesión)
 ///                  ├─ Reportar Focos     (/reportes)
 ///                  ├─ Estadísticas       (/estadisticas)
+///                  ├─ Históricos         (/historicos)
 ///                  └─ Informes           (/informes)
 /// ```
 class Rutas {
@@ -17,4 +18,5 @@ class Rutas {
   static const reportes = '/reportes';
   static const estadisticas = '/estadisticas';
   static const informes = '/informes';
+  static const historicos = '/historicos';
 }
