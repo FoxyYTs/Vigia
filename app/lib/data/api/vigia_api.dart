@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../models/estadisticas.dart';
 import '../models/foco.dart';
 import '../models/historico.dart';
 import '../models/reporte.dart';
@@ -229,6 +230,15 @@ class VigiaApi {
       throw ApiException('La foto ya no está disponible.', status: respuesta.statusCode);
     }
     return respuesta.bodyBytes;
+  }
+
+  // --------------------------------------------------------- estadisticas --
+
+  /// Focos, alertas y reportes de [desde] a [hasta] (ambos inclusivos).
+  Future<Estadisticas> estadisticas(String access, {required DateTime desde, required DateTime hasta}) async {
+    String dia(DateTime d) => d.toIso8601String().substring(0, 10);
+    final uri = baseUrl.resolve('estadisticas/').replace(queryParameters: {'desde': dia(desde), 'hasta': dia(hasta)});
+    return Estadisticas.fromJson(await _enviar(() => _cliente.get(uri, headers: _cabeceras(access))));
   }
 
   // ------------------------------------------------------------ internos --
