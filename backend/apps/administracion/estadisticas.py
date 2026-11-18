@@ -40,8 +40,10 @@ def _contar(qs, campo):
     ]
 
 
-def calcular(desde: date, hasta: date, municipios=None) -> dict:
-    """[desde, hasta] inclusivo, en hora de Colombia."""
+def consultas(desde: date, hasta: date, municipios=None):
+    """Focos, alertas y reportes de [desde, hasta] (inclusivo, hora de
+    Colombia), limitados a [municipios] si no es None. Los usan también los
+    informes, para que cuenten exactamente lo mismo."""
     zona = timezone.get_current_timezone()
     inicio = datetime.combine(desde, time.min, zona)
     fin = datetime.combine(hasta + timedelta(days=1), time.min, zona)
@@ -57,8 +59,20 @@ def calcular(desde: date, hasta: date, municipios=None) -> dict:
         focos = focos.filter(_en(municipios, "punto"))
         alertas = alertas.filter(municipio__in=municipios)
         reportes = reportes.filter(_en(municipios, "punto"))
+    return focos, alertas, reportes
 
-    departamento = Municipio.objects.filter(geom__contains=OuterRef("punto")).values("departamento")[:1]
+
+def municipio_del_punto():
+    """Subconsulta del municipio que contiene `punto` (anotado por `consultas`)."""
+    return Municipio.objects.filter(geom__contains=OuterRef("punto"))
+
+
+def calcular(desde: date, hasta: date, municipios=None) -> dict:
+    """Resumen del periodo, con los mismos filtros de `consultas`."""
+    zona = timezone.get_current_timezone()
+    focos, alertas, reportes = consultas(desde, hasta, municipios)
+
+    departamento = municipio_del_punto().values("departamento")[:1]
     por_departamento = _contar(focos.annotate(departamento=Subquery(departamento)), "departamento")
     por_dia = (
         focos.annotate(dia=TruncDate("fecha_hora", tzinfo=zona))
@@ -66,6 +80,7 @@ def calcular(desde: date, hasta: date, municipios=None) -> dict:
         .annotate(cantidad=Count("id"))
         .order_by("dia")
     )
+    conteo_dia = {f["dia"]: f["cantidad"] for f in por_dia}
 
     return {
         "desde": desde,
@@ -76,7 +91,12 @@ def calcular(desde: date, hasta: date, municipios=None) -> dict:
             "por_fuente": _contar(focos, "fuente"),
             # clave None: foco fuera de los municipios con polígono (mar, frontera).
             "por_departamento": por_departamento,
-            "por_dia": [{"dia": f["dia"], "cantidad": f["cantidad"]} for f in por_dia],
+            # Todos los días del periodo, con 0 donde no hubo: sin eso, el
+            # gráfico juntaba días separados por huecos.
+            "por_dia": [
+                {"dia": desde + timedelta(days=i), "cantidad": conteo_dia.get(desde + timedelta(days=i), 0)}
+                for i in range((hasta - desde).days + 1)
+            ],
         },
         "alertas": {
             "total": alertas.count(),

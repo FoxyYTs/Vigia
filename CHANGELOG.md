@@ -10,6 +10,13 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 ### Agregado
 - API: `GET /api/estadisticas/?desde=&hasta=` (I6, #16) con detecciones satelitales por fuente, departamento y día, alertas por disparador y reportes por estado. Solo para administradores y staff; el administrador de una entidad con polígonos ve solo su jurisdicción. Periodo máximo de 366 días.
 - App: "Gestionar Estadísticas" en el panel, con periodos de 7, 30, 90 y 365 días.
+- API: `GET /api/informes/?formato=pdf|xlsx|csv&desde=&hasta=` (`ExportadorDatos`, UC8) con los mismos permisos y jurisdicción que las estadísticas. PDF: informe de apoyo a la decisión (resumen, hasta un año). Excel: hoja de resumen y detalle de focos, alertas y reportes. CSV: detalle de un conjunto (`conjunto=focos|alertas|reportes`). El detalle admite hasta 92 días. Los reportes salen sin el usuario que reportó, y el texto que empieza por `=`, `+`, `-` o `@` se neutraliza para que Excel no lo ejecute como fórmula.
+- App: "Gestionar Informes" en el panel. Descarga el archivo en el navegador o lo abre en la hoja de compartir de Android (share_plus).
+
+### Corregido
+- Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.
+- Estadísticas: nuevo diseño en tarjetas (totales, gráfico por día con fechas y secciones en dos columnas), con ancho máximo en pantallas anchas.
+- El ciudadano ya no ve ni abre los bloques de gestión (estadísticas, informes, históricos, bot y permisos).
 
 ## [0.5.0] — 2026-11-17 · Reportes ciudadanos (I5)
 

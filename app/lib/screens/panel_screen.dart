@@ -8,22 +8,24 @@ import '../providers/auth_provider.dart';
 import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
 import 'estadisticas_screen.dart';
+import 'informes_screen.dart';
 import 'reportes_screen.dart';
 import 'rutas.dart';
 
 /// Bloques "Gestionar X" que cuelgan de "Iniciar Sesión" en el mapa de
 /// navegación. "Gestionar Usuario" (perfil de `/api/auth/yo/`), "Reportar
-/// Focos" y "Estadísticas" ya funcionan; los demás se habilitan en los
-/// incrementos siguientes.
+/// Focos", "Estadísticas" e "Informes" ya funcionan; los demás se habilitan
+/// en los incrementos siguientes. El ciudadano solo ve los bloques que puede
+/// usar: los de gestión son para administradores y staff.
 class PanelScreen extends StatelessWidget {
   const PanelScreen({super.key});
 
   static const _bloques = [
-    (Icons.add_a_photo_outlined, ReportesScreen.titulo, 'Reporte con foto tomada en el momento y ubicación del incendio.', Rutas.reportes),
-    (Icons.query_stats, EstadisticasScreen.titulo, 'Estadísticas de incidentes por región y periodo.', Rutas.estadisticas),
-    (Icons.history, 'Gestionar Históricos', 'Históricos de deforestación (IDEAM, UNGRD) e incendios (FIRMS).', null),
-    (Icons.description_outlined, 'Gestionar Informes', 'Informes de apoyo a la decisión en CSV, Excel y PDF.', null),
-    (Icons.send_outlined, 'Gestionar Bot de Telegram', 'Canales público, privado e interno de alertas.', null),
+    (Icons.add_a_photo_outlined, ReportesScreen.titulo, 'Reporte con foto tomada en el momento y ubicación del incendio.', Rutas.reportes, false),
+    (Icons.query_stats, EstadisticasScreen.titulo, 'Estadísticas de incidentes por región y periodo.', Rutas.estadisticas, true),
+    (Icons.history, 'Gestionar Históricos', 'Históricos de deforestación (IDEAM, UNGRD) e incendios (FIRMS).', null, true),
+    (Icons.description_outlined, InformesScreen.titulo, 'Informes de apoyo a la decisión en CSV, Excel y PDF.', Rutas.informes, true),
+    (Icons.send_outlined, 'Gestionar Bot de Telegram', 'Canales público, privado e interno de alertas.', null, true),
   ];
 
   @override
@@ -82,8 +84,9 @@ class PanelScreen extends StatelessWidget {
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      for (final (icono, titulo, detalle, ruta) in _bloques)
-                        SizedBox(width: 340, child: _Bloque(icono, titulo, detalle, ruta)),
+                      for (final (icono, titulo, detalle, ruta, gestion) in _bloques)
+                        if (!gestion || auth.rol.gestiona)
+                          SizedBox(width: 340, child: _Bloque(icono, titulo, detalle, ruta)),
                     ],
                   ),
                 ],
@@ -154,26 +157,28 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
                 ),
                 const SizedBox(height: 16),
                 contenido,
-                const Divider(height: 32),
                 // Única subpágina del mapa de navegación:
                 // Gestionar Usuario → Gestionar Permisos.
-                const Row(
-                  children: [
-                    Icon(Icons.admin_panel_settings_outlined, color: VigiaColors.textoSecundario),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Gestionar Permisos', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                          Text('Roles y permisos de los usuarios de cada entidad.',
-                              style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
-                        ],
+                if (context.watch<AuthProvider>().rol.gestiona) ...[
+                  const Divider(height: 32),
+                  const Row(
+                    children: [
+                      Icon(Icons.admin_panel_settings_outlined, color: VigiaColors.textoSecundario),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Gestionar Permisos', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                            Text('Roles y permisos de los usuarios de cada entidad.',
+                                style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                          ],
+                        ),
                       ),
-                    ),
-                    ProximoIncremento(),
-                  ],
-                ),
+                      ProximoIncremento(),
+                    ],
+                  ),
+                ],
               ],
             );
           },

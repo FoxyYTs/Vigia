@@ -16,40 +16,55 @@ import '../helpers/jwt_falso.dart';
 http.Response _json(Object cuerpo) =>
     http.Response.bytes(utf8.encode(jsonEncode(cuerpo)), 200, headers: {'content-type': 'application/json'});
 
+Future<void> _abrirPanel(WidgetTester t, String rol) async {
+  t.view.physicalSize = const Size(1280, 1400);
+  t.view.devicePixelRatio = 1;
+  addTearDown(t.view.reset);
+
+  final api = VigiaApi(
+    baseUrl: Uri.parse('https://vigia.test/api/'),
+    cliente: MockClient((r) async => r.url.path.endsWith('auth/token/')
+        ? _json({'access': jwtFalso(username: 'ana', rol: rol), 'refresh': 'r'})
+        : _json({'id': 1, 'username': 'ana', 'email': 'ana@vigia.test', 'rol': rol})),
+  );
+  final auth = AuthProvider(api: api, almacen: AlmacenTokensMemoria());
+  await auth.iniciarSesion('ana', 'clave');
+
+  await t.pumpWidget(MultiProvider(
+    providers: [Provider.value(value: api), ChangeNotifierProvider.value(value: auth)],
+    child: const MaterialApp(home: PanelScreen()),
+  ));
+  await t.pumpAndSettle();
+}
+
+const _gestion = [
+  'Gestionar Permisos',
+  'Gestionar Estadísticas',
+  'Gestionar Históricos',
+  'Gestionar Informes',
+  'Gestionar Bot de Telegram',
+];
+
 void main() {
-  testWidgets('el panel muestra los bloques del mapa de navegación, incluido Gestionar Permisos', (t) async {
-    t.view.physicalSize = const Size(1280, 1400);
-    t.view.devicePixelRatio = 1;
-    addTearDown(t.view.reset);
+  testWidgets('el ciudadano solo ve los bloques que puede usar', (t) async {
+    await _abrirPanel(t, 'ciudadano');
 
-    final api = VigiaApi(
-      baseUrl: Uri.parse('https://vigia.test/api/'),
-      cliente: MockClient((r) async => r.url.path.endsWith('auth/token/')
-          ? _json({'access': jwtFalso(username: 'ana'), 'refresh': 'r'})
-          : _json({'id': 1, 'username': 'ana', 'email': 'ana@vigia.test', 'rol': 'ciudadano'})),
-    );
-    final auth = AuthProvider(api: api, almacen: AlmacenTokensMemoria());
-    await auth.iniciarSesion('ana', 'clave');
+    expect(find.text('Gestionar Usuario'), findsOneWidget);
+    expect(find.text('Gestionar Reportar Focos de Incendios'), findsOneWidget);
+    for (final bloque in _gestion) {
+      expect(find.text(bloque), findsNothing, reason: bloque);
+    }
+    expect(find.text('ana@vigia.test'), findsOneWidget);
+  });
 
-    await t.pumpWidget(MultiProvider(
-      providers: [Provider.value(value: api), ChangeNotifierProvider.value(value: auth)],
-      child: const MaterialApp(home: PanelScreen()),
-    ));
-    await t.pumpAndSettle();
+  testWidgets('el administrador ve los bloques del mapa de navegación, incluido Gestionar Permisos', (t) async {
+    await _abrirPanel(t, 'administrador');
 
-    for (final bloque in const [
-      'Gestionar Usuario',
-      'Gestionar Permisos',
-      'Gestionar Reportar Focos de Incendios',
-      'Gestionar Estadísticas',
-      'Gestionar Históricos',
-      'Gestionar Informes',
-      'Gestionar Bot de Telegram',
-    ]) {
+    for (final bloque in ['Gestionar Usuario', 'Gestionar Reportar Focos de Incendios', ..._gestion]) {
       expect(find.text(bloque), findsOneWidget, reason: bloque);
     }
     // Perfil real en Gestionar Usuario; el resto rotulado como pendiente.
     expect(find.text('ana@vigia.test'), findsOneWidget);
-    expect(find.byType(ProximoIncremento), findsNWidgets(4));
+    expect(find.byType(ProximoIncremento), findsNWidgets(3));
   });
 }

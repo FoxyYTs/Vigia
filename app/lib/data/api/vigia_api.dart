@@ -241,6 +241,31 @@ class VigiaApi {
     return Estadisticas.fromJson(await _enviar(() => _cliente.get(uri, headers: _cabeceras(access))));
   }
 
+  /// Informe de [desde] a [hasta] como archivo: `csv` (detalle de
+  /// [conjunto]), `xlsx` (resumen y detalle) o `pdf` (resumen).
+  Future<({Uint8List bytes, String nombre})> descargarInforme(
+    String access, {
+    required String formato,
+    required DateTime desde,
+    required DateTime hasta,
+    String conjunto = 'focos',
+  }) async {
+    String dia(DateTime d) => d.toIso8601String().substring(0, 10);
+    final uri = baseUrl.resolve('informes/').replace(queryParameters: {
+      'formato': formato,
+      'conjunto': conjunto,
+      'desde': dia(desde),
+      'hasta': dia(hasta),
+    });
+    // Un Excel de 92 días puede tardar varios segundos en generarse.
+    final r = await _ejecutar(() => _cliente.get(uri, headers: {'Authorization': 'Bearer $access'}), timeout * 4);
+    if (r.statusCode != 200) {
+      throw _error(r.statusCode, _decodificar(r), 'Tu sesión expiró. Inicia sesión de nuevo.');
+    }
+    final nombre = RegExp(r'filename="([^"]+)"').firstMatch(r.headers['content-disposition'] ?? '')?.group(1);
+    return (bytes: r.bodyBytes, nombre: nombre ?? 'vigia-informe.$formato');
+  }
+
   // ------------------------------------------------------------ internos --
 
   Map<String, String> _cabeceras([String? access]) => {
@@ -263,9 +288,16 @@ class VigiaApi {
     Future<http.Response> Function() peticion, {
     required String mensaje401,
   }) async {
-    final http.Response respuesta;
+    final respuesta = await _ejecutar(peticion);
+    final cuerpo = _decodificar(respuesta);
+    final status = respuesta.statusCode;
+    if (status >= 200 && status < 300 && cuerpo is T) return cuerpo;
+    throw _error(status, cuerpo, mensaje401);
+  }
+
+  Future<http.Response> _ejecutar(Future<http.Response> Function() peticion, [Duration? limite]) async {
     try {
-      respuesta = await peticion().timeout(timeout);
+      return await peticion().timeout(limite ?? timeout);
     } on TimeoutException {
       throw const ApiException('El servidor tardó demasiado en responder. Inténtalo de nuevo.');
     } on http.ClientException {
@@ -273,12 +305,10 @@ class VigiaApi {
         'No se pudo conectar con el servidor de Vigía. Revisa tu conexión a internet.',
       );
     }
+  }
 
-    final cuerpo = _decodificar(respuesta);
-    final status = respuesta.statusCode;
-    if (status >= 200 && status < 300 && cuerpo is T) return cuerpo;
-
-    throw ApiException(
+  ApiException _error(int status, Object? cuerpo, String mensaje401) {
+    return ApiException(
       switch (status) {
         401 => mensaje401,
         403 => 'No tienes permiso para realizar esta acción.',
