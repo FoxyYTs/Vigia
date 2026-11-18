@@ -30,7 +30,7 @@ final _usuarios = [
   },
 ];
 
-Future<List<http.Request>> _montar(WidgetTester t, {required String rol}) async {
+Future<List<http.Request>> _montar(WidgetTester t, {required String rol, http.Response? Function(http.Request)? responder}) async {
   t.view.physicalSize = const Size(1200, 1400);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -42,6 +42,7 @@ Future<List<http.Request>> _montar(WidgetTester t, {required String rol}) async 
         return _json({'access': jwtFalso(username: 'ana', rol: rol), 'refresh': 'r'});
       }
       pedidas.add(r);
+      if (responder?.call(r) case final respuesta?) return respuesta;
       if (r.url.path.endsWith('entidades/')) return _json([{'id': 7, 'nombre': 'Cornare'}, {'id': 8, 'nombre': 'Corantioquia'}]);
       if (r.method == 'PATCH') return _json(_usuarios[2]);
       return _json({'count': 3, 'results': _usuarios});
@@ -111,5 +112,21 @@ void main() {
     expect(find.textContaining('Los permisos los cambia el staff'), findsOneWidget);
     expect(find.byIcon(Icons.edit), findsNothing);
     expect(find.byType(ChoiceChip), findsNothing);
+  });
+
+  testWidgets('muestra los errores de la API', (t) async {
+    await _montar(t,
+        rol: 'staff',
+        responder: (r) => r.method == 'PATCH' ? _json({'detail': 'x'}, 403) : null);
+    await t.tap(find.byTooltip('Editar permisos de beto'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Guardar'));
+    await t.pumpAndSettle();
+    expect(find.text('No tienes permiso para realizar esta acción.'), findsOneWidget);
+  });
+
+  testWidgets('si la lista no carga, lo dice', (t) async {
+    await _montar(t, rol: 'staff', responder: (r) => _json({'detail': 'x'}, 500));
+    expect(find.text('El servidor de Vigía tuvo un problema. Inténtalo más tarde.'), findsOneWidget);
   });
 }

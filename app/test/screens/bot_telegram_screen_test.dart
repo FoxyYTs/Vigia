@@ -58,7 +58,8 @@ const _estado = {
   ],
 };
 
-Future<List<http.Request>> _montar(WidgetTester t, {required String rol, Map<String, Object?> estado = _estado}) async {
+Future<List<http.Request>> _montar(WidgetTester t,
+    {required String rol, http.Response? Function(http.Request)? responder, Map<String, Object?> estado = _estado}) async {
   t.view.physicalSize = const Size(1300, 1600);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -68,7 +69,7 @@ Future<List<http.Request>> _montar(WidgetTester t, {required String rol, Map<Str
     cliente: MockClient((r) async {
       if (r.url.path.endsWith('auth/token/')) return _json({'access': jwtFalso(rol: rol), 'refresh': 'r'});
       pedidas.add(r);
-      return r.method == 'POST' ? _json({'detail': 'ok'}) : _json(estado);
+      return responder?.call(r) ?? (r.method == 'POST' ? _json({'detail': 'ok'}) : _json(estado));
     }),
   );
   final auth = AuthProvider(api: api, almacen: AlmacenTokensMemoria());
@@ -110,5 +111,28 @@ void main() {
     expect(pedidas.last.method, 'POST');
     expect(jsonDecode(pedidas.last.body), {'canal': 'telegram_publico'});
     expect(find.text('Mensaje de prueba enviado al canal Telegram público.'), findsOneWidget);
+  });
+
+  testWidgets('muestra el error de la API y recarga', (t) async {
+    var falla = true;
+    final pedidas = await _montar(t,
+        rol: 'administrador',
+        responder: (r) => falla ? _json({'detail': 'No tienes permiso para realizar esta acción.'}, 403) : null);
+    expect(find.text('No tienes permiso para realizar esta acción.'), findsOneWidget);
+
+    falla = false;
+    await t.tap(find.byTooltip('Recargar'));
+    await t.pumpAndSettle();
+    expect(pedidas, hasLength(2));
+    expect(find.text('El bot @VigiaAlertasBot está activo.'), findsOneWidget);
+  });
+
+  testWidgets('si Telegram rechaza la prueba, lo avisa', (t) async {
+    await _montar(t,
+        rol: 'staff',
+        responder: (r) => r.method == 'POST' ? _json({'detail': 'Telegram no aceptó el mensaje.'}, 502) : null);
+    await t.tap(find.text('Enviar prueba').first);
+    await t.pumpAndSettle();
+    expect(find.text('Telegram no aceptó el mensaje.'), findsOneWidget);
   });
 }

@@ -20,6 +20,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - App: "Gestionar Permisos" como subpágina de Gestionar Usuario. Con esto todos los bloques del panel funcionan.
 
 ### Corregido
+- Bot de Telegram: si Telegram rechazaba el mensaje de prueba, la app mostraba un error genérico del servidor en vez del detalle (un 502 con JSON ahora muestra su mensaje).
 - Históricos y Bot de Telegram: el botón de recargar fallaba (`setState` recibía un Future).
 - Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.
 - Estadísticas: nuevo diseño en tarjetas (totales, gráfico por día con fechas y secciones en dos columnas), con ancho máximo en pantallas anchas.

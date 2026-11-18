@@ -35,7 +35,8 @@ const _resumen = {
   },
 };
 
-Future<List<http.Request>> _montar(WidgetTester t, {required String rol}) async {
+Future<List<http.Request>> _montar(WidgetTester t,
+    {required String rol, http.Response Function(http.Request)? responder}) async {
   t.view.physicalSize = const Size(900, 2000);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -45,7 +46,7 @@ Future<List<http.Request>> _montar(WidgetTester t, {required String rol}) async 
     cliente: MockClient((r) async {
       if (r.url.path.endsWith('auth/token/')) return _json({'access': jwtFalso(rol: rol), 'refresh': 'r'});
       pedidas.add(r);
-      return r.method == 'POST' ? _json({'detail': 'ok'}, 202) : _json(_resumen);
+      return responder?.call(r) ?? (r.method == 'POST' ? _json({'detail': 'ok'}, 202) : _json(_resumen));
     }),
   );
   final auth = AuthProvider(api: api, almacen: AlmacenTokensMemoria());
@@ -80,5 +81,28 @@ void main() {
     expect(pedidas.last.method, 'POST');
     expect(pedidas.last.url.path, '/api/historico/ungrd/sincronizar/');
     expect(find.textContaining('Actualización en curso'), findsOneWidget);
+  });
+
+  testWidgets('muestra el error de la API y recarga', (t) async {
+    var falla = true;
+    final pedidas = await _montar(t,
+        rol: 'administrador',
+        responder: (r) => falla ? _json({'detail': 'No tienes permiso para realizar esta acción.'}, 403) : _json(_resumen));
+    expect(find.text('No tienes permiso para realizar esta acción.'), findsOneWidget);
+
+    falla = false;
+    await t.tap(find.byTooltip('Recargar'));
+    await t.pumpAndSettle();
+    expect(pedidas, hasLength(2));
+    expect(find.text('879.000 detecciones'), findsOneWidget);
+  });
+
+  testWidgets('si la actualización de la UNGRD falla, lo avisa', (t) async {
+    await _montar(t,
+        rol: 'staff',
+        responder: (r) => r.method == 'POST' ? _json({'detail': 'interno'}, 503) : _json(_resumen));
+    await t.tap(find.text('Actualizar desde datos.gov.co'));
+    await t.pumpAndSettle();
+    expect(find.text('El servidor de Vigía tuvo un problema. Inténtalo más tarde.'), findsOneWidget);
   });
 }
