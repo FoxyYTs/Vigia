@@ -76,8 +76,19 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
           AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => ListView(
               // Centrado y con ancho máximo en pantallas anchas.
               padding:
-                  EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 900) / 2)),
-              children: _fuentes(data!, staff),
+                  EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1500) / 2)),
+              children: [
+                // Una tarjeta por fuente, lado a lado cuando caben (3, 2 o 1 columnas).
+                LayoutBuilder(builder: (context, limites) {
+                  final columnas = limites.maxWidth >= 1200 ? 3 : (limites.maxWidth >= 760 ? 2 : 1);
+                  final ancho = (limites.maxWidth - 16 * (columnas - 1)) / columnas;
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [for (final f in _fuentes(data!, staff)) SizedBox(width: ancho, child: f)],
+                  );
+                }),
+              ],
             ),
           _ => const Center(child: CircularProgressIndicator()),
         },
@@ -169,7 +180,7 @@ class _Fuente extends StatelessWidget {
           child: Text(texto, style: estilo, textAlign: numero ? TextAlign.end : TextAlign.start),
         );
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
