@@ -5,19 +5,19 @@ import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
 import 'bot_telegram_screen.dart';
 import 'estadisticas_screen.dart';
 import 'historicos_screen.dart';
 import 'informes_screen.dart';
+import 'permisos_screen.dart';
 import 'reportes_screen.dart';
 import 'rutas.dart';
 
 /// Bloques "Gestionar X" que cuelgan de "Iniciar Sesión" en el mapa de
 /// navegación. "Gestionar Usuario" (perfil de `/api/auth/yo/`), "Reportar
-/// Focos", "Estadísticas", "Históricos", "Informes" y "Bot de Telegram" ya
-/// funcionan; "Gestionar Permisos" se habilita en el siguiente incremento. El ciudadano solo ve los bloques que puede
+/// Focos", "Estadísticas", "Históricos", "Informes", "Bot de Telegram" y
+/// "Gestionar Permisos" ya funcionan. El ciudadano solo ve los bloques que puede
 /// usar: los de gestión son para administradores y staff.
 class PanelScreen extends StatelessWidget {
   const PanelScreen({super.key});
@@ -163,22 +163,14 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
                 // Gestionar Usuario → Gestionar Permisos.
                 if (context.watch<AuthProvider>().rol.gestiona) ...[
                   const Divider(height: 32),
-                  const Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings_outlined, color: VigiaColors.textoSecundario),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Gestionar Permisos', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                            Text('Roles y permisos de los usuarios de cada entidad.',
-                                style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      ProximoIncremento(),
-                    ],
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.admin_panel_settings_outlined, color: VigiaColors.bosque),
+                    title: const Text(PermisosScreen.titulo, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    subtitle: const Text('Roles y permisos de los usuarios de cada entidad.',
+                        style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                    trailing: const Icon(Icons.arrow_forward),
+                    onTap: () => Navigator.of(context).pushNamed(Rutas.permisos),
                   ),
                 ],
               ],
@@ -206,21 +198,20 @@ class _Dato extends StatelessWidget {
       );
 }
 
-/// Bloque "Gestionar X": abre su pantalla si ya tiene [ruta]; si no, queda
-/// rotulado como próximo incremento.
+/// Bloque "Gestionar X": abre su pantalla.
 class _Bloque extends StatelessWidget {
   const _Bloque(this.icono, this.titulo, this.detalle, this.ruta);
 
   final IconData icono;
   final String titulo;
   final String detalle;
-  final String? ruta;
+  final String ruta;
 
   @override
   Widget build(BuildContext context) => Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: ruta == null ? null : () => Navigator.of(context).pushNamed(ruta!),
+          onTap: () => Navigator.of(context).pushNamed(ruta),
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -228,9 +219,9 @@ class _Bloque extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(icono, color: ruta == null ? VigiaColors.textoSecundario : VigiaColors.bosque),
+                    Icon(icono, color: VigiaColors.bosque),
                     const Spacer(),
-                    if (ruta == null) const ProximoIncremento() else const Icon(Icons.arrow_forward),
+                    const Icon(Icons.arrow_forward),
                   ],
                 ),
                 const SizedBox(height: 12),

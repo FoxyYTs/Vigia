@@ -41,7 +41,12 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
     return context.read<VigiaApi>().estadoBot(access);
   }
 
-  void _recargar() => setState(() => _datos = _cargar());
+  void _recargar() {
+    final datos = _cargar();
+    setState(() {
+      _datos = datos;
+    });
+  }
 
   Future<void> _probar(String canal, String nombre) async {
     final mensajero = ScaffoldMessenger.of(context);

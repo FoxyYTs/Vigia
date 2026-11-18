@@ -9,7 +9,6 @@ import 'package:vigia_app/data/api/vigia_api.dart';
 import 'package:vigia_app/data/storage/almacen_tokens.dart';
 import 'package:vigia_app/providers/auth_provider.dart';
 import 'package:vigia_app/screens/panel_screen.dart';
-import 'package:vigia_app/widgets/proximo_incremento.dart';
 
 import '../helpers/jwt_falso.dart';
 
@@ -63,8 +62,7 @@ void main() {
     for (final bloque in ['Gestionar Usuario', 'Gestionar Reportar Focos de Incendios', ..._gestion]) {
       expect(find.text(bloque), findsOneWidget, reason: bloque);
     }
-    // Perfil real en Gestionar Usuario; el resto rotulado como pendiente.
+    // Perfil real en Gestionar Usuario.
     expect(find.text('ana@vigia.test'), findsOneWidget);
-    expect(find.byType(ProximoIncremento), findsNWidgets(1));
   });
 }

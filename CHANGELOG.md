@@ -16,8 +16,11 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - App: "Gestionar Históricos" en el panel, con una tabla por fuente y el botón para actualizar la UNGRD (staff).
 - API: `GET /api/bot-telegram/` (administradores y staff) con el estado del bot (getMe), qué alertas recibe cada canal, los envíos y fallos de los últimos 7 días y los 20 envíos más recientes, sin exponer el token ni los ids de los chats. `POST /api/bot-telegram/probar/` (solo staff) manda un mensaje de prueba a un canal.
 - App: "Gestionar Bot de Telegram" en el panel, con una tarjeta por canal y el botón de prueba (staff).
+- API: `GET/PATCH /api/usuarios/` ("Gestionar Permisos"). El staff lista a todos los usuarios (con `buscar` y `rol`) y cambia su rol, entidad y si la cuenta está activa; no puede editarse a sí mismo ni a un superusuario, y desactivar una cuenta revoca sus sesiones. El administrador solo consulta a los administradores de su entidad. `GET /api/entidades/` para asignarlas.
+- App: "Gestionar Permisos" como subpágina de Gestionar Usuario. Con esto todos los bloques del panel funcionan.
 
 ### Corregido
+- Históricos y Bot de Telegram: el botón de recargar fallaba (`setState` recibía un Future).
 - Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.
 - Estadísticas: nuevo diseño en tarjetas (totales, gráfico por día con fechas y secciones en dos columnas), con ancho máximo en pantallas anchas.
 - El ciudadano ya no ve ni abre los bloques de gestión (estadísticas, informes, históricos, bot y permisos).

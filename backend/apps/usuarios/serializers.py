@@ -3,7 +3,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from apps.usuarios.models import Municipio, Usuario
+from apps.usuarios.models import EntidadPublica, Municipio, Usuario
 
 
 # Versión de la política de tratamiento de datos publicada en /privacidad.html.
@@ -22,6 +22,32 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = ["id", "username", "email", "rol", "municipio_residencia", "entidad"]
         read_only_fields = fields
+
+
+class EntidadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EntidadPublica
+        fields = ["id", "nombre"]
+
+
+class GestionUsuarioSerializer(serializers.ModelSerializer):
+    """"Gestionar Permisos": el staff cambia rol, entidad y si la cuenta está
+    activa. El resto del perfil es del propio usuario."""
+
+    entidad_nombre = serializers.CharField(source="entidad.nombre", read_only=True, default=None)
+
+    class Meta:
+        model = Usuario
+        fields = ["id", "username", "email", "rol", "entidad", "entidad_nombre", "is_active", "date_joined",
+                  "last_login"]
+        read_only_fields = ["id", "username", "email", "date_joined", "last_login"]
+
+    def validate(self, datos):
+        rol = datos.get("rol", self.instance.rol)
+        # La entidad solo aplica al administrador (limita su jurisdicción).
+        if rol != Usuario.Rol.ADMINISTRADOR:
+            datos["entidad"] = None
+        return datos
 
 
 class RegistroSerializer(serializers.ModelSerializer):

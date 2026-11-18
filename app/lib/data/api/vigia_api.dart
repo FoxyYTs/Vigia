@@ -289,6 +289,29 @@ class VigiaApi {
         body: jsonEncode({'canal': canal}),
       ));
 
+  // -------------------------------------------------------------- permisos --
+
+  /// Usuarios que puede ver quien consulta: todos para el staff; los
+  /// administradores de su entidad para un administrador.
+  // shortcut: solo la primera página (500), sobra para el piloto; paginar si crece.
+  Future<List<Map<String, dynamic>>> usuarios(String access, {String buscar = '', String? rol}) async {
+    final uri = baseUrl.resolve('usuarios/').replace(queryParameters: {
+      if (buscar.isNotEmpty) 'buscar': buscar,
+      'rol': ?rol,
+      'page_size': '$tamanoPaginaMaximo',
+    });
+    final json = await _enviar(() => _cliente.get(uri, headers: _cabeceras(access)));
+    return (json['results'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// Cambia `rol`, `entidad` o `is_active` de un usuario (solo staff).
+  Future<Map<String, dynamic>> actualizarUsuario(String access, int id, Map<String, Object?> cambios) => _enviar(
+      () => _cliente.patch(baseUrl.resolve('usuarios/$id/'), headers: _cabeceras(access), body: jsonEncode(cambios)));
+
+  Future<List<Map<String, dynamic>>> entidades(String access) async =>
+      (await _enviarLista(() => _cliente.get(baseUrl.resolve('entidades/'), headers: _cabeceras(access))))
+          .cast<Map<String, dynamic>>();
+
   // ------------------------------------------------------------ internos --
 
   Map<String, String> _cabeceras([String? access]) => {
