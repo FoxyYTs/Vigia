@@ -2,6 +2,7 @@ import re
 
 from django.db.models import Count, Max, Min, Sum
 from django.db.models.functions import ExtractYear
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -119,6 +120,7 @@ def capa_historica_disponible(request):
     })
 
 
+@extend_schema(responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
 def resumen_historicos(request):
@@ -154,6 +156,7 @@ def resumen_historicos(request):
     })
 
 
+@extend_schema(request=None, responses={202: inline_serializer("Encolada", {"detail": serializers.CharField()})})
 @api_view(["POST"])
 @permission_classes([EsStaff])
 def sincronizar_ungrd_view(request):

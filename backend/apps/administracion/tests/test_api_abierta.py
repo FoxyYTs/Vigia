@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from django.core.management import call_command
 from rest_framework.throttling import AnonRateThrottle
 
 pytestmark = pytest.mark.django_db
@@ -13,8 +14,13 @@ def test_el_esquema_documenta_los_endpoints_y_las_fuentes(api):
     assert r.status_code == 200
     esquema = r.json()
     assert {"/api/focos/", "/api/incendios-reportados/", "/api/zonas-recurrentes/"} <= set(esquema["paths"])
-    for fuente in ("NASA FIRMS", "Programa Queimadas/INPE", "UNGRD", "IDEAM", "CC BY-SA 4.0"):
+    for fuente in ("NASA FIRMS", "Programa Queimadas", "UNGRD", "IDEAM", "CC BY-SA 4.0", "tal cual"):
         assert fuente in esquema["info"]["description"]
+
+
+def test_el_esquema_es_valido_y_sin_avisos(tmp_path):
+    # Un endpoint nuevo sin tipos (vista de función sin @extend_schema) rompe esta prueba.
+    call_command("spectacular", "--validate", "--fail-on-warn", "--file", str(tmp_path / "esquema.yml"))
 
 
 def test_swagger_sin_scripts_en_linea_ni_cdn(api):

@@ -88,6 +88,8 @@ class GestionUsuarioViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, view
     http_method_names = ["get", "patch"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # al generar el esquema OpenAPI no hay usuario
+            return Usuario.objects.none()
         usuario = self.request.user
         qs = Usuario.objects.select_related("entidad").order_by("username")
         if not usuario.es_staff():

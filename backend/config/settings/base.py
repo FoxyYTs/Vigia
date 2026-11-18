@@ -174,12 +174,13 @@ Los reportes ciudadanos (foto, ubicación y texto) no se publican: son datos per
 
 ## Fuentes y licencias
 
-Quien reutilice estos datos debe citar la fuente original:
+Quien reutilice estos datos debe citar la fuente original. Se entregan "tal cual": los focos en
+casi tiempo real no tienen calidad científica y un foco de calor no siempre es un incendio.
 
 | Datos | Fuente | Licencia |
 |---|---|---|
-| Focos de calor (`/api/focos/`) | NASA FIRMS (LANCE/EOSDIS) | Sin restricciones de uso; citar "NASA FIRMS" |
-| Focos de calor (`/api/focos/`) | INPE, Programa Queimadas | Datos públicos; citar "Programa Queimadas/INPE" |
+| Focos de calor (`/api/focos/`) | NASA FIRMS (LANCE/EOSDIS) | Sin restricciones; citar a LANCE FIRMS (NASA/ESDIS) |
+| Focos de calor (`/api/focos/`) | INPE, Programa Queimadas | Acceso público sin licencia publicada; citar al INPE |
 | Incendios reportados (`/api/incendios-reportados/`) | UNGRD, datos.gov.co | Datos abiertos (Ley 1712 de 2014) |
 | Deforestación (`/api/historico/capa/`) | IDEAM, SMByC | CC BY-SA 4.0 (también las hectáreas por municipio) |
 | Límites municipales | geoBoundaries / DANE | CC BY 4.0 |

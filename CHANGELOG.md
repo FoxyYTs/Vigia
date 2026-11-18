@@ -19,7 +19,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API: `GET/PATCH /api/usuarios/` ("Gestionar Permisos"). El staff lista a todos los usuarios (con `buscar` y `rol`) y cambia su rol, entidad y si la cuenta está activa; no puede editarse a sí mismo ni a un superusuario, y desactivar una cuenta revoca sus sesiones. El administrador solo consulta a los administradores de su entidad. `GET /api/entidades/` para asignarlas.
 - App: "Gestionar Permisos" como subpágina de Gestionar Usuario. Con esto todos los bloques del panel funcionan.
 - API de datos abiertos: documentación OpenAPI en `/api/docs/` (Swagger UI servido localmente, compatible con la CSP) y esquema en `/api/schema/` (drf-spectacular), con la tabla de fuentes y licencias. Límite de 2.000 consultas por hora por IP para quien consulta sin sesión (`AnonRateThrottle`).
-- Licencias de NASA FIRMS e INPE Queimadas en `apps/satelital/data/LICENCIA.md`.
+- Licencias de NASA FIRMS (verificada: sin restricciones, con reconocimiento y aviso "tal cual") e INPE Queimadas (acceso público, sin licencia publicada) en `apps/satelital/data/LICENCIA.md`. El esquema OpenAPI no tiene avisos y una prueba lo valida.
 
 ### Corregido
 - Históricos y Bot de Telegram: el botón de recargar fallaba (`setState` recibía un Future).

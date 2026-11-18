@@ -5,7 +5,9 @@ import requests
 from django.conf import settings
 from django.db.models import Count, Max, Q
 from django.utils import timezone
-from rest_framework import mixins, status, viewsets
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -24,6 +26,8 @@ class NotificacionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     serializer_class = NotificacionSerializer
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # al generar el esquema OpenAPI no hay usuario
+            return Notificacion.objects.none()
         return Notificacion.objects.filter(usuario=self.request.user)
 
     @action(detail=True, methods=["post"], url_path="marcar-leida")
@@ -47,6 +51,7 @@ def _bot():
         return None
 
 
+@extend_schema(responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
 def estado_bot(request):
@@ -92,6 +97,15 @@ def estado_bot(request):
     })
 
 
+@extend_schema(
+    request=inline_serializer(
+        "PruebaCanal", {"canal": serializers.ChoiceField(list(DespachadorNotificaciones.DESTINOS))}
+    ),
+    responses={
+        codigo: inline_serializer(f"ResultadoPrueba{codigo}", {"detail": serializers.CharField()})
+        for codigo in (200, 502)
+    },
+)
 @api_view(["POST"])
 @permission_classes([EsStaff])
 def probar_canal(request):
