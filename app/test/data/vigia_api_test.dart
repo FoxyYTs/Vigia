@@ -82,6 +82,15 @@ void main() {
         throwsA(isA<ApiException>().having((e) => e.mensaje, 'mensaje', isNot(contains('Traceback')))),
       );
     });
+
+    test('un 502 muestra el detalle de Vigía, pero no la página de Nginx', () async {
+      final conDetalle = _api((_) async => _json({'detail': 'Telegram no aceptó el mensaje.'}, 502));
+      await expectLater(conDetalle.iniciarSesion('ana', 'x'),
+          throwsA(isA<ApiException>().having((e) => e.mensaje, 'mensaje', 'Telegram no aceptó el mensaje.')));
+      final nginx = _api((_) async => http.Response('<html>502 Bad Gateway</html>', 502));
+      await expectLater(nginx.iniciarSesion('ana', 'x'),
+          throwsA(isA<ApiException>().having((e) => e.mensaje, 'mensaje', startsWith('El servidor de Vigía'))));
+    });
   });
 
   group('focos', () {

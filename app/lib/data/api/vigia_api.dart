@@ -361,6 +361,9 @@ class VigiaApi {
         404 => 'El recurso solicitado no existe.',
         429 => 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
         400 => _primerError(cuerpo) ?? 'Revisa los datos enviados.',
+        // 502 con JSON: Vigía respondió, pero un servicio externo (Telegram)
+        // falló, y el detalle dice qué revisar. Sin JSON es Nginx sin backend.
+        502 => _primerError(cuerpo) ?? 'El servidor de Vigía tuvo un problema. Inténtalo más tarde.',
         >= 500 => 'El servidor de Vigía tuvo un problema. Inténtalo más tarde.',
         _ => 'Respuesta inesperada del servidor (código $status).',
       },
