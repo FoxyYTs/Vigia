@@ -24,12 +24,6 @@ class EstadisticasScreen extends StatefulWidget {
 
 class _EstadisticasScreenState extends State<EstadisticasScreen> {
   static const _periodos = [7, 30, 90, 365];
-  static const _tipos = {
-    'deteccion_satelital': 'Detección satelital',
-    'coincidencia_geografica': 'Coincidencia geográfica',
-    'acumulacion_reportes': 'Acumulación de reportes',
-    'validacion_manual': 'Validación manual',
-  };
 
   int _dias = 30;
   late Future<Estadisticas> _datos;
@@ -156,7 +150,7 @@ class _Contenido extends StatelessWidget {
                     'Alertas por disparador',
                     [
                       for (final c in e.alertasPorTipo)
-                        (_EstadisticasScreenState._tipos[c.clave] ?? c.clave ?? '', c.cantidad),
+                        (tiposAlerta[c.clave] ?? c.clave ?? '', c.cantidad),
                     ],
                   ),
                   (

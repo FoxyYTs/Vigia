@@ -10,6 +10,7 @@ import 'providers/auth_provider.dart';
 import 'providers/focos_provider.dart';
 import 'providers/historico_provider.dart';
 import 'providers/prediccion_provider.dart';
+import 'screens/bot_telegram_screen.dart';
 import 'screens/estadisticas_screen.dart';
 import 'screens/historicos_screen.dart';
 import 'screens/informes_screen.dart';
@@ -57,6 +58,7 @@ class VigiaApp extends StatelessWidget {
             Rutas.reportes => const RequiereSesion(child: ReportesScreen()),
             Rutas.estadisticas => const RequiereSesion(gestion: true, child: EstadisticasScreen()),
             Rutas.historicos => const RequiereSesion(gestion: true, child: HistoricosScreen()),
+            Rutas.botTelegram => const RequiereSesion(gestion: true, child: BotTelegramScreen()),
             Rutas.informes => const RequiereSesion(gestion: true, child: InformesScreen()),
             _ => const MapaScreen(),
           },

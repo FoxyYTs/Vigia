@@ -7,7 +7,8 @@
 ///                  ├─ Reportar Focos     (/reportes)
 ///                  ├─ Estadísticas       (/estadisticas)
 ///                  ├─ Históricos         (/historicos)
-///                  └─ Informes           (/informes)
+///                  ├─ Informes           (/informes)
+///                  └─ Bot de Telegram    (/bot-telegram)
 /// ```
 class Rutas {
   const Rutas._();
@@ -19,4 +20,5 @@ class Rutas {
   static const estadisticas = '/estadisticas';
   static const informes = '/informes';
   static const historicos = '/historicos';
+  static const botTelegram = '/bot-telegram';
 }

@@ -65,16 +65,20 @@ class NotificadorTelegram(Notificador):
     URL = "https://api.telegram.org/bot{token}/sendMessage"
 
     def enviar(self, alerta: Alerta, destino: str) -> bool:
+        return self.enviar_texto(destino, self.mensaje(alerta), f"la alerta {alerta.pk}")
+
+    def enviar_texto(self, destino: str, texto: str, que: str) -> bool:
+        """Envía [texto] (HTML) a [destino]; [que] solo describe el envío en el log."""
         token = settings.TELEGRAM_BOT_TOKEN
         if not token or not destino:
-            logger.warning("Telegram sin configurar: alerta %s no enviada", alerta.pk)
+            logger.warning("Telegram sin configurar: %s no enviada", que)
             return False
         try:
             r = requests.post(
                 self.URL.format(token=token),
                 json={
                     "chat_id": destino,
-                    "text": self.mensaje(alerta),
+                    "text": texto,
                     "parse_mode": "HTML",
                     # Sin esto, cada alerta trae la tarjeta genérica de OpenStreetMap.
                     "link_preview_options": {"is_disabled": True},
@@ -83,10 +87,10 @@ class NotificadorTelegram(Notificador):
             )
         except requests.RequestException:
             # Sin el token en el log: va dentro de la URL.
-            logger.error("Telegram no respondió para la alerta %s", alerta.pk)
+            logger.error("Telegram no respondió para %s", que)
             return False
         if not r.ok:
-            logger.error("Telegram rechazó la alerta %s: %s", alerta.pk, r.text[:200])
+            logger.error("Telegram rechazó %s: %s", que, r.text[:200])
         return r.ok
 
     @staticmethod
