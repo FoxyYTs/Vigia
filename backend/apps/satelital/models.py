@@ -45,6 +45,8 @@ class FocoIncendio(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["fuente", "fecha_hora"]),
+            # El mapa, las estadísticas y el motor filtran solo por fecha.
+            models.Index(fields=["fecha_hora"]),
         ]
         constraints = [
             # Dedup natural: la misma detección reportada dos veces por la
