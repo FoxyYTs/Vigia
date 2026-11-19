@@ -176,6 +176,17 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
                 ),
                 const SizedBox(height: 16),
                 contenido,
+                // Play exige poder borrar desde la app la cuenta que se creó en
+                // ella. Solo el ciudadano: las cuentas de gestión las maneja el staff.
+                if (context.watch<AuthProvider>().rol == Rol.ciudadano) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(foregroundColor: VigiaColors.error),
+                    onPressed: () => _eliminarCuenta(context),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Eliminar mi cuenta'),
+                  ),
+                ],
                 // Única subpágina del mapa de navegación:
                 // Gestionar Usuario → Gestionar Permisos.
                 if (context.watch<AuthProvider>().rol.gestiona) ...[
@@ -196,6 +207,39 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
         ),
       ),
     );
+  }
+}
+
+Future<void> _eliminarCuenta(BuildContext context) async {
+  final confirmado = await showDialog<bool>(
+    context: context,
+    builder: (contexto) => AlertDialog(
+      scrollable: true,
+      title: const Text('¿Eliminar tu cuenta?'),
+      content: const Text(
+        'Se borran tu usuario, tu correo y tu municipio, y se cierran tus sesiones. '
+        'Tus reportes se conservan como evidencia de los incendios, pero sin tus datos, '
+        'sin tu ubicación y solo con la miniatura de la foto. No se puede deshacer.',
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(contexto, false), child: const Text('Cancelar')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: VigiaColors.error),
+          onPressed: () => Navigator.pop(contexto, true),
+          child: const Text('Eliminar cuenta'),
+        ),
+      ],
+    ),
+  );
+  if (confirmado != true || !context.mounted) return;
+  final mensajero = ScaffoldMessenger.of(context);
+  final navegador = Navigator.of(context);
+  try {
+    await context.read<AuthProvider>().eliminarCuenta();
+    navegador.pushNamedAndRemoveUntil(Rutas.mapa, (_) => false);
+    mensajero.showSnackBar(const SnackBar(content: Text('Tu cuenta fue eliminada.')));
+  } on ApiException catch (e) {
+    mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
   }
 }
 

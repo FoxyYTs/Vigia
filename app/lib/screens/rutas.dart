@@ -3,6 +3,7 @@
 /// ```
 /// Vigía ─┬─ Mapa Interactivo            (/       público)
 ///        └─ Iniciar Sesión              (/login)
+///             ├─ Registrar cuenta       (/registro)
 ///             └─ Gestionar X (panel)     (/panel  requiere sesión)
 ///                  ├─ Usuario → Permisos (/permisos)
 ///                  ├─ Reportar Focos     (/reportes)
@@ -16,6 +17,7 @@ class Rutas {
 
   static const mapa = '/';
   static const login = '/login';
+  static const registro = '/registro';
   static const panel = '/panel';
   static const reportes = '/reportes';
   static const estadisticas = '/estadisticas';

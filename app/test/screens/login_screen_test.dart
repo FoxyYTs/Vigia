@@ -41,6 +41,7 @@ class _Escenario {
             Rutas.mapa: (_) => const Scaffold(body: Text('pantalla-mapa')),
             Rutas.login: (_) => const LoginScreen(),
             Rutas.panel: (_) => const Scaffold(body: Text('pantalla-panel')),
+            Rutas.registro: (_) => const Scaffold(body: Text('pantalla-registro')),
           },
         ),
       );
@@ -115,15 +116,14 @@ void main() {
     expect(find.text('pantalla-panel'), findsOneWidget);
   });
 
-  testWidgets('el registro aparece como próximo incremento, sin acción', (t) async {
+  testWidgets('"Registrar cuenta" abre el registro', (t) async {
     final e = _Escenario((_) async => http.Response('{}', 200));
     _escritorio(t);
     await t.pumpWidget(e.app());
 
-    final registro = find.byKey(const Key('registro-proximo'));
-    expect(registro, findsOneWidget);
-    expect(find.descendant(of: registro, matching: find.text('Próximo incremento')), findsOneWidget);
-    expect(find.descendant(of: registro, matching: find.byType(ButtonStyleButton)), findsNothing);
+    await t.tap(find.byKey(const Key('boton-registro')));
+    await t.pumpAndSettle();
+    expect(find.text('pantalla-registro'), findsOneWidget);
   });
 
   testWidgets('el botón de mostrar contraseña tiene etiqueta accesible', (t) async {

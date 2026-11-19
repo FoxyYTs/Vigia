@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView, TokenRefreshView
 
@@ -46,6 +47,14 @@ class RefrescoView(TokenRefreshView):
 
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "refresco"
+
+    def post(self, request, *args, **kwargs):
+        # simplejwt busca al usuario del refresh y no captura DoesNotExist: el
+        # refresh de una cuenta borrada en el admin respondía 500 en vez de 401.
+        try:
+            return super().post(request, *args, **kwargs)
+        except Usuario.DoesNotExist:
+            raise InvalidToken("La cuenta de esta sesión ya no existe.") from None
 
 
 @method_decorator(never_cache, name="dispatch")

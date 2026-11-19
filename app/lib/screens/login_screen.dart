@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/proximo_incremento.dart';
 import '../widgets/vigia_marca.dart';
 import 'rutas.dart';
 
@@ -156,17 +155,6 @@ class _PanelMarca extends StatelessWidget {
 class FormularioLogin extends StatefulWidget {
   const FormularioLogin({super.key});
 
-  @override
-  State<FormularioLogin> createState() => _FormularioLoginState();
-}
-
-class _FormularioLoginState extends State<FormularioLogin> {
-  final _formKey = GlobalKey<FormState>();
-  final _usuario = TextEditingController();
-  final _password = TextEditingController();
-  final _focoPassword = FocusNode();
-  bool _ocultar = true;
-
   /// Mismos caracteres que acepta el validador de usernames de Django.
   static final _patronUsuario = RegExp(r'^[\w.@+-]+$');
 
@@ -184,6 +172,17 @@ class _FormularioLoginState extends State<FormularioLogin> {
     if (valor == null || valor.isEmpty) return 'Escribe tu contraseña.';
     return null;
   }
+
+  @override
+  State<FormularioLogin> createState() => _FormularioLoginState();
+}
+
+class _FormularioLoginState extends State<FormularioLogin> {
+  final _formKey = GlobalKey<FormState>();
+  final _usuario = TextEditingController();
+  final _password = TextEditingController();
+  final _focoPassword = FocusNode();
+  bool _ocultar = true;
 
   @override
   void dispose() {
@@ -248,7 +247,7 @@ class _FormularioLoginState extends State<FormularioLogin> {
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
                   enableSuggestions: false,
-                  validator: validarUsuario,
+                  validator: FormularioLogin.validarUsuario,
                   onChanged: (_) => auth.limpiarError(),
                   onFieldSubmitted: (_) => _focoPassword.requestFocus(),
                 ),
@@ -269,7 +268,7 @@ class _FormularioLoginState extends State<FormularioLogin> {
                   ),
                   autofillHints: const [AutofillHints.password],
                   textInputAction: TextInputAction.done,
-                  validator: validarPassword,
+                  validator: FormularioLogin.validarPassword,
                   onChanged: (_) => auth.limpiarError(),
                   onFieldSubmitted: (_) => _enviar(),
                 ),
@@ -287,18 +286,17 @@ class _FormularioLoginState extends State<FormularioLogin> {
                   label: Text(auth.enviando ? 'Ingresando…' : 'Ingresar'),
                 ),
                 const SizedBox(height: 12),
-                // "Iniciar Sesión/Registrar Sesión" en el mapa de navegación:
-                // el registro se muestra, pero se habilita en otro incremento.
-                const Row(
-                  key: Key('registro-proximo'),
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // "Iniciar Sesión/Registrar cuenta" en el mapa de navegación.
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Flexible(
-                      child: Text('¿No tienes cuenta? Registrar cuenta',
-                          style: TextStyle(color: VigiaColors.textoSecundario)),
+                    const Text('¿No tienes cuenta?', style: TextStyle(color: VigiaColors.textoSecundario)),
+                    TextButton(
+                      key: const Key('boton-registro'),
+                      onPressed: () => Navigator.of(context).pushNamed(Rutas.registro),
+                      child: const Text('Registrar cuenta'),
                     ),
-                    SizedBox(width: 8),
-                    ProximoIncremento(),
                   ],
                 ),
                 const SizedBox(height: 20),
