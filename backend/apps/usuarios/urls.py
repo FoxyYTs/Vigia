@@ -1,9 +1,20 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from apps.usuarios.views import CerrarSesionView, MunicipioViewSet, RefrescoView, RegistroView, TokenView, YoView
+from apps.usuarios.views import (
+    CerrarSesionView,
+    EntidadViewSet,
+    GestionUsuarioViewSet,
+    MunicipioViewSet,
+    RefrescoView,
+    RegistroView,
+    TokenView,
+    YoView,
+)
 
 router = DefaultRouter()
 router.register("municipios", MunicipioViewSet, basename="municipio")
+router.register("usuarios", GestionUsuarioViewSet, basename="usuario")
+router.register("entidades", EntidadViewSet, basename="entidad")
 
 urlpatterns = [
     path("auth/registro/", RegistroView.as_view(), name="registro"),

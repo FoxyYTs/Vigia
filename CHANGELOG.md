@@ -7,6 +7,38 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.6.0] — 2026-11-18 · Panel de administración (I6)
+
+### Agregado
+- API: `GET /api/estadisticas/?desde=&hasta=` (I6, #16) con detecciones satelitales por fuente, departamento y día, alertas por disparador y reportes por estado. Solo para administradores y staff; el administrador de una entidad con polígonos ve solo su jurisdicción. Periodo máximo de 366 días.
+- App: "Gestionar Estadísticas" en el panel, con periodos de 7, 30, 90 y 365 días.
+- API: `GET /api/informes/?formato=pdf|xlsx|csv&desde=&hasta=` (`ExportadorDatos`, UC8) con los mismos permisos y jurisdicción que las estadísticas. PDF: informe de apoyo a la decisión (resumen, hasta un año). Excel: hoja de resumen y detalle de focos, alertas y reportes. CSV: detalle de un conjunto (`conjunto=focos|alertas|reportes`). El detalle admite hasta 92 días. Los reportes salen sin el usuario que reportó, y el texto que empieza por `=`, `+`, `-` o `@` se neutraliza para que Excel no lo ejecute como fórmula.
+- App: "Gestionar Informes" en el panel. Descarga el archivo en el navegador o lo abre en la hoja de compartir de Android (share_plus).
+- API: `GET /api/historico/resumen/` (administradores y staff) con lo cargado de cada fuente histórica por año: incendios reportados a la UNGRD (cantidad, hectáreas y los que quedaron sin municipio), deforestación del IDEAM (municipios y hectáreas) y detecciones de NASA FIRMS. `POST /api/historico/ungrd/sincronizar/` (solo staff) encola la tarea `sincronizar_ungrd`.
+- App: "Gestionar Históricos" en el panel, con una tabla por fuente y el botón para actualizar la UNGRD (staff).
+- API: `GET /api/bot-telegram/` (administradores y staff) con el estado del bot (getMe), qué alertas recibe cada canal, los envíos y fallos de los últimos 7 días y los 20 envíos más recientes, sin exponer el token ni los ids de los chats. `POST /api/bot-telegram/probar/` (solo staff) manda un mensaje de prueba a un canal.
+- App: "Gestionar Bot de Telegram" en el panel, con una tarjeta por canal y el botón de prueba (staff).
+- API: `GET/PATCH /api/usuarios/` ("Gestionar Permisos"). El staff lista a todos los usuarios (con `buscar` y `rol`) y cambia su rol, entidad y si la cuenta está activa; no puede editarse a sí mismo ni a un superusuario, y desactivar una cuenta revoca sus sesiones. El administrador solo consulta a los administradores de su entidad. `GET /api/entidades/` para asignarlas.
+- App: "Gestionar Permisos" como subpágina de Gestionar Usuario. Con esto todos los bloques del panel funcionan.
+- API de datos abiertos: documentación OpenAPI en `/api/docs/` (Swagger UI servido localmente, compatible con la CSP) y esquema en `/api/schema/` (drf-spectacular), con la tabla de fuentes y licencias. Límite de 20.000 consultas por hora por IP para quien consulta sin sesión (`AnonRateThrottle`).
+- Licencias de NASA FIRMS (verificada: sin restricciones, con reconocimiento y aviso "tal cual") e INPE Queimadas (acceso público, sin licencia publicada) en `apps/satelital/data/LICENCIA.md`. El esquema OpenAPI no tiene avisos y una prueba lo valida.
+
+### Corregido
+- Revisión previa al release:
+  - Informes: el Excel fallaba (500) si la descripción de un reporte traía caracteres de control; ahora se limpian en Excel y CSV.
+  - Gestionar Permisos: el rol staff ahora va con el acceso al Django Admin (`is_staff`), y cambiar el rol cierra las sesiones del usuario para que el JWT no conserve el rol anterior.
+  - Gestionar Permisos: al promover a administrador hay que elegir la entidad o «todo el país»; antes quedaba nacional por defecto.
+  - Límite para anónimos subido a 20.000 consultas por hora por IP: con 2.000, un salón u oficina detrás de una IP agotaba el cupo del mapa.
+  - `/api/bot-telegram/probar/` y las estadísticas con fechas futuras respondían 500 en vez de 400.
+  - El mensaje de prueba al canal público ya no muestra el usuario del staff, y el bot no arma el mensaje si el canal no está configurado.
+  - Informes en la app: si la hoja de compartir falla, avisa en vez de quedarse callada.
+  - Las exportaciones de alertas y el estado del bot ya no cargan el polígono de cada municipio.
+- Bot de Telegram: si Telegram rechazaba el mensaje de prueba, la app mostraba un error genérico del servidor en vez del detalle (un 502 con JSON ahora muestra su mensaje).
+- Históricos y Bot de Telegram: el botón de recargar fallaba (`setState` recibía un Future).
+- Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.
+- Estadísticas: nuevo diseño en tarjetas (totales, gráfico por día con fechas y secciones en dos columnas), con ancho máximo en pantallas anchas.
+- El ciudadano ya no ve ni abre los bloques de gestión (estadísticas, informes, históricos, bot y permisos).
+
 ## [0.5.0] — 2026-11-17 · Reportes ciudadanos (I5)
 
 ### Agregado
@@ -118,7 +150,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.5.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.6.0...develop
+[0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0
 [0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0
 [0.4.5]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.5
 [0.4.4]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.4

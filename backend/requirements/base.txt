@@ -5,6 +5,9 @@
 Django==5.2.18
 djangorestframework==3.18.3
 djangorestframework-simplejwt==5.5.1
+# Documentación OpenAPI en /api/docs/ (Swagger UI servido localmente, sin CDN).
+drf-spectacular==0.30.0
+drf-spectacular-sidecar==2026.10.1
 django-environ==0.14.0
 psycopg[binary]==3.3.6
 requests==2.34.2
@@ -26,6 +29,10 @@ Pillow==13.0.0
 # Aprendizaje automático — ModeloRecurrencia (ver Vigia-UML-Clases § Servicios)
 pandas==3.1.0
 scikit-learn==1.9.1
+
+# Informes del panel de administración (ExportadorDatos)
+openpyxl==3.1.5
+reportlab==5.1.0
 
 # Notificaciones push (FCM, #43). Telegram usa requests, sin librería aparte.
 firebase-admin==7.7.0

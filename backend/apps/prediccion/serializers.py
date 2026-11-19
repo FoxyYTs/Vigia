@@ -17,5 +17,5 @@ class ZonaRecurrenteSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_area(self, obj):
+    def get_area(self, obj) -> dict:
         return json.loads(obj.area.geojson)

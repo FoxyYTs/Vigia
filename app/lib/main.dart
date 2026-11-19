@@ -10,9 +10,14 @@ import 'providers/auth_provider.dart';
 import 'providers/focos_provider.dart';
 import 'providers/historico_provider.dart';
 import 'providers/prediccion_provider.dart';
+import 'screens/bot_telegram_screen.dart';
+import 'screens/estadisticas_screen.dart';
+import 'screens/historicos_screen.dart';
+import 'screens/informes_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/mapa_screen.dart';
 import 'screens/panel_screen.dart';
+import 'screens/permisos_screen.dart';
 import 'screens/reportes_screen.dart';
 import 'screens/rutas.dart';
 
@@ -52,6 +57,11 @@ class VigiaApp extends StatelessWidget {
             Rutas.login => const LoginScreen(),
             Rutas.panel => const RequiereSesion(child: PanelScreen()),
             Rutas.reportes => const RequiereSesion(child: ReportesScreen()),
+            Rutas.estadisticas => const RequiereSesion(gestion: true, child: EstadisticasScreen()),
+            Rutas.historicos => const RequiereSesion(gestion: true, child: HistoricosScreen()),
+            Rutas.botTelegram => const RequiereSesion(gestion: true, child: BotTelegramScreen()),
+            Rutas.permisos => const RequiereSesion(gestion: true, child: PermisosScreen()),
+            Rutas.informes => const RequiereSesion(gestion: true, child: InformesScreen()),
             _ => const MapaScreen(),
           },
         ),
@@ -62,8 +72,10 @@ class VigiaApp extends StatelessWidget {
 
 /// El panel cuelga de "Iniciar Sesión": sin sesión se muestra el login.
 class RequiereSesion extends StatelessWidget {
-  const RequiereSesion({super.key, required this.child});
+  const RequiereSesion({super.key, this.gestion = false, required this.child});
 
+  /// Solo para administradores y staff (el ciudadano ni ve el bloque).
+  final bool gestion;
   final Widget child;
 
   @override
@@ -72,6 +84,10 @@ class RequiereSesion extends StatelessWidget {
     return switch (auth.estado) {
       EstadoSesion.verificando => const Scaffold(body: Center(child: CircularProgressIndicator())),
       EstadoSesion.anonima => const LoginScreen(),
+      EstadoSesion.autenticada when gestion && !auth.rol.gestiona => Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: Text('No tienes permiso para ver esta página.')),
+        ),
       EstadoSesion.autenticada => child,
     };
   }

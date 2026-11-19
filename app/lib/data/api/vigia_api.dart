@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../models/estadisticas.dart';
 import '../models/foco.dart';
 import '../models/historico.dart';
 import '../models/reporte.dart';
@@ -231,6 +232,86 @@ class VigiaApi {
     return respuesta.bodyBytes;
   }
 
+  // --------------------------------------------------------- estadisticas --
+
+  /// Focos, alertas y reportes de [desde] a [hasta] (ambos inclusivos).
+  Future<Estadisticas> estadisticas(String access, {required DateTime desde, required DateTime hasta}) async {
+    String dia(DateTime d) => d.toIso8601String().substring(0, 10);
+    final uri = baseUrl.resolve('estadisticas/').replace(queryParameters: {'desde': dia(desde), 'hasta': dia(hasta)});
+    return Estadisticas.fromJson(await _enviar(() => _cliente.get(uri, headers: _cabeceras(access))));
+  }
+
+  /// Informe de [desde] a [hasta] como archivo: `csv` (detalle de
+  /// [conjunto]), `xlsx` (resumen y detalle) o `pdf` (resumen).
+  Future<({Uint8List bytes, String nombre})> descargarInforme(
+    String access, {
+    required String formato,
+    required DateTime desde,
+    required DateTime hasta,
+    String conjunto = 'focos',
+  }) async {
+    String dia(DateTime d) => d.toIso8601String().substring(0, 10);
+    final uri = baseUrl.resolve('informes/').replace(queryParameters: {
+      'formato': formato,
+      'conjunto': conjunto,
+      'desde': dia(desde),
+      'hasta': dia(hasta),
+    });
+    // Un Excel de 92 días puede tardar varios segundos en generarse.
+    final r = await _ejecutar(() => _cliente.get(uri, headers: {'Authorization': 'Bearer $access'}), timeout * 4);
+    if (r.statusCode != 200) {
+      throw _error(r.statusCode, _decodificar(r), 'Tu sesión expiró. Inicia sesión de nuevo.');
+    }
+    final nombre = RegExp(r'filename="([^"]+)"').firstMatch(r.headers['content-disposition'] ?? '')?.group(1);
+    return (bytes: r.bodyBytes, nombre: nombre ?? 'vigia-informe.$formato');
+  }
+
+  // ------------------------------------------------------------ historicos --
+
+  /// Qué hay cargado de cada fuente histórica (UNGRD, IDEAM y FIRMS), por año.
+  Future<Map<String, dynamic>> resumenHistoricos(String access) =>
+      _enviar(() => _cliente.get(baseUrl.resolve('historico/resumen/'), headers: _cabeceras(access)));
+
+  /// Encola la descarga de los incendios nuevos de la UNGRD (solo staff).
+  Future<void> sincronizarUngrd(String access) =>
+      _enviar(() => _cliente.post(baseUrl.resolve('historico/ungrd/sincronizar/'), headers: _cabeceras(access)));
+
+  // ---------------------------------------------------------- bot telegram --
+
+  /// Estado del bot y de sus tres canales (sin token ni ids de chat).
+  Future<Map<String, dynamic>> estadoBot(String access) =>
+      _enviar(() => _cliente.get(baseUrl.resolve('bot-telegram/'), headers: _cabeceras(access)));
+
+  /// Mensaje de prueba al [canal] (`telegram_publico|privado|interno`; solo staff).
+  Future<void> probarCanal(String access, String canal) => _enviar(() => _cliente.post(
+        baseUrl.resolve('bot-telegram/probar/'),
+        headers: _cabeceras(access),
+        body: jsonEncode({'canal': canal}),
+      ));
+
+  // -------------------------------------------------------------- permisos --
+
+  /// Usuarios que puede ver quien consulta: todos para el staff; los
+  /// administradores de su entidad para un administrador.
+  // shortcut: solo la primera página (500), sobra para el piloto; paginar si crece.
+  Future<List<Map<String, dynamic>>> usuarios(String access, {String buscar = '', String? rol}) async {
+    final uri = baseUrl.resolve('usuarios/').replace(queryParameters: {
+      if (buscar.isNotEmpty) 'buscar': buscar,
+      'rol': ?rol,
+      'page_size': '$tamanoPaginaMaximo',
+    });
+    final json = await _enviar(() => _cliente.get(uri, headers: _cabeceras(access)));
+    return (json['results'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// Cambia `rol`, `entidad` o `is_active` de un usuario (solo staff).
+  Future<Map<String, dynamic>> actualizarUsuario(String access, int id, Map<String, Object?> cambios) => _enviar(
+      () => _cliente.patch(baseUrl.resolve('usuarios/$id/'), headers: _cabeceras(access), body: jsonEncode(cambios)));
+
+  Future<List<Map<String, dynamic>>> entidades(String access) async =>
+      (await _enviarLista(() => _cliente.get(baseUrl.resolve('entidades/'), headers: _cabeceras(access))))
+          .cast<Map<String, dynamic>>();
+
   // ------------------------------------------------------------ internos --
 
   Map<String, String> _cabeceras([String? access]) => {
@@ -253,9 +334,16 @@ class VigiaApi {
     Future<http.Response> Function() peticion, {
     required String mensaje401,
   }) async {
-    final http.Response respuesta;
+    final respuesta = await _ejecutar(peticion);
+    final cuerpo = _decodificar(respuesta);
+    final status = respuesta.statusCode;
+    if (status >= 200 && status < 300 && cuerpo is T) return cuerpo;
+    throw _error(status, cuerpo, mensaje401);
+  }
+
+  Future<http.Response> _ejecutar(Future<http.Response> Function() peticion, [Duration? limite]) async {
     try {
-      respuesta = await peticion().timeout(timeout);
+      return await peticion().timeout(limite ?? timeout);
     } on TimeoutException {
       throw const ApiException('El servidor tardó demasiado en responder. Inténtalo de nuevo.');
     } on http.ClientException {
@@ -263,18 +351,19 @@ class VigiaApi {
         'No se pudo conectar con el servidor de Vigía. Revisa tu conexión a internet.',
       );
     }
+  }
 
-    final cuerpo = _decodificar(respuesta);
-    final status = respuesta.statusCode;
-    if (status >= 200 && status < 300 && cuerpo is T) return cuerpo;
-
-    throw ApiException(
+  ApiException _error(int status, Object? cuerpo, String mensaje401) {
+    return ApiException(
       switch (status) {
         401 => mensaje401,
         403 => 'No tienes permiso para realizar esta acción.',
         404 => 'El recurso solicitado no existe.',
         429 => 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
         400 => _primerError(cuerpo) ?? 'Revisa los datos enviados.',
+        // 502 con JSON: Vigía respondió, pero un servicio externo (Telegram)
+        // falló, y el detalle dice qué revisar. Sin JSON es Nginx sin backend.
+        502 => _primerError(cuerpo) ?? 'El servidor de Vigía tuvo un problema. Inténtalo más tarde.',
         >= 500 => 'El servidor de Vigía tuvo un problema. Inténtalo más tarde.',
         _ => 'Respuesta inesperada del servidor (código $status).',
       },

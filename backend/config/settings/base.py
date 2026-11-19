@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "django_celery_beat",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     # Apps del dominio — ver Vigia-UML-Clases (vault) § Persistencia/Servicios
     "apps.usuarios",
     "apps.satelital",
@@ -137,10 +139,18 @@ REST_FRAMEWORK = {
     # Cerrado por defecto: cada vista pública declara AllowAny explícitamente.
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "config.pagination.PaginacionEstandar",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Los endpoints públicos (focos, zonas, históricos) son una API de datos
+    # abiertos: el límite por IP evita que una descarga masiva tumbe el
+    # servidor. Las vistas con `throttle_classes` propio lo reemplazan.
+    "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.AnonRateThrottle",),
     # Los límites por usuario/IP protegen registro, login y creación de
     # reportes. En producción el caché es Redis (límite global, ver
     # production.py); en desarrollo y pruebas, memoria local.
     "DEFAULT_THROTTLE_RATES": {
+        # Holgado: un filtro del mapa cuesta ~13 consultas y un salón u oficina
+        # comparte la IP (la app no manda la sesión a los endpoints públicos).
+        "anon": "20000/hour",
         "registro": "20/hour",
         "login": "60/hour",
         "refresco": "120/hour",
@@ -150,6 +160,38 @@ REST_FRAMEWORK = {
     # CF-Connecting-IP): se confía en exactamente un proxy. Sin esto DRF usaba
     # la cadena completa y cada X-Forwarded-For inventado era una "IP" nueva.
     "NUM_PROXIES": 1,
+}
+
+# Documentación OpenAPI (/api/schema/ y /api/docs/).
+SPECTACULAR_SETTINGS = {
+    "TITLE": "API de Vigía",
+    "VERSION": "0.6.0",
+    "DESCRIPTION": """
+Alertas tempranas de incendios forestales en Colombia. Los endpoints marcados como públicos
+no piden sesión y forman una API de **datos abiertos**, con un límite de 20.000 consultas
+por hora por IP. Los demás piden un JWT de `/api/auth/token/`.
+
+Los reportes ciudadanos (foto, ubicación y texto) no se publican: son datos personales
+(Ley 1581 de 2012) y solo aparecen agregados en las estadísticas.
+
+## Fuentes y licencias
+
+Quien reutilice estos datos debe citar la fuente original. Se entregan "tal cual": los focos en
+casi tiempo real no tienen calidad científica y un foco de calor no siempre es un incendio.
+
+| Datos | Fuente | Licencia |
+|---|---|---|
+| Focos de calor (`/api/focos/`) | NASA FIRMS (LANCE/EOSDIS) | Sin restricciones; citar a LANCE FIRMS (NASA/ESDIS) |
+| Focos de calor (`/api/focos/`) | INPE, Programa Queimadas | Acceso público sin licencia publicada; citar al INPE |
+| Incendios reportados (`/api/incendios-reportados/`) | UNGRD, datos.gov.co | Datos abiertos (Ley 1712 de 2014) |
+| Deforestación (`/api/historico/capa/`) | IDEAM, SMByC | CC BY-SA 4.0 (también las hectáreas por municipio) |
+| Límites municipales | geoBoundaries / DANE | CC BY 4.0 |
+| Zonas recurrentes (`/api/zonas-recurrentes/`) | Modelo de Vigía sobre NASA FIRMS | Citar Vigía y NASA FIRMS |
+""",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 SIMPLE_JWT = {

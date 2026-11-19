@@ -45,6 +45,8 @@ class ReporteCiudadanoViewSet(
         return [(EsCiudadano | EsAdministrador | EsStaff)()]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # al generar el esquema OpenAPI no hay usuario
+            return ReporteCiudadano.objects.none()
         usuario = self.request.user
         qs = ReporteCiudadano.objects.select_related("ciudadano", "validado_por")
         if usuario.es_ciudadano():
