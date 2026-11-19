@@ -34,8 +34,7 @@ scikit-learn==1.9.1
 openpyxl==3.1.5
 reportlab==5.1.0
 
-# Notificaciones push (FCM, #43). Telegram usa requests, sin librería aparte.
-firebase-admin==7.7.0
+# Telegram usa requests, sin librería aparte. firebase-admin vuelve con el push (FCM, #43).
 
 # Servidor de aplicación (producción)
 gunicorn==26.2.0

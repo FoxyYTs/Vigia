@@ -131,3 +131,9 @@ def test_cambiar_solo_la_entidad_no_cierra_las_sesiones(api_como, staff, adminis
     refresco = RefreshToken.for_user(administrador)
     _patch(api_como(staff), administrador, {"entidad": otra_entidad.pk})
     assert not BlacklistedToken.objects.filter(token__jti=refresco["jti"]).exists()
+
+
+def test_refrescar_la_sesion_de_una_cuenta_borrada_da_401(api, ciudadano):
+    refresco = str(RefreshToken.for_user(ciudadano))
+    ciudadano.delete()
+    assert api.post("/api/auth/token/refresh/", {"refresh": refresco}, format="json").status_code == 401

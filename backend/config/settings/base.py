@@ -18,11 +18,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env()
 
-# El build context del Dockerfile es solo backend/ (ver Vigia-UML-Despliegue),
-# así que dentro del contenedor no existe un .env físico en BASE_DIR.parent
-# — ahí las variables ya llegan inyectadas por `env_file:` de
-# docker-compose.yml. read_env() es solo para desarrollo local fuera de
-# Docker; por eso se guarda condicionado a que el archivo exista.
 # SHA-256 de claves que fueron públicas (el antiguo valor de .env.example,
 # visible en el historial del repo): con ellas cualquiera firma un JWT válido.
 CLAVES_COMPROMETIDAS = {"968f8b985b9934bc24827e8fefe319de3024c7c3a822eb7f0e5485ecb4215f3d"}
@@ -38,6 +33,11 @@ def validar_secret_key(clave: str) -> None:
         )
 
 
+# El build context del Dockerfile es solo backend/ (ver Vigia-UML-Despliegue),
+# así que dentro del contenedor no existe un .env físico en BASE_DIR.parent
+# — ahí las variables ya llegan inyectadas por `env_file:` de
+# docker-compose.yml. read_env() es solo para desarrollo local fuera de
+# Docker; por eso se guarda condicionado a que el archivo exista.
 _dotenv_path = BASE_DIR.parent / ".env"
 if _dotenv_path.exists():
     environ.Env.read_env(_dotenv_path)
@@ -155,6 +155,7 @@ REST_FRAMEWORK = {
         "login": "60/hour",
         "refresco": "120/hour",
         "reporte": "30/hour",
+        "informe": "60/hour",
     },
     # Nginx reemplaza X-Forwarded-For por la IP real del cliente (tomada de
     # CF-Connecting-IP): se confía en exactamente un proxy. Sin esto DRF usaba
@@ -165,7 +166,7 @@ REST_FRAMEWORK = {
 # Documentación OpenAPI (/api/schema/ y /api/docs/).
 SPECTACULAR_SETTINGS = {
     "TITLE": "API de Vigía",
-    "VERSION": "0.6.0",
+    "VERSION": "0.7.0",
     "DESCRIPTION": """
 Alertas tempranas de incendios forestales en Colombia. Los endpoints marcados como públicos
 no piden sesión y forman una API de **datos abiertos**, con un límite de 20.000 consultas
@@ -213,6 +214,9 @@ LOGGING = {
     "loggers": {
         # Los 4xx/5xx de Django van como WARNING/ERROR; el detalle de SQL no.
         "django.db.backends": {"level": "WARNING"},
+        # El token de Telegram y la MAP_KEY de FIRMS van en la URL: urllib3 la
+        # registra en DEBUG, así que nunca baja de WARNING.
+        "urllib3": {"level": "WARNING"},
     },
 }
 
@@ -223,6 +227,10 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+# Ninguna tarea se queda colgada ocupando un worker (descargas de FIRMS, INPE
+# o la UNGRD sin respuesta). El reentrenamiento tiene su propio límite.
+CELERY_TASK_SOFT_TIME_LIMIT = 10 * 60
+CELERY_TASK_TIME_LIMIT = 15 * 60
 
 # Credenciales e integraciones externas — ver Vigia-Credenciales-APIs
 # (vault de Obsidian) para el proceso de registro de cada una y el
@@ -233,7 +241,6 @@ INPE_QUEIMADAS_WFS_URL = env(
     default="https://terrabrasilis.dpi.inpe.br/queimadas/geoserver/wfs",
 )
 UNGRD_SOCRATA_APP_TOKEN = env("UNGRD_SOCRATA_APP_TOKEN", default="")
-UNGRD_SOCRATA_APP_SECRET = env("UNGRD_SOCRATA_APP_SECRET", default="")
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CANAL_PUBLICO_ID = env("TELEGRAM_CANAL_PUBLICO_ID", default="")
 TELEGRAM_CANAL_PRIVADO_ID = env("TELEGRAM_CANAL_PRIVADO_ID", default="")

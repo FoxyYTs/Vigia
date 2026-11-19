@@ -24,12 +24,17 @@ def _fecha(valor: str, nombre: str, fin_de_dia: bool = False):
     """Acepta '2026-09-01' o '2026-09-01T12:00:00Z'. Una fecha sin hora es el
     inicio del día, o el final si `fin_de_dia` (para que `hasta=2026-09-01`
     incluya los focos de ese día)."""
-    resultado = parse_datetime(valor)
-    if resultado is None:
-        dia = parse_date(valor)
-        if dia is None:
-            raise ValidationError({nombre: "Formato inválido, usar AAAA-MM-DD o ISO 8601."})
-        resultado = datetime(dia.year, dia.month, dia.day) + (timedelta(days=1) if fin_de_dia else timedelta())
+    # parse_* devuelven None con texto que no parece fecha, pero lanzan
+    # ValueError con una fecha imposible (2026-02-30), que antes daba 500.
+    try:
+        resultado = parse_datetime(valor)
+        if resultado is None:
+            dia = parse_date(valor)
+            if dia is None:
+                raise ValueError
+            resultado = datetime(dia.year, dia.month, dia.day) + (timedelta(days=1) if fin_de_dia else timedelta())
+    except (ValueError, OverflowError):
+        raise ValidationError({nombre: "Formato inválido, usar AAAA-MM-DD o ISO 8601."}) from None
     if timezone.is_naive(resultado):
         resultado = timezone.make_aware(resultado, UTC)
     return resultado

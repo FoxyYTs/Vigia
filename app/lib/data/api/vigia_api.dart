@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../models/bot_telegram.dart';
 import '../models/estadisticas.dart';
+import '../models/historicos.dart';
 import '../models/foco.dart';
 import '../models/historico.dart';
 import '../models/reporte.dart';
@@ -77,6 +79,40 @@ class VigiaApi {
           body: jsonEncode({'refresh': refresh}),
         ),
       );
+
+  /// Registro público: siempre crea un ciudadano (`RegistroSerializer`). La
+  /// aceptación de la política de datos es obligatoria (Ley 1581).
+  Future<void> registrar({
+    required String usuario,
+    required String correo,
+    required String contrasena,
+    required bool aceptoPolitica,
+    int? municipio,
+  }) =>
+      _enviar(() => _cliente.post(
+            baseUrl.resolve('auth/registro/'),
+            headers: _cabeceras(),
+            body: jsonEncode({
+              'username': usuario,
+              'email': correo,
+              'password': contrasena,
+              'municipio_residencia': municipio,
+              'acepto_politica': aceptoPolitica,
+            }),
+          ));
+
+  /// Catálogo de municipios para el formulario de registro (público).
+  Future<List<Municipio>> municipios() async => [
+        for (final m in await _enviarLista(() => _cliente.get(baseUrl.resolve('municipios/'), headers: _cabeceras())))
+          Municipio.fromJson(m as Map<String, dynamic>),
+      ];
+
+  /// Elimina la cuenta: el backend anonimiza los datos personales y revoca
+  /// las sesiones (`DELETE /api/auth/yo/`, responde 204 sin cuerpo).
+  Future<void> eliminarCuenta(String access) async {
+    final r = await _ejecutar(() => _cliente.delete(baseUrl.resolve('auth/yo/'), headers: _cabeceras(access)));
+    if (r.statusCode != 204) throw _error(r.statusCode, _decodificar(r), 'Necesitas iniciar sesión para continuar.');
+  }
 
   Future<Usuario> obtenerPerfil(String access) async {
     final json = await _enviar(
@@ -269,8 +305,8 @@ class VigiaApi {
   // ------------------------------------------------------------ historicos --
 
   /// Qué hay cargado de cada fuente histórica (UNGRD, IDEAM y FIRMS), por año.
-  Future<Map<String, dynamic>> resumenHistoricos(String access) =>
-      _enviar(() => _cliente.get(baseUrl.resolve('historico/resumen/'), headers: _cabeceras(access)));
+  Future<ResumenHistoricos> resumenHistoricos(String access) async => ResumenHistoricos.fromJson(
+      await _enviar(() => _cliente.get(baseUrl.resolve('historico/resumen/'), headers: _cabeceras(access))));
 
   /// Encola la descarga de los incendios nuevos de la UNGRD (solo staff).
   Future<void> sincronizarUngrd(String access) =>
@@ -279,8 +315,8 @@ class VigiaApi {
   // ---------------------------------------------------------- bot telegram --
 
   /// Estado del bot y de sus tres canales (sin token ni ids de chat).
-  Future<Map<String, dynamic>> estadoBot(String access) =>
-      _enviar(() => _cliente.get(baseUrl.resolve('bot-telegram/'), headers: _cabeceras(access)));
+  Future<EstadoBot> estadoBot(String access) async =>
+      EstadoBot.fromJson(await _enviar(() => _cliente.get(baseUrl.resolve('bot-telegram/'), headers: _cabeceras(access))));
 
   /// Mensaje de prueba al [canal] (`telegram_publico|privado|interno`; solo staff).
   Future<void> probarCanal(String access, String canal) => _enviar(() => _cliente.post(

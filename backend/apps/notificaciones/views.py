@@ -1,8 +1,10 @@
+import hashlib
 from datetime import timedelta
 from html import escape
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Count, Max, Q
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -39,15 +41,29 @@ class NotificacionViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         return Response(self.get_serializer(n).data)
 
 
+# El nombre del bot casi nunca cambia; un fallo se recuerda poco tiempo para
+# que una demora de Telegram (en producción llegó a 15 s tras reiniciar) no
+# frene cada carga de la pantalla ni la deje marcada como caída por horas.
+CACHE_BOT_OK = 6 * 3600
+CACHE_BOT_FALLO = 120
+
+
 def _bot():
     """Nombre del bot según Telegram (getMe), o None si el token falta o no sirve."""
-    if not settings.TELEGRAM_BOT_TOKEN:
+    token = settings.TELEGRAM_BOT_TOKEN
+    if not token:
         return None
+    # La clave depende del token (sin guardarlo): al cambiarlo, se consulta de nuevo.
+    clave = "telegram-getme:" + hashlib.sha256(token.encode()).hexdigest()[:16]
+    if (nombre := cache.get(clave)) is not None:
+        return nombre or None  # "" = falló hace poco
     try:
-        r = requests.get(f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/getMe", timeout=5)
-        return r.json()["result"]["username"] if r.ok else None
+        r = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=5)
+        nombre = r.json()["result"]["username"] if r.ok else None
     except (requests.RequestException, ValueError, KeyError):
-        return None
+        nombre = None
+    cache.set(clave, nombre or "", CACHE_BOT_OK if nombre else CACHE_BOT_FALLO)
+    return nombre
 
 
 @extend_schema(responses=OpenApiTypes.OBJECT)

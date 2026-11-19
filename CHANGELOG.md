@@ -7,6 +7,40 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.7.0] — 2026-11-19 · Registro en la app y pulido
+
+### Agregado
+- App: registro de cuenta (`/registro`) con usuario, correo, contraseña, municipio de residencia opcional y aceptación expresa de la política de datos (Ley 1581), con enlace a ella. Al registrarse inicia sesión.
+- App: «Eliminar mi cuenta» en Gestionar Usuario para el ciudadano (anonimiza los datos y cierra las sesiones, `DELETE /api/auth/yo/`), como pide Play para las apps que permiten crear cuentas. `privacidad.html` lo menciona.
+- App: «Reintentar» en los errores de carga de las pantallas de gestión, y botón de recargar en Estadísticas.
+- CI: job que construye la imagen de producción y corre `check --deploy`; cancelación de corridas viejas y límites de tiempo.
+
+### Cambiado
+- Motor de alertas: `dwithin` en vez de `distance_lte`, que sí usa el índice espacial (unas 3 veces más rápido). Índice nuevo en `FocoIncendio.fecha_hora`, creado con `CONCURRENTLY`.
+- Las vistas públicas, el bot y el motor ya no cargan el polígono de cada municipio cuando solo usan el nombre; FIRMS se inserta en lote como INPE.
+- Gunicorn corta a los 90 s (antes 30) y Nginx espera 95 s; con sesión, 60 informes por hora como máximo.
+- `desplegar.sh`: exige el árbol limpio y en el commit a desplegar, acepta un tag (para volver atrás), respalda la base antes y comprueba la API, la web y la salud de los contenedores.
+- Docker: logs con rotación (10 MB × 3), healthcheck del backend (Nginx espera a que esté sano), celery-worker con 2 procesos, `.dockerignore` del backend y sin `firebase-admin` hasta que llegue el push.
+- App: componentes compartidos para el ancho máximo, la carga con error y el selector de periodo; la barra del panel usa íconos en el celular; los avisos del mapa no tapan los botones; encabezados accesibles en los títulos.
+- Web: `orientation: any` en el manifiesto, `theme-color` y `consentimiento.js` con `defer`.
+- Backend: `SimpleRouter` en todas las apps; sin `UNGRD_SOCRATA_APP_SECRET`, que no se usaba.
+- La regla de jurisdicción del administrador vive en un solo lugar (`apps/usuarios/jurisdiccion.py`) y la usan los reportes, las estadísticas y los informes; antes estaba repetida.
+- Estadísticas: los totales salen de los conteos agrupados (tres consultas menos, y una menos con el filtro espacial sobre todos los focos).
+- Informes: las etiquetas de fuentes y disparadores salen de los modelos en vez de una copia.
+
+### Corregido
+- Renovar la sesión de una cuenta borrada desde el admin respondía 500 (simplejwt no captura `DoesNotExist`); ahora 401.
+- `/api/focos/` con una fecha imposible (`desde=2026-02-30`) respondía 500; ahora 400.
+- Django Admin: Alerta, Notificación, históricos y zonas recurrentes ya no cargan millones de focos o reportes en un desplegable (`raw_id_fields`) ni el polígono de cada municipio en las listas.
+- Una fila mal formada de la UNGRD ya no aborta toda la sincronización: se omite y se registra.
+- Celery: límite de tiempo por tarea (10 min, y 1 h para el reentrenamiento) para que una descarga colgada no ocupe un worker.
+- Los reintentos del bot actualizan la notificación fallida en vez de sumar otra: los fallos de la pantalla del bot se contaban hasta 4 veces.
+- Los logs nunca muestran el token de Telegram ni la MAP_KEY de FIRMS (`urllib3` en WARNING).
+- App: si la cámara no abre, el reporte lo explica; el mapa del reporte da crédito a OpenStreetMap; en el navegador se avisa que se puede elegir un archivo.
+- App: validar o rechazar un reporte desactiva los botones mientras responde la API (sin doble envío).
+- App: Históricos y Bot de Telegram leen la respuesta con modelos tipados; un JSON inesperado se muestra como error en vez de romper la pantalla.
+- Gestionar Bot de Telegram: el nombre del bot (`getMe`) se guarda en caché 6 horas, y un fallo 2 minutos. Tras reiniciar los contenedores, Telegram tardó hasta 15 s y la pantalla mostraba el bot como caído aunque las alertas salían.
+
 ## [0.6.0] — 2026-11-18 · Panel de administración (I6)
 
 ### Agregado
@@ -150,7 +184,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.6.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.7.0...develop
+[0.7.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.7.0
 [0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0
 [0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0
 [0.4.5]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.5

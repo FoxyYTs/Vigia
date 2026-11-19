@@ -1,5 +1,5 @@
 from django.urls import path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
 from apps.historico.views import (
     IncendioReportadoViewSet,
@@ -9,7 +9,7 @@ from apps.historico.views import (
     sincronizar_ungrd_view,
 )
 
-router = DefaultRouter()
+router = SimpleRouter()
 router.register("incendios-reportados", IncendioReportadoViewSet, basename="incendio-reportado")
 
 urlpatterns = [

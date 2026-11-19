@@ -1,9 +1,9 @@
 from django.urls import path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
 from apps.notificaciones.views import NotificacionViewSet, estado_bot, probar_canal
 
-router = DefaultRouter()
+router = SimpleRouter()
 router.register("notificaciones", NotificacionViewSet, basename="notificacion")
 
 urlpatterns = [

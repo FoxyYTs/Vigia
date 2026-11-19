@@ -93,11 +93,11 @@ GitFlow: `main` solo para releases estables, `develop` como rama de integración
 
 ## Estado
 
-Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implementación:
+Versión 0.7.0 (registro en la app y pulido tras el I6). Lo que ya funciona:
 
 - ✅ `apps/satelital`: `FocoIncendio` + `ClienteNasaFirms` (tiempo real e histórico) +
   `ClienteInpeQueimadas` (WFS, capa `bdqueimadas2:focos` filtrada por Colombia). Probados contra las
-  APIs reales; 20/20 tests con Postgres real. La tarea de Celery `sincronizar_focos` corre cada 3 h
+  APIs reales y con pruebas sobre PostGIS real. La tarea de Celery `sincronizar_focos` corre cada 3 h
   y cada fuente falla de forma aislada; tras una caída recupera los días perdidos (hasta 30) sin
   disparar alertas por focos viejos.
 - ✅ Histórico: `python manage.py cargar_historico_firms` (VIIRS NOAA-20, 2018-04 → hoy, idempotente).
@@ -108,7 +108,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
   municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
   y la jurisdicción de Cornare.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (312 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (99 % de cobertura en el backend; la app tiene sus propias pruebas en `app/test/`).
 - ✅ App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
   JWT, reportes ciudadanos (foto con cámara, GPS y pin; validación por el administrador) y panel
   de administración (I6): estadísticas, informes en PDF/Excel/CSV, históricos, bot de Telegram y
@@ -130,13 +130,16 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ✅ Producción en `https://vigia.foxyyts.qzz.io` (servidor propio con Docker Compose y túnel de
   Cloudflare, respaldo diario de la base). Ver [`DESPLIEGUE.md`](DESPLIEGUE.md).
 - 🟡 App Android `com.vigia.foxyyts` en prueba interna de Play Store.
-- ⬜ Fotos de reportes (I5b) y push FCM.
+- ✅ Fotos de reportes (I5b): solo desde la cámara, con miniatura, comparación del EXIF con el
+  reporte y purga según el estado (Ley 1581).
+- ⬜ Notificaciones push (FCM, #43).
 
 ## Versiones y cambios
 
 Ver [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog + SemVer). Las versiones publicadas son
 etiquetas `vX.Y.Z` sobre `main`. El CI (`.github/workflows/ci.yml`) corre pytest, ruff,
-`flutter analyze` y `flutter test` en cada PR.
+`makemigrations --check`, `flutter analyze` y `flutter test` en cada PR, y construye la imagen
+de producción para correr `check --deploy`.
 
 ## API de datos abiertos
 

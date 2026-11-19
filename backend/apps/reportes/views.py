@@ -1,5 +1,3 @@
-from django.contrib.gis.db.models import PointField
-from django.db.models import Exists, F, Func, OuterRef
 from django.http import Http404, HttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -9,7 +7,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from apps.alertas.motor import MotorAlertas
 from apps.reportes.models import ReporteCiudadano
 from apps.reportes.serializers import ReporteCiudadanoSerializer
-from apps.usuarios.models import Municipio
+from apps.usuarios.jurisdiccion import como_geometry, dentro_de, municipios_de
 from apps.usuarios.permissions import EsAdministrador, EsCiudadano, EsStaff
 
 
@@ -51,12 +49,8 @@ class ReporteCiudadanoViewSet(
         qs = ReporteCiudadano.objects.select_related("ciudadano", "validado_por")
         if usuario.es_ciudadano():
             qs = qs.filter(ciudadano=usuario)
-        elif usuario.es_administrador() and usuario.entidad_id:
-            jurisdiccion = Municipio.objects.filter(entidades=usuario.entidad_id, geom__isnull=False)
-            if jurisdiccion.exists():
-                qs = qs.annotate(punto=_como_geometry("ubicacion_incendio")).filter(
-                    Exists(jurisdiccion.filter(geom__contains=OuterRef("punto")))
-                )
+        elif (municipios := municipios_de(usuario)) is not None:
+            qs = qs.annotate(punto=como_geometry("ubicacion_incendio")).filter(dentro_de(municipios, "punto"))
         if estado := self.request.query_params.get("estado"):
             qs = qs.filter(estado=estado)
         return qs
@@ -81,7 +75,7 @@ class ReporteCiudadanoViewSet(
         Nginx la entrega desde una ruta `internal` que no es accesible desde
         afuera: /media/ ya no es público."""
         reporte = self.get_object()
-        archivo = reporte.miniatura if request.query_params.get("miniatura") else reporte.foto
+        archivo = reporte.miniatura if request.query_params.get("miniatura") == "1" else reporte.foto
         if not archivo:
             raise Http404("La foto ya no está disponible.")
         respuesta = HttpResponse(content_type="image/jpeg")
@@ -96,9 +90,3 @@ class ReporteCiudadanoViewSet(
     @action(detail=True, methods=["post"])
     def rechazar(self, request, pk=None):
         return self._resolver(request, "rechazar")
-
-
-def _como_geometry(campo):
-    """geography → geometry: `Municipio.geom` es geometry y PostGIS no
-    compara directamente ambos tipos."""
-    return Func(F(campo), template="%(expressions)s::geometry", output_field=PointField(srid=4326))

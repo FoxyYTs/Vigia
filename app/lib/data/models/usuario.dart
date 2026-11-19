@@ -86,3 +86,18 @@ class Usuario {
         entidad: json['entidad'] as int?,
       );
 }
+
+/// Municipio del catálogo (`MunicipioSerializer`), para el registro.
+class Municipio {
+  const Municipio({required this.id, required this.nombre, required this.departamento});
+
+  final int id;
+  final String nombre;
+  final String departamento;
+
+  factory Municipio.fromJson(Map<String, dynamic> json) => Municipio(
+        id: json['id'] as int,
+        nombre: json['nombre'] as String,
+        departamento: json['departamento'] as String,
+      );
+}

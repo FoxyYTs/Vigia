@@ -5,11 +5,13 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 
 from apps.administracion import estadisticas
 from apps.administracion.exportador import CONJUNTOS, ExportadorDatos
+from apps.usuarios.jurisdiccion import municipios_de
 from apps.usuarios.permissions import EsAdministrador, EsStaff
 
 
@@ -42,7 +44,7 @@ def estadisticas_view(request):
     con polígonos solo ve su jurisdicción."""
     periodo = PeriodoSerializer(data=request.query_params)
     periodo.is_valid(raise_exception=True)
-    return Response(estadisticas.calcular(**periodo.validated_data, municipios=estadisticas.jurisdiccion(request.user)))
+    return Response(estadisticas.calcular(**periodo.validated_data, municipios=municipios_de(request.user)))
 
 
 DIAS_MAXIMOS_DETALLE = 92
@@ -72,12 +74,19 @@ TIPOS_MIME = {
 }
 
 
+class LimiteInformes(UserRateThrottle):
+    """Generar un informe ocupa un worker varios segundos: con sesión también hay tope."""
+
+    scope = "informe"
+
+
 @extend_schema(
     parameters=[InformeSerializer],
     responses={(200, tipo.split(";")[0]): OpenApiTypes.BINARY for tipo in TIPOS_MIME.values()},
 )
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
+@throttle_classes([LimiteInformes])
 def informe_view(request):
     """`?formato=csv|xlsx|pdf&desde=&hasta=` (y `conjunto=` para CSV): el
     informe como archivo descargable, con la jurisdicción de las estadísticas.
@@ -85,7 +94,7 @@ def informe_view(request):
     params = InformeSerializer(data=request.query_params)
     params.is_valid(raise_exception=True)
     d = params.validated_data
-    exportador = ExportadorDatos(d["desde"], d["hasta"], estadisticas.jurisdiccion(request.user))
+    exportador = ExportadorDatos(d["desde"], d["hasta"], municipios_de(request.user))
     formato = d["formato"]
     contenido = {
         "csv": lambda: exportador.exportar_csv(d["conjunto"]),

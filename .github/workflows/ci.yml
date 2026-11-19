@@ -10,9 +10,15 @@ on:
 permissions:
   contents: read
 
+# Un push nuevo a la misma rama o PR cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     services:
       db:
         image: postgis/postgis:16-3.4
@@ -47,10 +53,31 @@ jobs:
       - name: Migraciones al día
         run: python manage.py makemigrations --check --dry-run
       - name: pytest
-        run: python -m pytest -p no:cacheprovider
+        # --durations: las pruebas más lentas, para saber dónde se va el tiempo.
+        run: python -m pytest -p no:cacheprovider --durations=15
+
+  # La imagen de producción instala requirements/production.txt, no local.txt:
+  # en la v0.4.5 faltaba una dependencia que solo traían las de pruebas y se
+  # rompió únicamente en producción.
+  imagen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir la imagen de producción
+        run: docker build --build-arg REQUIREMENTS_FILE=requirements/production.txt -t vigia-backend backend
+      - name: Importa Django, Celery y pasa check --deploy
+        run: |
+          docker run --rm \
+            -e DJANGO_SETTINGS_MODULE=config.settings.production \
+            -e DJANGO_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')" \
+            -e DJANGO_ALLOWED_HOSTS=vigia.example.org \
+            -e DATABASE_URL=postgis://x:y@localhost:5432/z \
+            vigia-backend sh -c "python -c 'import config.celery' && python manage.py check --deploy --fail-level ERROR"
 
   app:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: app

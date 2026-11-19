@@ -1,5 +1,5 @@
 from django.urls import path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 from apps.usuarios.views import (
     CerrarSesionView,
     EntidadViewSet,
@@ -11,7 +11,7 @@ from apps.usuarios.views import (
     YoView,
 )
 
-router = DefaultRouter()
+router = SimpleRouter()
 router.register("municipios", MunicipioViewSet, basename="municipio")
 router.register("usuarios", GestionUsuarioViewSet, basename="usuario")
 router.register("entidades", EntidadViewSet, basename="entidad")

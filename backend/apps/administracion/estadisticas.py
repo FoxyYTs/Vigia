@@ -5,32 +5,18 @@ Estadísticas"). Se calculan al vuelo, sin persistencia, igual que los informes.
 
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import Count, Exists, OuterRef, Subquery
+from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from apps.alertas.models import Alerta
 from apps.reportes.models import ReporteCiudadano
-from apps.reportes.views import _como_geometry
 from apps.satelital.models import FocoIncendio
+from apps.usuarios.jurisdiccion import como_geometry, dentro_de
 from apps.usuarios.models import Municipio
 
 # Un año de focos tarda ~2,5 s en agruparse por departamento (879 mil focos).
 DIAS_MAXIMOS = 366
-
-
-def jurisdiccion(usuario):
-    """Municipios con polígono de la entidad del administrador, o None si ve
-    todo el país (staff, o administrador sin entidad o sin polígonos), con la
-    misma regla que los reportes ciudadanos."""
-    if not (usuario.es_administrador() and usuario.entidad_id):
-        return None
-    municipios = Municipio.objects.filter(entidades=usuario.entidad_id, geom__isnull=False)
-    return municipios if municipios.exists() else None
-
-
-def _en(municipios, campo):
-    return Exists(municipios.filter(geom__contains=OuterRef(campo)))
 
 
 def _contar(qs, campo):
@@ -38,6 +24,10 @@ def _contar(qs, campo):
         {"clave": f[campo], "cantidad": f["cantidad"]}
         for f in qs.values(campo).annotate(cantidad=Count("id")).order_by("-cantidad", campo)
     ]
+
+
+def _total(conteos):
+    return sum(c["cantidad"] for c in conteos)
 
 
 def consultas(desde: date, hasta: date, municipios=None):
@@ -49,16 +39,16 @@ def consultas(desde: date, hasta: date, municipios=None):
     fin = datetime.combine(hasta + timedelta(days=1), time.min, zona)
 
     focos = FocoIncendio.objects.filter(fecha_hora__gte=inicio, fecha_hora__lt=fin).annotate(
-        punto=_como_geometry("ubicacion")
+        punto=como_geometry("ubicacion")
     )
     alertas = Alerta.objects.filter(fecha_creacion__gte=inicio, fecha_creacion__lt=fin)
     reportes = ReporteCiudadano.objects.filter(fecha_creacion__gte=inicio, fecha_creacion__lt=fin).annotate(
-        punto=_como_geometry("ubicacion_incendio")
+        punto=como_geometry("ubicacion_incendio")
     )
     if municipios is not None:
-        focos = focos.filter(_en(municipios, "punto"))
+        focos = focos.filter(dentro_de(municipios, "punto"))
         alertas = alertas.filter(municipio__in=municipios)
-        reportes = reportes.filter(_en(municipios, "punto"))
+        reportes = reportes.filter(dentro_de(municipios, "punto"))
     return focos, alertas, reportes
 
 
@@ -81,14 +71,19 @@ def calcular(desde: date, hasta: date, municipios=None) -> dict:
         .order_by("dia")
     )
     conteo_dia = {f["dia"]: f["cantidad"] for f in por_dia}
+    # Los totales salen de un agrupado que ya cubre todas las filas: un count()
+    # aparte repetía el filtro espacial sobre todos los focos del periodo.
+    por_fuente = _contar(focos, "fuente")
+    por_tipo = _contar(alertas, "tipo_disparador")
+    por_estado = _contar(reportes, "estado")
 
     return {
         "desde": desde,
         "hasta": hasta,
         "nacional": municipios is None,
         "focos": {
-            "total": focos.count(),
-            "por_fuente": _contar(focos, "fuente"),
+            "total": _total(por_fuente),
+            "por_fuente": por_fuente,
             # clave None: foco fuera de los municipios con polígono (mar, frontera).
             "por_departamento": por_departamento,
             # Todos los días del periodo, con 0 donde no hubo: sin eso, el
@@ -99,12 +94,12 @@ def calcular(desde: date, hasta: date, municipios=None) -> dict:
             ],
         },
         "alertas": {
-            "total": alertas.count(),
-            "por_tipo": _contar(alertas, "tipo_disparador"),
+            "total": _total(por_tipo),
+            "por_tipo": por_tipo,
             "por_departamento": _contar(alertas, "municipio__departamento"),
         },
         "reportes": {
-            "total": reportes.count(),
-            "por_estado": _contar(reportes, "estado"),
+            "total": _total(por_estado),
+            "por_estado": por_estado,
         },
     }

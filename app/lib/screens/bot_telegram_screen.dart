@@ -1,14 +1,15 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
+import '../data/models/bot_telegram.dart';
 import '../data/models/estadisticas.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
+import '../widgets/lista_centrada.dart';
 
 /// "Gestionar Bot de Telegram": si el bot responde, qué alertas recibe cada
 /// canal (público, privado e interno) y cómo van los envíos. El staff puede
@@ -26,7 +27,7 @@ class BotTelegramScreen extends StatefulWidget {
 class _BotTelegramScreenState extends State<BotTelegramScreen> {
   static const _estados = {'enviado': 'Enviado', 'fallido': 'Fallido', 'leido': 'Leído'};
 
-  late Future<Map<String, dynamic>> _datos;
+  late Future<EstadoBot> _datos;
   String? _probando;
 
   @override
@@ -35,14 +36,16 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
     _datos = _cargar();
   }
 
-  Future<Map<String, dynamic>> _cargar() async {
+  Future<EstadoBot> _cargar() async {
     final access = await context.read<AuthProvider>().accessToken();
     if (!mounted) throw const ApiException('');
     return context.read<VigiaApi>().estadoBot(access);
   }
 
   void _recargar() {
-    final datos = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final datos = _cargar()..ignore();
     setState(() {
       _datos = datos;
     });
@@ -71,35 +74,22 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
         title: const Text(BotTelegramScreen.titulo),
         actions: [IconButton(tooltip: 'Recargar', onPressed: _recargar, icon: const Icon(Icons.refresh))],
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _datos,
-        builder: (context, snap) => switch (snap) {
-          AsyncSnapshot(hasError: true, :final error) => Center(
-              child: Text(
-                error is ApiException ? error.mensaje : 'No se pudo cargar el estado del bot.',
-                style: const TextStyle(color: VigiaColors.error),
-              ),
-            ),
-          AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => ListView(
-              // Centrado y con ancho máximo en pantallas anchas.
-              padding:
-                  EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1500) / 2)),
-              children: _contenido(data!, staff),
-            ),
-          _ => const Center(child: CircularProgressIndicator()),
-        },
+      body: EstadoCarga<EstadoBot>(
+        futuro: _datos,
+        mensajeError: 'No se pudo cargar el estado del bot.',
+        onReintentar: _recargar,
+        contenido: (datos) => ListaCentrada(children: _contenido(datos, staff)),
       ),
     );
   }
 
-  List<Widget> _contenido(Map<String, dynamic> d, bool staff) {
-    final bot = d['bot'] as String?;
-    final (icono, color, texto) = switch ((bot, d['token_configurado'] as bool)) {
+  List<Widget> _contenido(EstadoBot d, bool staff) {
+    final (icono, color, texto) = switch ((d.bot, d.tokenConfigurado)) {
       (final String nombre, _) => (Icons.check_circle, VigiaColors.bosque, 'El bot @$nombre está activo.'),
       (null, true) => (Icons.error, VigiaColors.error, 'Telegram no reconoce el token del bot o no responde.'),
       (null, false) => (Icons.error, VigiaColors.error, 'El bot no tiene token: las alertas no salen por Telegram.'),
     };
-    final recientes = d['recientes'] as List;
+    final recientes = d.recientes;
     return [
       Card(
         margin: EdgeInsets.zero,
@@ -117,13 +107,13 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
           spacing: 16,
           runSpacing: 16,
           children: [
-            for (final c in d['canales'] as List)
+            for (final c in d.canales)
               SizedBox(
                 width: ancho,
                 child: _Canal(
-                  c as Map<String, dynamic>,
-                  probando: _probando == c['canal'],
-                  onProbar: staff && _probando == null ? () => _probar(c['canal'] as String, c['nombre'] as String) : null,
+                  c,
+                  probando: _probando == c.canal,
+                  onProbar: staff && _probando == null ? () => _probar(c.canal, c.nombre) : null,
                   staff: staff,
                 ),
               ),
@@ -151,15 +141,12 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
-                      n['estado'] == 'fallido' ? Icons.error_outline : Icons.check,
-                      color: n['estado'] == 'fallido' ? VigiaColors.error : VigiaColors.bosque,
+                      n.fallido ? Icons.error_outline : Icons.check,
+                      color: n.fallido ? VigiaColors.error : VigiaColors.bosque,
                     ),
-                    title: Text(
-                      [tiposAlerta[n['tipo_alerta']] ?? n['tipo_alerta'], ?n['municipio'] as String?].join(' · '),
-                    ),
+                    title: Text([tiposAlerta[n.tipoAlerta] ?? n.tipoAlerta, ?n.municipio].join(' · ')),
                     subtitle: Text(
-                      '${Formato.fechaHora(DateTime.parse(n['fecha_envio'] as String))} · '
-                      '${_nombreCanal(d, n['canal'] as String)} · ${_estados[n['estado']] ?? n['estado']}',
+                      '${Formato.fechaHora(n.fechaEnvio)} · ${d.nombreCanal(n.canal)} · ${_estados[n.estado] ?? n.estado}',
                     ),
                   ),
             ],
@@ -168,26 +155,22 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
       ),
     ];
   }
-
-  static String _nombreCanal(Map<String, dynamic> d, String canal) =>
-      (d['canales'] as List).firstWhere((c) => c['canal'] == canal, orElse: () => {'nombre': canal})['nombre']
-          as String;
 }
 
 /// Tarjeta de un canal: si está configurado, qué alertas recibe y sus envíos.
 class _Canal extends StatelessWidget {
   const _Canal(this.c, {required this.probando, required this.onProbar, required this.staff});
 
-  final Map<String, dynamic> c;
+  final CanalBot c;
   final bool probando;
   final VoidCallback? onProbar;
   final bool staff;
 
   @override
   Widget build(BuildContext context) {
-    final configurado = c['configurado'] as bool;
-    final ultimo = c['ultimo_envio'] as String?;
-    final fallidos = c['fallidos_7d'] as int;
+    final configurado = c.configurado;
+    final ultimo = c.ultimoEnvio;
+    final fallidos = c.fallidos7d;
     const secundario = TextStyle(color: VigiaColors.textoSecundario);
     return Card(
       margin: EdgeInsets.zero,
@@ -203,7 +186,7 @@ class _Canal extends StatelessWidget {
                 Expanded(
                   child: Semantics(
                     header: true,
-                    child: Text(c['nombre'] as String, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    child: Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                   ),
                 ),
                 Chip(
@@ -215,15 +198,15 @@ class _Canal extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text('Recibe:', style: secundario),
-            for (final t in c['alertas'] as List) Text('• ${tiposAlerta[t] ?? t}'),
+            for (final t in c.alertas) Text('• ${tiposAlerta[t] ?? t}'),
             const SizedBox(height: 8),
             Text(
-              'Últimos 7 días: ${Formato.entero(c['enviados_7d'] as int)} enviados'
+              'Últimos 7 días: ${Formato.entero(c.enviados7d)} enviados'
               '${fallidos > 0 ? ' · ${Formato.entero(fallidos)} fallidos' : ''}',
               style: TextStyle(color: fallidos > 0 ? VigiaColors.error : null),
             ),
             Text(
-              ultimo == null ? 'Sin envíos todavía.' : 'Último envío: ${Formato.fechaHora(DateTime.parse(ultimo))}',
+              ultimo == null ? 'Sin envíos todavía.' : 'Último envío: ${Formato.fechaHora(ultimo)}',
               style: secundario,
             ),
             if (staff) ...[

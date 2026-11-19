@@ -4,8 +4,17 @@
 # modelo de recurrencia corren dentro de celery-worker, no como servicios
 # propios.
 
+# Logs acotados: con el driver json-file por defecto crecen sin límite en el
+# servidor (celery-worker registra en info cada sincronización).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
+    logging: *logging
     image: postgis/postgis:16-3.4
     restart: unless-stopped
     environment:
@@ -21,6 +30,7 @@ services:
       retries: 5
 
   redis:
+    logging: *logging
     image: redis:7-alpine
     restart: unless-stopped
     healthcheck:
@@ -30,6 +40,7 @@ services:
       retries: 5
 
   backend:
+    logging: *logging
     build:
       context: ./backend
       args:
@@ -41,7 +52,7 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 90"
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
@@ -53,14 +64,25 @@ services:
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
+    # Gunicorn respondiendo de verdad (no solo el contenedor arriba); nginx
+    # espera a que esté sano. start_period cubre migrate + collectstatic.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/focos/ultimo/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   celery-worker:
+    logging: *logging
     build:
       context: ./backend
       args:
         REQUIREMENTS_FILE: requirements/production.txt
     restart: unless-stopped
-    command: celery -A config worker --loglevel=info
+    # Dos procesos: el reentrenamiento usa ~1,2 GB y el servidor es compartido.
+    # max-tasks-per-child libera la memoria que pandas/sklearn no devuelven.
+    command: celery -A config worker --loglevel=info --concurrency 2 --max-tasks-per-child 50
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
@@ -73,6 +95,7 @@ services:
       - media_files:/app/media
 
   celery-beat:
+    logging: *logging
     build:
       context: ./backend
       args:
@@ -89,6 +112,7 @@ services:
         condition: service_healthy
 
   nginx:
+    logging: *logging
     build: ./nginx
     restart: unless-stopped
     # Solo accesible en localhost — cloudflared llega por la red interna
@@ -98,7 +122,8 @@ services:
     ports:
       - "${NGINX_PUERTO:-127.0.0.1:8080}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     volumes:
       - static_files:/app/staticfiles:ro
       - media_files:/app/media:ro
@@ -109,6 +134,7 @@ services:
       - ./app:/srv/app:ro
 
   cloudflared:
+    logging: *logging
     image: cloudflare/cloudflared:2025.11.1
     restart: unless-stopped
     # Solo arranca con COMPOSE_PROFILES=publico (el servidor). Si el portátil

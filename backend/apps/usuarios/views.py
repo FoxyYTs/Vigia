@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView, TokenRefreshView
 
@@ -47,6 +48,14 @@ class RefrescoView(TokenRefreshView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "refresco"
 
+    def post(self, request, *args, **kwargs):
+        # simplejwt busca al usuario del refresh y no captura DoesNotExist: el
+        # refresh de una cuenta borrada en el admin respondía 500 en vez de 401.
+        try:
+            return super().post(request, *args, **kwargs)
+        except Usuario.DoesNotExist:
+            raise InvalidToken("La cuenta de esta sesión ya no existe.") from None
+
 
 @method_decorator(never_cache, name="dispatch")
 class CerrarSesionView(TokenBlacklistView):
@@ -73,8 +82,9 @@ class YoView(generics.RetrieveDestroyAPIView):
 
 
 def _revocar_sesiones(usuario):
-    for token in OutstandingToken.objects.filter(user=usuario):
-        BlacklistedToken.objects.get_or_create(token=token)
+    BlacklistedToken.objects.bulk_create(
+        [BlacklistedToken(token=t) for t in OutstandingToken.objects.filter(user=usuario)], ignore_conflicts=True
+    )
 
 
 class GestionUsuarioViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -146,7 +156,8 @@ class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None  # catálogo cerrado (~1.100 municipios), la app lo carga una vez
 
     def get_queryset(self):
-        qs = Municipio.objects.order_by("departamento", "nombre")
+        # Sin el polígono: el formulario de registro solo necesita los nombres.
+        qs = Municipio.objects.only("id", "nombre", "departamento", "codigo_dane").order_by("departamento", "nombre")
         departamento = self.request.query_params.get("departamento")
         return qs.filter(departamento__iexact=departamento) if departamento else qs
 

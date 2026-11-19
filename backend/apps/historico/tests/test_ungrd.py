@@ -70,6 +70,15 @@ def test_sincronizar_guarda_con_municipio_y_es_idempotente(municipios, api_ungrd
     assert "INCENDIO+FORESTAL" in peticion.url and "%24order=%3Aid" in peticion.url
 
 
+def test_una_fila_invalida_no_aborta_la_carga(municipios):
+    malas = [{":id": "sin-fecha", "evento": "INCENDIO FORESTAL"},
+             {":id": "ha-raras", "fecha": "2023-03-01", "evento": "INCENDIO FORESTAL", "hectareas": "N/A"}]
+    with responses.RequestsMock() as rsps:
+        rsps.get("https://www.datos.gov.co/resource/wwkg-r6te.json", json=_filas("wwkg-r6te") + malas)
+        rsps.get("https://www.datos.gov.co/resource/rgre-6ak4.json", json=_filas("rgre-6ak4"))
+        assert ClienteUngrd().sincronizar() == 6
+
+
 def test_pagina_hasta_recibir_una_pagina_incompleta(municipios):
     with responses.RequestsMock() as rsps:
         url = "https://www.datos.gov.co/resource/{}.json"

@@ -13,3 +13,8 @@ class CorridaModeloMLAdmin(admin.ModelAdmin):
 class ZonaRecurrenteAdmin(admin.ModelAdmin):
     list_display = ("corrida", "puntaje_recurrencia", "cantidad_incendios_historicos", "municipio")
     list_filter = ("corrida",)
+    list_select_related = ("corrida", "municipio")
+    raw_id_fields = ("corrida", "municipio")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).defer("municipio__geom")

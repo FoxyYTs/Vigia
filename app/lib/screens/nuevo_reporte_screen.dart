@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -64,8 +65,13 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
   }
 
   Future<void> _capturar() async {
-    final foto = await (widget.tomarFoto ?? _fotoCamara)();
-    if (foto != null && mounted) setState(() => _foto = foto);
+    try {
+      final foto = await (widget.tomarFoto ?? _fotoCamara)();
+      if (foto != null && mounted) setState(() => _foto = foto);
+    } on Exception {
+      // Permiso de cámara negado o dispositivo sin cámara.
+      if (mounted) setState(() => _error = 'No se pudo abrir la cámara. Revisa el permiso de cámara de la app.');
+    }
   }
 
   Future<void> _enviar() async {
@@ -107,6 +113,16 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           const _Paso('1. Foto del incendio', 'Tómala ahora con la cámara; no se aceptan fotos de la galería.'),
+          // En el navegador de escritorio el selector puede abrir archivos:
+          // el servidor revisa la fecha y el GPS de la foto (EXIF).
+          if (kIsWeb)
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                'Desde el navegador se puede elegir un archivo; la fecha y la ubicación de la foto se revisan al validar.',
+                style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13),
+              ),
+            ),
           const SizedBox(height: 8),
           if (_foto != null)
             ClipRRect(
@@ -156,6 +172,11 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
                             semanticLabel: 'Ubicación del incendio'),
                       ),
                   ]),
+                  // Exigido por la política de uso de las teselas de OpenStreetMap.
+                  const RichAttributionWidget(
+                    alignment: AttributionAlignment.bottomLeft,
+                    attributions: [TextSourceAttribution('OpenStreetMap contributors')],
+                  ),
                 ],
               ),
             ),

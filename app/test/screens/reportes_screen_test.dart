@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -163,5 +165,45 @@ void main() {
     await t.pump();
 
     expect(find.text('El incendio debe estar en Colombia.'), findsOneWidget);
+  });
+
+  testWidgets('mientras se valida, los botones esperan (sin doble envío)', (t) async {
+    final pedidas = <String>[];
+    final respuesta = Completer<http.Response>();
+    await _montar(t, const ReportesScreen(), rol: 'administrador', manejar: (r) {
+      if (r.method == 'POST') {
+        pedidas.add(r.url.path);
+        return respuesta.future;
+      }
+      return Future.value(_json({'count': 1, 'next': null, 'previous': null, 'results': [_reporte(7, 'pendiente')]}));
+    });
+
+    await t.tap(find.text('Validar'));
+    await t.pump();
+    expect(t.widget<FilledButton>(find.widgetWithText(FilledButton, 'Validar')).onPressed, isNull);
+    await t.tap(find.text('Validar'));
+    await t.pump();
+    expect(pedidas, hasLength(1));
+
+    respuesta.complete(_json(_reporte(7, 'validado')));
+    await t.pump();
+    await t.pump();
+  });
+
+  testWidgets('si la cámara no abre, lo explica; el mapa da crédito a OpenStreetMap', (t) async {
+    await _montar(
+      t,
+      NuevoReporteScreen(
+        tomarFoto: () async => throw Exception('permiso negado'),
+        ubicar: () async => const LatLng(6.25, -75.56),
+      ),
+      rol: 'ciudadano',
+      manejar: (_) async => _json({}),
+    );
+
+    await t.tap(find.text('Tomar foto'));
+    await t.pump();
+    expect(find.textContaining('No se pudo abrir la cámara'), findsOneWidget);
+    expect(find.byType(RichAttributionWidget), findsOneWidget);
   });
 }

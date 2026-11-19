@@ -23,7 +23,7 @@ class ZonaRecurrenteViewSet(viewsets.ReadOnlyModelViewSet):
         corrida = CorridaModeloML.objects.first()  # ordering = -fecha_ejecucion
         if corrida is None:
             return ZonaRecurrente.objects.none()
-        qs = corrida.zonas.select_related("municipio")
+        qs = corrida.zonas.select_related("municipio").defer("municipio__geom")
         if self.action == "list":
             qs = qs.filter(mes_objetivo=self._mes(corrida))
         if minimo := self.request.query_params.get("min_puntaje"):

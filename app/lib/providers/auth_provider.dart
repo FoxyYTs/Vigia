@@ -77,6 +77,14 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Elimina la cuenta en el servidor y cierra la sesión en el dispositivo.
+  /// El backend ya revoca los tokens, así que no se llama a logout.
+  Future<void> eliminarCuenta() async {
+    await _api.eliminarCuenta(await accessToken());
+    await _almacen.borrar();
+    _limpiar();
+  }
+
   /// Access token vigente para llamar endpoints protegidos.
   Future<String> accessToken() async {
     final tokens = _tokens;

@@ -6,7 +6,7 @@
     "background_color": "#F4F6F3",
     "theme_color": "#1B5E3A",
     "description": "Alertas tempranas de incendios forestales en Colombia.",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

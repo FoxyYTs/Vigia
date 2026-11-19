@@ -1,13 +1,14 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
+import '../data/models/historicos.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
+import '../widgets/lista_centrada.dart';
 
 /// "Gestionar Históricos": qué hay cargado de cada fuente histórica, por año.
 /// El staff puede traer los incendios nuevos de la UNGRD; el IDEAM y el
@@ -22,7 +23,7 @@ class HistoricosScreen extends StatefulWidget {
 }
 
 class _HistoricosScreenState extends State<HistoricosScreen> {
-  late Future<Map<String, dynamic>> _datos;
+  late Future<ResumenHistoricos> _datos;
   bool _actualizando = false;
 
   @override
@@ -31,14 +32,16 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
     _datos = _cargar();
   }
 
-  Future<Map<String, dynamic>> _cargar() async {
+  Future<ResumenHistoricos> _cargar() async {
     final access = await context.read<AuthProvider>().accessToken();
     if (!mounted) throw const ApiException('');
     return context.read<VigiaApi>().resumenHistoricos(access);
   }
 
   void _recargar() {
-    final datos = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final datos = _cargar()..ignore();
     setState(() {
       _datos = datos;
     });
@@ -69,19 +72,11 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
         title: const Text(HistoricosScreen.titulo),
         actions: [IconButton(tooltip: 'Recargar', onPressed: _recargar, icon: const Icon(Icons.refresh))],
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _datos,
-        builder: (context, snap) => switch (snap) {
-          AsyncSnapshot(hasError: true, :final error) => Center(
-              child: Text(
-                error is ApiException ? error.mensaje : 'No se pudo cargar el resumen de los históricos.',
-                style: const TextStyle(color: VigiaColors.error),
-              ),
-            ),
-          AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => ListView(
-              // Centrado y con ancho máximo en pantallas anchas.
-              padding:
-                  EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1500) / 2)),
+      body: EstadoCarga<ResumenHistoricos>(
+        futuro: _datos,
+        mensajeError: 'No se pudo cargar el resumen de los históricos.',
+        onReintentar: _recargar,
+        contenido: (datos) => ListaCentrada(
               children: [
                 // Una tarjeta por fuente, lado a lado cuando caben (3, 2 o 1 columnas).
                 LayoutBuilder(builder: (context, limites) {
@@ -90,37 +85,29 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
                   return Wrap(
                     spacing: 16,
                     runSpacing: 16,
-                    children: [for (final f in _fuentes(data!, staff)) SizedBox(width: ancho, child: f)],
+                    children: [for (final f in _fuentes(datos, staff)) SizedBox(width: ancho, child: f)],
                   );
                 }),
               ],
             ),
-          _ => const Center(child: CircularProgressIndicator()),
-        },
       ),
     );
   }
 
-  List<Widget> _fuentes(Map<String, dynamic> d, bool staff) {
-    final ungrd = d['ungrd'] as Map<String, dynamic>;
-    final ideam = d['ideam'] as Map<String, dynamic>;
-    final firms = d['firms'] as Map<String, dynamic>;
-    String? fecha(Object? v) => v == null ? null : Formato.fecha(DateTime.parse(v as String));
-    final desde = fecha(ungrd['desde']), hasta = fecha(ungrd['hasta']);
+  List<Widget> _fuentes(ResumenHistoricos d, bool staff) {
+    final (desde, hasta) = (d.ungrdDesde, d.ungrdHasta);
     return [
       _Fuente(
         icono: Icons.local_fire_department_outlined,
         titulo: 'Incendios reportados (UNGRD)',
         detalle: 'Incendios forestales reportados a la UNGRD, por municipio (datos.gov.co).',
         resumen: [
-          '${Formato.entero(ungrd['total'] as int)} incendios',
-          if (desde != null) 'del $desde al $hasta',
-          if (ungrd['sin_municipio'] as int > 0) '${Formato.entero(ungrd['sin_municipio'] as int)} sin municipio',
+          '${Formato.entero(d.ungrdTotal)} incendios',
+          if (desde != null && hasta != null) 'del ${Formato.fecha(desde)} al ${Formato.fecha(hasta)}',
+          if (d.ungrdSinMunicipio > 0) '${Formato.entero(d.ungrdSinMunicipio)} sin municipio',
         ],
         columnas: const ['Incendios', 'Hectáreas'],
-        filas: [
-          for (final f in ungrd['por_anio'] as List) (f['anio'] as int, [f['cantidad'] as num, f['hectareas'] as num?]),
-        ],
+        filas: d.ungrdPorAnio,
         accion: staff
             ? FilledButton.icon(
                 onPressed: _actualizando ? null : _actualizarUngrd,
@@ -138,20 +125,16 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
             'Se carga desde el servidor cuando el IDEAM publica un año nuevo.',
         resumen: const [],
         columnas: const ['Municipios', 'Hectáreas'],
-        filas: [
-          for (final f in ideam['por_anio'] as List) (f['anio'] as int, [f['municipios'] as num, f['hectareas'] as num?]),
-        ],
+        filas: d.ideamPorAnio,
       ),
       _Fuente(
         icono: Icons.satellite_alt_outlined,
         titulo: 'Detecciones históricas (NASA FIRMS)',
         detalle: 'Archivo de puntos de calor de NASA FIRMS, que alimenta el modelo de recurrencia. '
             'Desde la puesta en marcha se completa solo con la ingesta en tiempo real.',
-        resumen: ['${Formato.entero(firms['total'] as int)} detecciones'],
+        resumen: ['${Formato.entero(d.firmsTotal)} detecciones'],
         columnas: const ['Detecciones'],
-        filas: [
-          for (final f in firms['por_anio'] as List) (f['anio'] as int, [f['cantidad'] as num]),
-        ],
+        filas: d.firmsPorAnio,
       ),
     ];
   }

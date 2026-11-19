@@ -16,7 +16,7 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):  # al generar el esquema OpenAPI no hay usuario
             return Alerta.objects.none()
-        qs = Alerta.objects.select_related("municipio")
+        qs = Alerta.objects.select_related("municipio").defer("municipio__geom")
         if self.request.user.es_ciudadano():
             # La acumulación es una sospecha pendiente de validar: va solo a
             # entidades y administradores (ver ruteo en despachador.py).

@@ -184,20 +184,10 @@ class ClienteNasaFirms(ClienteDatosExternos):
             hoy = datetime.now(UTC).date()
             return self.descargar_historico(hoy - timedelta(days=dias - 1), hoy, sensor=self.SENSOR)
         filas = self._descargar_csv(dias)
-        nuevos = 0
-        for datos in self._solo_colombia([parsear_fila_firms(f, self.FUENTE) for f in filas]):
-            _, creado = FocoIncendio.objects.get_or_create(
-                fuente=datos["fuente"],
-                ubicacion=Point(datos["longitud"], datos["latitud"], srid=4326),
-                fecha_hora=datos["fecha_hora"],
-                defaults={
-                    "confianza": datos["confianza"],
-                    "brillo_frp": datos["brillo_frp"],
-                    "satelite": datos["satelite"],
-                },
-            )
-            if creado:
-                nuevos += 1
+        # En lote, como INPE: get_or_create hacía dos consultas por foco.
+        antes = self._contar()
+        self._insertar_masivo(self._solo_colombia([parsear_fila_firms(f, self.FUENTE) for f in filas]))
+        nuevos = self._contar() - antes
         logger.info(
             "ClienteNasaFirms.sincronizar: %s focos nuevos de %s recibidos", nuevos, len(filas)
         )

@@ -74,6 +74,7 @@ def test_la_foto_se_sirve_por_nginx_con_permisos(api_como, ciudadano, administra
     assert respuesta.status_code == 200
     assert respuesta["X-Accel-Redirect"].startswith("/protegido/media/reportes/")
     assert api_como(staff).get(url + "?miniatura=1")["X-Accel-Redirect"].endswith("_min.jpg")
+    assert not api_como(staff).get(url + "?miniatura=0")["X-Accel-Redirect"].endswith("_min.jpg")
 
     otro = Usuario.objects.create_user("otro", password="clave-segura-4", rol=Usuario.Rol.CIUDADANO)
     assert api_como(otro).get(url).status_code == 404
