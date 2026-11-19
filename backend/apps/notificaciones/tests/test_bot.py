@@ -61,6 +61,32 @@ def test_bot_que_no_responde(api_como, staff, telegram, respuesta):
         assert api_como(staff).get("/api/bot-telegram/").data["bot"] is None
 
 
+def test_el_nombre_del_bot_se_guarda_en_cache(api_como, staff, telegram):
+    with patch("apps.notificaciones.views.requests.get", return_value=_get_me()) as get:
+        for _ in range(3):
+            assert api_como(staff).get("/api/bot-telegram/").data["bot"] == "VigiaAlertasBot"
+    get.assert_called_once()
+
+
+def test_un_fallo_se_recuerda_poco_y_luego_se_reintenta(api_como, staff, telegram):
+    from apps.notificaciones import views
+
+    with patch("apps.notificaciones.views.requests.get", side_effect=requests.Timeout) as get, \
+            patch.object(views.cache, "set", wraps=views.cache.set) as guardar:
+        assert api_como(staff).get("/api/bot-telegram/").data["bot"] is None
+        assert api_como(staff).get("/api/bot-telegram/").data["bot"] is None
+    get.assert_called_once()
+    assert guardar.call_args.args[1:] == ("", views.CACHE_BOT_FALLO)
+
+
+def test_cambiar_el_token_vuelve_a_consultar(api_como, staff, telegram):
+    with patch("apps.notificaciones.views.requests.get", return_value=_get_me()) as get:
+        api_como(staff).get("/api/bot-telegram/")
+        telegram.TELEGRAM_BOT_TOKEN = "456:otro"
+        api_como(staff).get("/api/bot-telegram/")
+    assert get.call_count == 2
+
+
 def test_sin_token_no_consulta_telegram(api_como, staff, settings):
     settings.TELEGRAM_BOT_TOKEN = ""
     with patch("apps.notificaciones.views.requests.get") as get:

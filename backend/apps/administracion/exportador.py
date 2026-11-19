@@ -23,17 +23,15 @@ from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from apps.administracion import estadisticas
+from apps.alertas.models import Alerta
+from apps.satelital.models import FocoIncendio
 from apps.usuarios.models import Municipio
 
 CONJUNTOS = ("focos", "alertas", "reportes")
 
-TIPOS_ALERTA = {
-    "deteccion_satelital": "Detección satelital",
-    "coincidencia_geografica": "Coincidencia geográfica",
-    "acumulacion_reportes": "Acumulación de reportes",
-    "validacion_manual": "Validación manual",
-}
-FUENTES = {"NASA_FIRMS": "NASA FIRMS", "INPE_QUEIMADAS": "INPE QUEIMADAS"}
+# Etiquetas legibles de los modelos (mismo texto que el admin de Django).
+TIPOS_ALERTA = dict(Alerta.TipoDisparador.choices)
+FUENTES = dict(FocoIncendio.Fuente.choices)
 
 
 def _texto_seguro(valor):
