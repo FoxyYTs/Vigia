@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +5,8 @@ import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/estado_carga.dart';
+import '../widgets/lista_centrada.dart';
 
 /// "Gestionar Permisos" (subpágina de Gestionar Usuario): el staff cambia el
 /// rol, la entidad y si la cuenta está activa; el administrador solo consulta
@@ -23,6 +23,7 @@ class PermisosScreen extends StatefulWidget {
 class _PermisosScreenState extends State<PermisosScreen> {
   final _buscar = TextEditingController();
   Rol? _rol;
+  bool _abriendo = false;
   late Future<List<Map<String, dynamic>>> _usuarios;
 
   @override
@@ -44,19 +45,25 @@ class _PermisosScreenState extends State<PermisosScreen> {
   }
 
   void _recargar() {
-    final usuarios = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final usuarios = _cargar()..ignore();
     setState(() {
       _usuarios = usuarios;
     });
   }
 
   Future<void> _editar(Map<String, dynamic> usuario) async {
+    // Las entidades tardan en llegar: sin esto, varios toques abrían varios diálogos.
+    if (_abriendo) return;
     final mensajero = ScaffoldMessenger.of(context);
     final auth = context.read<AuthProvider>();
     final api = context.read<VigiaApi>();
+    setState(() => _abriendo = true);
     try {
       final entidades = await api.entidades(await auth.accessToken());
       if (!mounted) return;
+      setState(() => _abriendo = false);
       final cambios = await showDialog<Map<String, Object?>>(
         context: context,
         builder: (_) => _EditarUsuario(usuario: usuario, entidades: entidades),
@@ -67,6 +74,8 @@ class _PermisosScreenState extends State<PermisosScreen> {
       if (mounted) _recargar();
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } finally {
+      if (mounted && _abriendo) setState(() => _abriendo = false);
     }
   }
 
@@ -76,9 +85,8 @@ class _PermisosScreenState extends State<PermisosScreen> {
     final staff = auth.rol == Rol.staff;
     return Scaffold(
       appBar: AppBar(title: const Text(PermisosScreen.titulo)),
-      body: ListView(
-        // Centrado y con ancho máximo en pantallas anchas.
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1000) / 2)),
+      body: ListaCentrada(
+        maximo: ListaCentrada.lectura,
         children: [
           if (!staff)
             const Padding(
@@ -110,7 +118,6 @@ class _PermisosScreenState extends State<PermisosScreen> {
                   ChoiceChip(
                     label: Text(r?.etiqueta ?? 'Todos'),
                     selected: _rol == r,
-                    selectedColor: VigiaColors.bosqueClaro,
                     onSelected: (_) {
                       _rol = r;
                       _recargar();
@@ -119,30 +126,25 @@ class _PermisosScreenState extends State<PermisosScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _usuarios,
-            builder: (context, snap) => switch (snap) {
-              AsyncSnapshot(hasError: true, :final error) => Text(
-                  error is ApiException ? error.mensaje : 'No se pudieron cargar los usuarios.',
-                  style: const TextStyle(color: VigiaColors.error),
-                ),
-              AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) when data!.isEmpty =>
-                const Text('Ningún usuario coincide.', style: TextStyle(color: VigiaColors.textoSecundario)),
-              AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => Card(
-                  margin: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      for (final u in data!)
-                        _Usuario(
-                          u,
-                          // Ni a sí mismo: el backend también lo rechaza.
-                          onEditar: staff && u['username'] != auth.username ? () => _editar(u) : null,
-                        ),
-                    ],
+          EstadoCarga<List<Map<String, dynamic>>>(
+            futuro: _usuarios,
+            mensajeError: 'No se pudieron cargar los usuarios.',
+            onReintentar: _recargar,
+            contenido: (usuarios) => usuarios.isEmpty
+                ? const Text('Ningún usuario coincide.', style: TextStyle(color: VigiaColors.textoSecundario))
+                : Card(
+                    margin: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (final u in usuarios)
+                          _Usuario(
+                            u,
+                            // Ni a sí mismo: el backend también lo rechaza.
+                            onEditar: staff && u['username'] != auth.username ? () => _editar(u) : null,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              _ => const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
-            },
           ),
         ],
       ),
@@ -207,6 +209,8 @@ class _EditarUsuarioState extends State<_EditarUsuario> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+        // Con el teclado abierto o letra grande, el contenido se desplaza.
+        scrollable: true,
         title: Text('Permisos de ${widget.usuario['username']}'),
         content: SizedBox(
           width: 400,

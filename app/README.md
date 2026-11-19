@@ -1,8 +1,8 @@
 # Vigía — App (Flutter)
 
-Cliente web y Android de Vigía (incremento I5, issue #15). Primera versión:
-**Mapa Interactivo** (público) e **Iniciar Sesión** con JWT, siguiendo el mapa de
-navegación del vault (`Vigia-Mapa-Navegacion`):
+Cliente web y Android de Vigía. Tiene el **Mapa Interactivo** (público), el
+registro y el **inicio de sesión** con JWT, los reportes ciudadanos y el panel de
+administración, siguiendo el mapa de navegación del vault (`Vigia-Mapa-Navegacion`):
 
 ```
 Vigía ─┬─ Mapa Interactivo          /         sin cuenta
@@ -52,7 +52,7 @@ lib/
 ├── data/api/vigia_api.dart     cliente HTTP y traducción de errores
 ├── data/models/                DTO de los serializers (Foco, Usuario, JWT)
 ├── data/storage/               almacenamiento de tokens (seguro / memoria)
-├── providers/                  AuthProvider, FocosProvider (provider)
+├── providers/                  AuthProvider, FocosProvider, PrediccionProvider, HistoricoProvider
 ├── screens/                    login, mapa, panel, reportes, gestión (I6) y rutas
 └── widgets/                    mapa, filtros, detalle, marca
 design/                         capturas de Stitch e IDs (design/README.md)

@@ -95,7 +95,11 @@ void main() {
   });
 
   testWidgets('un ciudadano ve el mensaje de permiso de la API', (t) async {
-    await _montar(t, rol: 'ciudadano', respuesta: _json({'detail': 'No.'}, 403));
+    final pedidas = await _montar(t, rol: 'ciudadano', respuesta: _json({'detail': 'No.'}, 403));
     expect(find.text('No tienes permiso para realizar esta acción.'), findsOneWidget);
+    // El error ofrece reintentar la misma consulta.
+    await t.tap(find.text('Reintentar'));
+    await t.pumpAndSettle();
+    expect(pedidas, hasLength(2));
   });
 }
