@@ -7,6 +7,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.7.0] — 2026-11-19 · Registro en la app y pulido
+
 ### Agregado
 - App: registro de cuenta (`/registro`) con usuario, correo, contraseña, municipio de residencia opcional y aceptación expresa de la política de datos (Ley 1581), con enlace a ella. Al registrarse inicia sesión.
 - App: «Eliminar mi cuenta» en Gestionar Usuario para el ciudadano (anonimiza los datos y cierra las sesiones, `DELETE /api/auth/yo/`), como pide Play para las apps que permiten crear cuentas. `privacidad.html` lo menciona.
@@ -182,7 +184,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.6.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.7.0...develop
+[0.7.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.7.0
 [0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0
 [0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0
 [0.4.5]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.5

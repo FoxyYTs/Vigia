@@ -93,7 +93,7 @@ GitFlow: `main` solo para releases estables, `develop` como rama de integración
 
 ## Estado
 
-Versión 0.6.0 (panel de administración, I6). Lo que ya funciona:
+Versión 0.7.0 (registro en la app y pulido tras el I6). Lo que ya funciona:
 
 - ✅ `apps/satelital`: `FocoIncendio` + `ClienteNasaFirms` (tiempo real e histórico) +
   `ClienteInpeQueimadas` (WFS, capa `bdqueimadas2:focos` filtrada por Colombia). Probados contra las
