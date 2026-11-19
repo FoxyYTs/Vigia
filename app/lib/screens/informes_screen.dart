@@ -55,6 +55,10 @@ class _InformesScreenState extends State<InformesScreen> {
       await (widget.guardar ?? _compartir)(informe.bytes, informe.nombre, _tiposMime[formato]!);
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } catch (_) {
+      // La hoja de compartir puede fallar (p. ej. en web, si el gesto del
+      // usuario venció mientras el servidor generaba el archivo).
+      mensajero.showSnackBar(const SnackBar(content: Text('No se pudo guardar el archivo. Inténtalo de nuevo.')));
     } finally {
       if (mounted) setState(() => _generando = null);
     }

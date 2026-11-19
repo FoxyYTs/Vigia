@@ -64,7 +64,7 @@ class _PermisosScreenState extends State<PermisosScreen> {
       if (cambios == null) return;
       await api.actualizarUsuario(await auth.accessToken(), usuario['id'] as int, cambios);
       mensajero.showSnackBar(SnackBar(content: Text('Permisos de ${usuario['username']} actualizados.')));
-      _recargar();
+      if (mounted) _recargar();
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
@@ -189,8 +189,20 @@ class _EditarUsuario extends StatefulWidget {
 }
 
 class _EditarUsuarioState extends State<_EditarUsuario> {
-  late Rol _rol = Rol.desdeApi(widget.usuario['rol'] as String?);
-  late int? _entidad = widget.usuario['entidad'] as int?;
+  /// Valor del selector para "todo el país" (administrador sin entidad).
+  static const _todoElPais = -1;
+
+  late Rol _rol;
+  int? _entidad;
+
+  @override
+  void initState() {
+    super.initState();
+    _rol = Rol.desdeApi(widget.usuario['rol'] as String?);
+    // Quien ya es administrador conserva su alcance; al promover a alguien hay
+    // que elegirlo: por defecto vería los reportes (y el GPS) de todo el país.
+    if (_rol == Rol.administrador) _entidad = widget.usuario['entidad'] as int? ?? _todoElPais;
+  }
   late bool _activo = widget.usuario['is_active'] as bool;
 
   @override
@@ -213,19 +225,26 @@ class _EditarUsuarioState extends State<_EditarUsuario> {
               ),
               const SizedBox(height: 12),
               if (_rol == Rol.administrador)
-                DropdownButtonFormField<int?>(
+                DropdownButtonFormField<int>(
                   isExpanded: true,
                   initialValue: _entidad,
+                  hint: const Text('Elige su alcance'),
                   decoration: const InputDecoration(
                     labelText: 'Entidad',
                     helperText: 'Limita lo que ve a los municipios de la entidad.',
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Sin entidad (todo el país)')),
+                    const DropdownMenuItem(value: _todoElPais, child: Text('Sin entidad (todo el país)')),
                     for (final e in widget.entidades)
                       DropdownMenuItem(value: e['id'] as int, child: Text(e['nombre'] as String)),
                   ],
                   onChanged: (v) => setState(() => _entidad = v),
+                ),
+              if (_rol.valorApi != widget.usuario['rol'])
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Al cambiar el rol se cerrarán sus sesiones abiertas.',
+                      style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
                 ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -240,11 +259,13 @@ class _EditarUsuarioState extends State<_EditarUsuario> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
-            onPressed: () => Navigator.pop(context, {
-              'rol': _rol.valorApi,
-              'entidad': _rol == Rol.administrador ? _entidad : null,
-              'is_active': _activo,
-            }),
+            onPressed: _rol == Rol.administrador && _entidad == null
+                ? null
+                : () => Navigator.pop(context, {
+                      'rol': _rol.valorApi,
+                      'entidad': _rol == Rol.administrador && _entidad != _todoElPais ? _entidad : null,
+                      'is_active': _activo,
+                    }),
             child: const Text('Guardar'),
           ),
         ],

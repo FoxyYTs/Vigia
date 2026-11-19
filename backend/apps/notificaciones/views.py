@@ -9,7 +9,6 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -79,7 +78,7 @@ def estado_bot(request):
             "fallidos_7d": e.get("fallidos", 0),
             "ultimo_envio": e.get("ultimo"),
         })
-    recientes = telegram.select_related("alerta__municipio")[:20]
+    recientes = telegram.select_related("alerta__municipio").defer("alerta__municipio__geom")[:20]
     return Response({
         "bot": _bot(),
         "token_configurado": bool(settings.TELEGRAM_BOT_TOKEN),
@@ -97,10 +96,12 @@ def estado_bot(request):
     })
 
 
+class _PruebaCanalSerializer(serializers.Serializer):
+    canal = serializers.ChoiceField(list(DespachadorNotificaciones.DESTINOS))
+
+
 @extend_schema(
-    request=inline_serializer(
-        "PruebaCanal", {"canal": serializers.ChoiceField(list(DespachadorNotificaciones.DESTINOS))}
-    ),
+    request=_PruebaCanalSerializer,
     responses={
         codigo: inline_serializer(f"ResultadoPrueba{codigo}", {"detail": serializers.CharField()})
         for codigo in (200, 502)
@@ -111,14 +112,13 @@ def estado_bot(request):
 def probar_canal(request):
     """Envía un mensaje de prueba al canal `canal` para comprobar que el bot
     puede publicar ahí. No crea una Notificacion: no hay alerta detrás."""
-    canal = request.data.get("canal")
-    if canal not in DespachadorNotificaciones.DESTINOS:
-        raise ValidationError({"canal": f"Uno de: {', '.join(DespachadorNotificaciones.DESTINOS)}."})
+    datos = _PruebaCanalSerializer(data=request.data)
+    datos.is_valid(raise_exception=True)
+    canal = datos.validated_data["canal"]
     destino = getattr(settings, DespachadorNotificaciones.DESTINOS[canal])
-    texto = (
-        "🧪 <b>Mensaje de prueba de Vigía</b>\n"
-        f"Enviado por {escape(request.user.username)} desde Gestionar Bot de Telegram."
-    )
+    # En el canal público no se muestra quién la envió: es un usuario interno.
+    autor = "" if canal == Notificacion.Canal.TELEGRAM_PUBLICO else f" por {escape(request.user.username)}"
+    texto = f"🧪 <b>Mensaje de prueba de Vigía</b>\nEnviado{autor} desde Gestionar Bot de Telegram."
     if not NotificadorTelegram().enviar_texto(destino, texto, f"la prueba del canal {canal}"):
         return Response(
             {"detail": "Telegram no aceptó el mensaje: revisa el token y el id del canal."},

@@ -1,4 +1,4 @@
-from datetime import date, datetime, UTC
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
@@ -112,3 +112,16 @@ def test_periodo_por_defecto_son_30_dias(api_como, staff):
     r = api_como(staff).get("/api/estadisticas/")
     assert r.status_code == 200
     assert (r.data["hasta"] - r.data["desde"]).days == 29
+
+
+@pytest.mark.parametrize("hasta", ["9999-12-31", "2999-01-01"])
+def test_fecha_futura(api_como, staff, hasta):
+    r = api_como(staff).get(f"/api/estadisticas/?desde=2026-09-01&hasta={hasta}")
+    assert r.status_code == 400 and "hasta" in r.data
+
+
+def test_un_dia_de_margen_por_el_huso_horario(api_como, staff):
+    from django.utils import timezone
+
+    manana = timezone.localdate() + timedelta(days=1)
+    assert api_como(staff).get(f"/api/estadisticas/?hasta={manana}").status_code == 200

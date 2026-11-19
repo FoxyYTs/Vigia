@@ -65,6 +65,10 @@ class NotificadorTelegram(Notificador):
     URL = "https://api.telegram.org/bot{token}/sendMessage"
 
     def enviar(self, alerta: Alerta, destino: str) -> bool:
+        # Sin token o sin canal no se arma el mensaje (son varias consultas).
+        if not settings.TELEGRAM_BOT_TOKEN or not destino:
+            logger.warning("Telegram sin configurar: la alerta %s no enviada", alerta.pk)
+            return False
         return self.enviar_texto(destino, self.mensaje(alerta), f"la alerta {alerta.pk}")
 
     def enviar_texto(self, destino: str, texto: str, que: str) -> bool:

@@ -15,7 +15,7 @@ import '../helpers/jwt_falso.dart';
 
 typedef _Guardado = ({Uint8List bytes, String nombre, String tipo});
 
-Future<(List<Uri>, List<_Guardado>)> _montar(WidgetTester t, {http.Response? respuesta}) async {
+Future<(List<Uri>, List<_Guardado>)> _montar(WidgetTester t, {http.Response? respuesta, bool falla = false}) async {
   t.view.physicalSize = const Size(800, 1600);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -40,7 +40,10 @@ Future<(List<Uri>, List<_Guardado>)> _montar(WidgetTester t, {http.Response? res
   await t.pumpWidget(MultiProvider(
     providers: [Provider.value(value: api), ChangeNotifierProvider.value(value: auth)],
     child: MaterialApp(
-      home: InformesScreen(guardar: (bytes, nombre, tipo) async => guardados.add((bytes: bytes, nombre: nombre, tipo: tipo))),
+      home: InformesScreen(guardar: (bytes, nombre, tipo) async {
+        if (falla) throw Exception('gesto vencido');
+        guardados.add((bytes: bytes, nombre: nombre, tipo: tipo));
+      }),
     ),
   ));
   return (pedidas, guardados);
@@ -92,5 +95,14 @@ void main() {
 
     expect(find.text('El detalle en CSV o Excel admite hasta 92 días.'), findsOneWidget);
     expect(guardados, isEmpty);
+  });
+
+  testWidgets('si la hoja de compartir falla, lo avisa y se puede reintentar', (t) async {
+    await _montar(t, falla: true);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Descargar PDF'));
+    await t.pumpAndSettle();
+    expect(find.text('No se pudo guardar el archivo. Inténtalo de nuevo.'), findsOneWidget);
+    expect(find.text('Descargar PDF'), findsOneWidget);
   });
 }

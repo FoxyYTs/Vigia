@@ -101,3 +101,13 @@ def test_ciudadano_y_anonimo_no_exportan(api, api_como, ciudadano):
 
 def test_el_pdf_admite_un_anio(api_como, staff):
     assert api_como(staff).get("/api/informes/?formato=pdf&desde=2025-10-01&hasta=2026-09-30").status_code == 200
+
+
+def test_excel_y_csv_limpian_los_caracteres_de_control(api_como, staff, datos):
+    from apps.reportes.models import ReporteCiudadano as R
+
+    R.objects.update(descripcion="humo\x08 negro\x1f")
+    r = api_como(staff).get(f"/api/informes/?formato=xlsx&{PERIODO}")
+    assert r.status_code == 200
+    assert load_workbook(io.BytesIO(r.content))["Reportes"]["G2"].value == "humo negro"
+    assert _csv(api_como(staff).get(f"/api/informes/?formato=csv&conjunto=reportes&{PERIODO}"))[1][-1] == "humo negro"

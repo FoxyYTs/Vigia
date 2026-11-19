@@ -148,7 +148,9 @@ REST_FRAMEWORK = {
     # reportes. En producción el caché es Redis (límite global, ver
     # production.py); en desarrollo y pruebas, memoria local.
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "2000/hour",
+        # Holgado: un filtro del mapa cuesta ~13 consultas y un salón u oficina
+        # comparte la IP (la app no manda la sesión a los endpoints públicos).
+        "anon": "20000/hour",
         "registro": "20/hour",
         "login": "60/hour",
         "refresco": "120/hour",
@@ -166,7 +168,7 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.6.0",
     "DESCRIPTION": """
 Alertas tempranas de incendios forestales en Colombia. Los endpoints marcados como públicos
-no piden sesión y forman una API de **datos abiertos**, con un límite de 2.000 consultas
+no piden sesión y forman una API de **datos abiertos**, con un límite de 20.000 consultas
 por hora por IP. Los demás piden un JWT de `/api/auth/token/`.
 
 Los reportes ciudadanos (foto, ubicación y texto) no se publican: son datos personales

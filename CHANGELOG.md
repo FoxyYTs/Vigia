@@ -18,10 +18,19 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - App: "Gestionar Bot de Telegram" en el panel, con una tarjeta por canal y el botón de prueba (staff).
 - API: `GET/PATCH /api/usuarios/` ("Gestionar Permisos"). El staff lista a todos los usuarios (con `buscar` y `rol`) y cambia su rol, entidad y si la cuenta está activa; no puede editarse a sí mismo ni a un superusuario, y desactivar una cuenta revoca sus sesiones. El administrador solo consulta a los administradores de su entidad. `GET /api/entidades/` para asignarlas.
 - App: "Gestionar Permisos" como subpágina de Gestionar Usuario. Con esto todos los bloques del panel funcionan.
-- API de datos abiertos: documentación OpenAPI en `/api/docs/` (Swagger UI servido localmente, compatible con la CSP) y esquema en `/api/schema/` (drf-spectacular), con la tabla de fuentes y licencias. Límite de 2.000 consultas por hora por IP para quien consulta sin sesión (`AnonRateThrottle`).
+- API de datos abiertos: documentación OpenAPI en `/api/docs/` (Swagger UI servido localmente, compatible con la CSP) y esquema en `/api/schema/` (drf-spectacular), con la tabla de fuentes y licencias. Límite de 20.000 consultas por hora por IP para quien consulta sin sesión (`AnonRateThrottle`).
 - Licencias de NASA FIRMS (verificada: sin restricciones, con reconocimiento y aviso "tal cual") e INPE Queimadas (acceso público, sin licencia publicada) en `apps/satelital/data/LICENCIA.md`. El esquema OpenAPI no tiene avisos y una prueba lo valida.
 
 ### Corregido
+- Revisión previa al release:
+  - Informes: el Excel fallaba (500) si la descripción de un reporte traía caracteres de control; ahora se limpian en Excel y CSV.
+  - Gestionar Permisos: el rol staff ahora va con el acceso al Django Admin (`is_staff`), y cambiar el rol cierra las sesiones del usuario para que el JWT no conserve el rol anterior.
+  - Gestionar Permisos: al promover a administrador hay que elegir la entidad o «todo el país»; antes quedaba nacional por defecto.
+  - Límite para anónimos subido a 20.000 consultas por hora por IP: con 2.000, un salón u oficina detrás de una IP agotaba el cupo del mapa.
+  - `/api/bot-telegram/probar/` y las estadísticas con fechas futuras respondían 500 en vez de 400.
+  - El mensaje de prueba al canal público ya no muestra el usuario del staff, y el bot no arma el mensaje si el canal no está configurado.
+  - Informes en la app: si la hoja de compartir falla, avisa en vez de quedarse callada.
+  - Las exportaciones de alertas y el estado del bot ya no cargan el polígono de cada municipio.
 - Bot de Telegram: si Telegram rechazaba el mensaje de prueba, la app mostraba un error genérico del servidor en vez del detalle (un 502 con JSON ahora muestra su mensaje).
 - Históricos y Bot de Telegram: el botón de recargar fallaba (`setState` recibía un Future).
 - Estadísticas: los días sin detecciones ahora aparecen con 0; antes el gráfico juntaba días separados por huecos.

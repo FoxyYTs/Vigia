@@ -61,6 +61,13 @@ def test_reintento_no_repite_canales_ya_enviados(crear_alerta):
     assert n.canal == Canal.TELEGRAM_PRIVADO
 
 
+def test_sin_canal_no_arma_el_mensaje(telegram, crear_alerta):
+    alerta = crear_alerta(Tipo.ACUMULACION_REPORTES)
+    with patch.object(NotificadorTelegram, "mensaje") as mensaje:
+        assert NotificadorTelegram().enviar(alerta, "") is False
+    mensaje.assert_not_called()
+
+
 def test_telegram_sin_token_no_envia_nada(telegram, crear_alerta):
     telegram.TELEGRAM_BOT_TOKEN = ""
     with patch("apps.notificaciones.despachador.requests.post") as post:
