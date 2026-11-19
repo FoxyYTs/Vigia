@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../models/bot_telegram.dart';
 import '../models/estadisticas.dart';
+import '../models/historicos.dart';
 import '../models/foco.dart';
 import '../models/historico.dart';
 import '../models/reporte.dart';
@@ -269,8 +271,8 @@ class VigiaApi {
   // ------------------------------------------------------------ historicos --
 
   /// Qué hay cargado de cada fuente histórica (UNGRD, IDEAM y FIRMS), por año.
-  Future<Map<String, dynamic>> resumenHistoricos(String access) =>
-      _enviar(() => _cliente.get(baseUrl.resolve('historico/resumen/'), headers: _cabeceras(access)));
+  Future<ResumenHistoricos> resumenHistoricos(String access) async => ResumenHistoricos.fromJson(
+      await _enviar(() => _cliente.get(baseUrl.resolve('historico/resumen/'), headers: _cabeceras(access))));
 
   /// Encola la descarga de los incendios nuevos de la UNGRD (solo staff).
   Future<void> sincronizarUngrd(String access) =>
@@ -279,8 +281,8 @@ class VigiaApi {
   // ---------------------------------------------------------- bot telegram --
 
   /// Estado del bot y de sus tres canales (sin token ni ids de chat).
-  Future<Map<String, dynamic>> estadoBot(String access) =>
-      _enviar(() => _cliente.get(baseUrl.resolve('bot-telegram/'), headers: _cabeceras(access)));
+  Future<EstadoBot> estadoBot(String access) async =>
+      EstadoBot.fromJson(await _enviar(() => _cliente.get(baseUrl.resolve('bot-telegram/'), headers: _cabeceras(access))));
 
   /// Mensaje de prueba al [canal] (`telegram_publico|privado|interno`; solo staff).
   Future<void> probarCanal(String access, String canal) => _enviar(() => _cliente.post(

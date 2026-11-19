@@ -78,7 +78,16 @@ class ClienteUngrd(ClienteDatosExternos):
         municipios = dict(Municipio.objects.exclude(codigo_dane=None).values_list("codigo_dane", "id"))
         antes = IncendioReportado.objects.count()
         for dataset, campo in DATASETS:
-            datos = [parsear_fila_ungrd(f, campo) for f in self._descargar(dataset, campo)]
+            datos, invalidas = [], 0
+            for fila in self._descargar(dataset, campo):
+                # Una fila mal formada (fecha vacía, "N/A" en hectáreas) no
+                # debe abortar la carga de las demás.
+                try:
+                    datos.append(parsear_fila_ungrd(fila, campo))
+                except (KeyError, ValueError, TypeError):
+                    invalidas += 1
+            if invalidas:
+                logger.warning("ClienteUngrd %s: %s filas inválidas omitidas", dataset, invalidas)
             sin_municipio = [d for d in datos if d["codigo_dane"] not in municipios]
             if sin_municipio:
                 logger.warning(

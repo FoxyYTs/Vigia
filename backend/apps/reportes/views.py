@@ -75,7 +75,7 @@ class ReporteCiudadanoViewSet(
         Nginx la entrega desde una ruta `internal` que no es accesible desde
         afuera: /media/ ya no es público."""
         reporte = self.get_object()
-        archivo = reporte.miniatura if request.query_params.get("miniatura") else reporte.foto
+        archivo = reporte.miniatura if request.query_params.get("miniatura") == "1" else reporte.foto
         if not archivo:
             raise Http404("La foto ya no está disponible.")
         respuesta = HttpResponse(content_type="image/jpeg")

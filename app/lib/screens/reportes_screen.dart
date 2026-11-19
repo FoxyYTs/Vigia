@@ -26,6 +26,9 @@ class ReportesScreen extends StatefulWidget {
 
 class _ReportesScreenState extends State<ReportesScreen> {
   late Future<List<Reporte>> _reportes;
+  // Reporte que se está validando o rechazando: sus botones se desactivan
+  // para que un doble toque no mande dos veces la decisión.
+  int? _resolviendo;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
 
   Future<void> _resolver(Reporte reporte, {required bool validar}) async {
     final mensajero = ScaffoldMessenger.of(context);
+    setState(() => _resolviendo = reporte.id);
     try {
       final access = await context.read<AuthProvider>().accessToken();
       if (!mounted) return;
@@ -63,6 +67,8 @@ class _ReportesScreenState extends State<ReportesScreen> {
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
+    if (!mounted) return;
+    _resolviendo = null;
     _recargar();
   }
 
@@ -105,6 +111,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
                       onResolver: rol == Rol.administrador && r.estado == EstadoReporte.pendiente
                           ? (validar) => _resolver(r, validar: validar)
                           : null,
+                      bloqueado: _resolviendo != null,
                     ),
                 ],
               ),
@@ -131,10 +138,13 @@ class _Mensaje extends StatelessWidget {
 }
 
 class _TarjetaReporte extends StatelessWidget {
-  const _TarjetaReporte(this.reporte, {this.onResolver});
+  const _TarjetaReporte(this.reporte, {this.onResolver, this.bloqueado = false});
 
   final Reporte reporte;
   final void Function(bool validar)? onResolver;
+
+  /// Hay una validación o un rechazo en curso: los botones esperan.
+  final bool bloqueado;
 
   static final _fecha = DateFormat('d MMM y, h:mm a', 'es_CO');
 
@@ -191,14 +201,14 @@ class _TarjetaReporte extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      onPressed: () => onResolver!(false),
+                      onPressed: bloqueado ? null : () => onResolver!(false),
                       icon: const Icon(Icons.close),
                       label: const Text('Rechazar'),
                       style: TextButton.styleFrom(foregroundColor: VigiaColors.error),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
-                      onPressed: () => onResolver!(true),
+                      onPressed: bloqueado ? null : () => onResolver!(true),
                       icon: const Icon(Icons.check),
                       label: const Text('Validar'),
                     ),

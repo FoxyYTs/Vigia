@@ -105,4 +105,10 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('El servidor de Vigía tuvo un problema. Inténtalo más tarde.'), findsOneWidget);
   });
+
+  testWidgets('un JSON inesperado se muestra como error, sin romper la pantalla', (t) async {
+    await _montar(t, rol: 'administrador', responder: (r) => _json({'ungrd': {'total': 'muchos'}}));
+    expect(find.textContaining('No se pudo cargar'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
 }

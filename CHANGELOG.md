@@ -13,6 +13,15 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - Informes: las etiquetas de fuentes y disparadores salen de los modelos en vez de una copia.
 
 ### Corregido
+- `/api/focos/` con una fecha imposible (`desde=2026-02-30`) respondía 500; ahora 400.
+- Django Admin: Alerta, Notificación, históricos y zonas recurrentes ya no cargan millones de focos o reportes en un desplegable (`raw_id_fields`) ni el polígono de cada municipio en las listas.
+- Una fila mal formada de la UNGRD ya no aborta toda la sincronización: se omite y se registra.
+- Celery: límite de tiempo por tarea (10 min, y 1 h para el reentrenamiento) para que una descarga colgada no ocupe un worker.
+- Los reintentos del bot actualizan la notificación fallida en vez de sumar otra: los fallos de la pantalla del bot se contaban hasta 4 veces.
+- Los logs nunca muestran el token de Telegram ni la MAP_KEY de FIRMS (`urllib3` en WARNING).
+- App: si la cámara no abre, el reporte lo explica; el mapa del reporte da crédito a OpenStreetMap; en el navegador se avisa que se puede elegir un archivo.
+- App: validar o rechazar un reporte desactiva los botones mientras responde la API (sin doble envío).
+- App: Históricos y Bot de Telegram leen la respuesta con modelos tipados; un JSON inesperado se muestra como error en vez de romper la pantalla.
 - Gestionar Bot de Telegram: el nombre del bot (`getMe`) se guarda en caché 6 horas, y un fallo 2 minutos. Tras reiniciar los contenedores, Telegram tardó hasta 15 s y la pantalla mostraba el bot como caído aunque las alertas salían.
 
 ## [0.6.0] — 2026-11-18 · Panel de administración (I6)

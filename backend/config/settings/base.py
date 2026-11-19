@@ -213,6 +213,9 @@ LOGGING = {
     "loggers": {
         # Los 4xx/5xx de Django van como WARNING/ERROR; el detalle de SQL no.
         "django.db.backends": {"level": "WARNING"},
+        # El token de Telegram y la MAP_KEY de FIRMS van en la URL: urllib3 la
+        # registra en DEBUG, así que nunca baja de WARNING.
+        "urllib3": {"level": "WARNING"},
     },
 }
 
@@ -223,6 +226,10 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+# Ninguna tarea se queda colgada ocupando un worker (descargas de FIRMS, INPE
+# o la UNGRD sin respuesta). El reentrenamiento tiene su propio límite.
+CELERY_TASK_SOFT_TIME_LIMIT = 10 * 60
+CELERY_TASK_TIME_LIMIT = 15 * 60
 
 # Credenciales e integraciones externas — ver Vigia-Credenciales-APIs
 # (vault de Obsidian) para el proceso de registro de cada una y el
