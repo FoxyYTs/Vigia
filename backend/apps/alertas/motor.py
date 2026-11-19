@@ -43,7 +43,7 @@ class MotorAlertas:
             return None
         ya_hay = Alerta.objects.filter(
             tipo_disparador=Alerta.TipoDisparador.DETECCION_SATELITAL,
-            ubicacion__distance_lte=(foco.ubicacion, D(km=RADIO_AGRUPACION_SATELITAL_KM)),
+            ubicacion__dwithin=(foco.ubicacion, D(km=RADIO_AGRUPACION_SATELITAL_KM)),
             fecha_creacion__gte=timezone.now() - VENTANA_AGRUPACION_SATELITAL,
         ).exists()
         if ya_hay:
@@ -56,7 +56,7 @@ class MotorAlertas:
 
         foco = (
             FocoIncendio.objects.filter(
-                ubicacion__distance_lte=(punto, D(km=RADIO_COINCIDENCIA_KM)),
+                ubicacion__dwithin=(punto, D(km=RADIO_COINCIDENCIA_KM)),
                 fecha_hora__gte=ahora - VENTANA_FOCO_ACTIVO,
             )
             .order_by("-fecha_hora")
@@ -77,7 +77,7 @@ class MotorAlertas:
 
         existente = Alerta.objects.filter(
             tipo_disparador=Alerta.TipoDisparador.ACUMULACION_REPORTES,
-            ubicacion__distance_lte=(punto, D(km=RADIO_ACUMULACION_KM)),
+            ubicacion__dwithin=(punto, D(km=RADIO_ACUMULACION_KM)),
             fecha_creacion__gte=ahora - VENTANA_ACUMULACION,
         ).first()
         if existente:
@@ -85,7 +85,7 @@ class MotorAlertas:
             return None
 
         cercanos = ReporteCiudadano.objects.filter(
-            ubicacion_incendio__distance_lte=(punto, D(km=RADIO_ACUMULACION_KM)),
+            ubicacion_incendio__dwithin=(punto, D(km=RADIO_ACUMULACION_KM)),
             fecha_creacion__gte=ahora - VENTANA_ACUMULACION,
             ciudadano__date_joined__lte=ahora - ANTIGUEDAD_MINIMA_CUENTA,
         ).exclude(estado=ReporteCiudadano.Estado.RECHAZADO)
@@ -105,7 +105,8 @@ class MotorAlertas:
 
     @transaction.atomic
     def _crear(self, tipo, ubicacion, foco=None, disparador=None, corroboran=()) -> Alerta:
-        municipio = Municipio.objects.filter(geom__contains=ubicacion).first()
+        # Solo el id: el polígono del municipio no hace falta para la FK.
+        municipio = Municipio.objects.filter(geom__contains=ubicacion).only("id").first()
         alerta = Alerta.objects.create(tipo_disparador=tipo, ubicacion=ubicacion, foco=foco, municipio=municipio)
         if disparador:
             AlertaReporte.objects.create(alerta=alerta, reporte=disparador, es_disparador=True)

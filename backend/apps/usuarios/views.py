@@ -73,8 +73,9 @@ class YoView(generics.RetrieveDestroyAPIView):
 
 
 def _revocar_sesiones(usuario):
-    for token in OutstandingToken.objects.filter(user=usuario):
-        BlacklistedToken.objects.get_or_create(token=token)
+    BlacklistedToken.objects.bulk_create(
+        [BlacklistedToken(token=t) for t in OutstandingToken.objects.filter(user=usuario)], ignore_conflicts=True
+    )
 
 
 class GestionUsuarioViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -146,7 +147,8 @@ class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None  # catálogo cerrado (~1.100 municipios), la app lo carga una vez
 
     def get_queryset(self):
-        qs = Municipio.objects.order_by("departamento", "nombre")
+        # Sin el polígono: el formulario de registro solo necesita los nombres.
+        qs = Municipio.objects.only("id", "nombre", "departamento", "codigo_dane").order_by("departamento", "nombre")
         departamento = self.request.query_params.get("departamento")
         return qs.filter(departamento__iexact=departamento) if departamento else qs
 

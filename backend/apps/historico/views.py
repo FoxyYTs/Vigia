@@ -34,7 +34,7 @@ class IncendioReportadoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IncendioReportadoSerializer
 
     def get_queryset(self):
-        qs = IncendioReportado.objects.select_related("municipio")
+        qs = IncendioReportado.objects.select_related("municipio").defer("municipio__geom")
         params = self.request.query_params
         if anio := params.get("anio"):
             qs = qs.filter(fecha__year=_anio(anio))

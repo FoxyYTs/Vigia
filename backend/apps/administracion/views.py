@@ -5,8 +5,9 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 
 from apps.administracion import estadisticas
 from apps.administracion.exportador import CONJUNTOS, ExportadorDatos
@@ -73,12 +74,19 @@ TIPOS_MIME = {
 }
 
 
+class LimiteInformes(UserRateThrottle):
+    """Generar un informe ocupa un worker varios segundos: con sesión también hay tope."""
+
+    scope = "informe"
+
+
 @extend_schema(
     parameters=[InformeSerializer],
     responses={(200, tipo.split(";")[0]): OpenApiTypes.BINARY for tipo in TIPOS_MIME.values()},
 )
 @api_view(["GET"])
 @permission_classes([EsAdministrador | EsStaff])
+@throttle_classes([LimiteInformes])
 def informe_view(request):
     """`?formato=csv|xlsx|pdf&desde=&hasta=` (y `conjunto=` para CSV): el
     informe como archivo descargable, con la jurisdicción de las estadísticas.

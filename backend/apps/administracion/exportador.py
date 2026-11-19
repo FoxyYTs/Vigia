@@ -24,6 +24,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from apps.administracion import estadisticas
 from apps.alertas.models import Alerta
+from apps.reportes.models import ReporteCiudadano
 from apps.satelital.models import FocoIncendio
 from apps.usuarios.models import Municipio
 
@@ -32,6 +33,7 @@ CONJUNTOS = ("focos", "alertas", "reportes")
 # Etiquetas legibles de los modelos (mismo texto que el admin de Django).
 TIPOS_ALERTA = dict(Alerta.TipoDisparador.choices)
 FUENTES = dict(FocoIncendio.Fuente.choices)
+ESTADOS_REPORTE = dict(ReporteCiudadano.Estado.choices)
 
 
 def _texto_seguro(valor):
@@ -108,7 +110,10 @@ class ExportadorDatos:
     def _filas_reportes(self):
         # Sin el usuario que reportó: el informe circula fuera de Vigía y no
         # necesita datos personales (minimización, Ley 1581).
-        qs = self._reportes.order_by("fecha_creacion")
+        # Solo las columnas exportadas: ni la foto, ni el EXIF, ni el GPS del ciudadano.
+        qs = self._reportes.only(
+            "id", "fecha_creacion", "estado", "ubicacion_incendio", "fecha_validacion", "descripcion"
+        ).order_by("fecha_creacion")
         encabezados = ["id", "fecha_creacion", "estado", "latitud_incendio", "longitud_incendio",
                        "fecha_validacion", "descripcion"]
         filas = (
@@ -204,7 +209,7 @@ class ExportadorDatos:
             ("Alertas por disparador", tabla("Disparador", alertas["por_tipo"], lambda c: TIPOS_ALERTA.get(c, c))),
             ("Alertas por departamento", tabla(
                 "Departamento", alertas["por_departamento"], lambda c: c or "Sin municipio")),
-            ("Reportes por estado", tabla("Estado", reportes["por_estado"], lambda c: c.capitalize())),
+            ("Reportes por estado", tabla("Estado", reportes["por_estado"], lambda c: ESTADOS_REPORTE.get(c, c))),
         ]
 
     def _tablas_resumen(self, datos):

@@ -155,6 +155,7 @@ REST_FRAMEWORK = {
         "login": "60/hour",
         "refresco": "120/hour",
         "reporte": "30/hour",
+        "informe": "60/hour",
     },
     # Nginx reemplaza X-Forwarded-For por la IP real del cliente (tomada de
     # CF-Connecting-IP): se confía en exactamente un proxy. Sin esto DRF usaba
