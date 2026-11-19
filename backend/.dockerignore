@@ -1,0 +1,11 @@
+# No van a la imagen: datos locales (las fotos de reportes son datos personales,
+# Ley 1581), estáticos generados, cachés y secretos.
+media/
+staticfiles/
+.env*
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+*.pyc
