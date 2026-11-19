@@ -7,6 +7,14 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Cambiado
+- La regla de jurisdicción del administrador vive en un solo lugar (`apps/usuarios/jurisdiccion.py`) y la usan los reportes, las estadísticas y los informes; antes estaba repetida.
+- Estadísticas: los totales salen de los conteos agrupados (tres consultas menos, y una menos con el filtro espacial sobre todos los focos).
+- Informes: las etiquetas de fuentes y disparadores salen de los modelos en vez de una copia.
+
+### Corregido
+- Gestionar Bot de Telegram: el nombre del bot (`getMe`) se guarda en caché 6 horas, y un fallo 2 minutos. Tras reiniciar los contenedores, Telegram tardó hasta 15 s y la pantalla mostraba el bot como caído aunque las alertas salían.
+
 ## [0.6.0] — 2026-11-18 · Panel de administración (I6)
 
 ### Agregado

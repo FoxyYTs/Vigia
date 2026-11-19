@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from apps.administracion import estadisticas
 from apps.administracion.exportador import CONJUNTOS, ExportadorDatos
+from apps.usuarios.jurisdiccion import municipios_de
 from apps.usuarios.permissions import EsAdministrador, EsStaff
 
 
@@ -42,7 +43,7 @@ def estadisticas_view(request):
     con polígonos solo ve su jurisdicción."""
     periodo = PeriodoSerializer(data=request.query_params)
     periodo.is_valid(raise_exception=True)
-    return Response(estadisticas.calcular(**periodo.validated_data, municipios=estadisticas.jurisdiccion(request.user)))
+    return Response(estadisticas.calcular(**periodo.validated_data, municipios=municipios_de(request.user)))
 
 
 DIAS_MAXIMOS_DETALLE = 92
@@ -85,7 +86,7 @@ def informe_view(request):
     params = InformeSerializer(data=request.query_params)
     params.is_valid(raise_exception=True)
     d = params.validated_data
-    exportador = ExportadorDatos(d["desde"], d["hasta"], estadisticas.jurisdiccion(request.user))
+    exportador = ExportadorDatos(d["desde"], d["hasta"], municipios_de(request.user))
     formato = d["formato"]
     contenido = {
         "csv": lambda: exportador.exportar_csv(d["conjunto"]),
