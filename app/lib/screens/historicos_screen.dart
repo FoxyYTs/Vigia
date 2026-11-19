@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,7 +6,9 @@ import '../data/api/vigia_api.dart';
 import '../data/models/historicos.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
+import '../widgets/lista_centrada.dart';
 
 /// "Gestionar Históricos": qué hay cargado de cada fuente histórica, por año.
 /// El staff puede traer los incendios nuevos de la UNGRD; el IDEAM y el
@@ -39,7 +39,9 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
   }
 
   void _recargar() {
-    final datos = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final datos = _cargar()..ignore();
     setState(() {
       _datos = datos;
     });
@@ -70,19 +72,11 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
         title: const Text(HistoricosScreen.titulo),
         actions: [IconButton(tooltip: 'Recargar', onPressed: _recargar, icon: const Icon(Icons.refresh))],
       ),
-      body: FutureBuilder<ResumenHistoricos>(
-        future: _datos,
-        builder: (context, snap) => switch (snap) {
-          AsyncSnapshot(hasError: true, :final error) => Center(
-              child: Text(
-                error is ApiException ? error.mensaje : 'No se pudo cargar el resumen de los históricos.',
-                style: const TextStyle(color: VigiaColors.error),
-              ),
-            ),
-          AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => ListView(
-              // Centrado y con ancho máximo en pantallas anchas.
-              padding:
-                  EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1500) / 2)),
+      body: EstadoCarga<ResumenHistoricos>(
+        futuro: _datos,
+        mensajeError: 'No se pudo cargar el resumen de los históricos.',
+        onReintentar: _recargar,
+        contenido: (datos) => ListaCentrada(
               children: [
                 // Una tarjeta por fuente, lado a lado cuando caben (3, 2 o 1 columnas).
                 LayoutBuilder(builder: (context, limites) {
@@ -91,13 +85,11 @@ class _HistoricosScreenState extends State<HistoricosScreen> {
                   return Wrap(
                     spacing: 16,
                     runSpacing: 16,
-                    children: [for (final f in _fuentes(data!, staff)) SizedBox(width: ancho, child: f)],
+                    children: [for (final f in _fuentes(datos, staff)) SizedBox(width: ancho, child: f)],
                   );
                 }),
               ],
             ),
-          _ => const Center(child: CircularProgressIndicator()),
-        },
       ),
     );
   }

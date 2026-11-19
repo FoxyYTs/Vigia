@@ -95,6 +95,7 @@ ThemeData construirTemaVigia() {
       ),
     ),
     chipTheme: const ChipThemeData(
+      selectedColor: VigiaColors.bosqueClaro,
       shape: RoundedRectangleBorder(borderRadius: radio),
       side: BorderSide(color: VigiaColors.borde),
     ),

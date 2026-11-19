@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,7 +7,9 @@ import '../data/models/bot_telegram.dart';
 import '../data/models/estadisticas.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
+import '../widgets/lista_centrada.dart';
 
 /// "Gestionar Bot de Telegram": si el bot responde, qué alertas recibe cada
 /// canal (público, privado e interno) y cómo van los envíos. El staff puede
@@ -43,7 +43,9 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
   }
 
   void _recargar() {
-    final datos = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final datos = _cargar()..ignore();
     setState(() {
       _datos = datos;
     });
@@ -72,23 +74,11 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
         title: const Text(BotTelegramScreen.titulo),
         actions: [IconButton(tooltip: 'Recargar', onPressed: _recargar, icon: const Icon(Icons.refresh))],
       ),
-      body: FutureBuilder<EstadoBot>(
-        future: _datos,
-        builder: (context, snap) => switch (snap) {
-          AsyncSnapshot(hasError: true, :final error) => Center(
-              child: Text(
-                error is ApiException ? error.mensaje : 'No se pudo cargar el estado del bot.',
-                style: const TextStyle(color: VigiaColors.error),
-              ),
-            ),
-          AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => ListView(
-              // Centrado y con ancho máximo en pantallas anchas.
-              padding:
-                  EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1500) / 2)),
-              children: _contenido(data!, staff),
-            ),
-          _ => const Center(child: CircularProgressIndicator()),
-        },
+      body: EstadoCarga<EstadoBot>(
+        futuro: _datos,
+        mensajeError: 'No se pudo cargar el estado del bot.',
+        onReintentar: _recargar,
+        contenido: (datos) => ListaCentrada(children: _contenido(datos, staff)),
       ),
     );
   }

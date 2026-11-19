@@ -99,10 +99,11 @@ class _MapaScreenState extends State<MapaScreen> {
         ),
         if (!ancho)
           Positioned(top: 12, left: 12, child: _ChipContador(total: p.total, cargando: p.cargando)),
+        // right: 72 deja libre la columna de botones del mapa (48 px + márgenes).
         if (p.error != null)
-          Positioned(top: 60, left: 12, right: 12, child: _AvisoError(p.error!, onReintentar: p.cargar)),
+          Positioned(top: 60, left: 12, right: 72, child: _AvisoError(p.error!, onReintentar: p.cargar)),
         if (!p.cargando && p.error == null && p.corte != null && p.total == 0)
-          const Positioned(top: 60, left: 12, right: 12, child: _AvisoVacio()),
+          const Positioned(top: 60, left: 12, right: 72, child: _AvisoVacio()),
         if (p.seleccionado != null)
           Positioned(
             right: 12,

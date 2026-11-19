@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
@@ -9,6 +8,7 @@ import '../data/api/vigia_api.dart';
 import '../data/models/reporte.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/formato.dart';
 import 'nuevo_reporte_screen.dart';
 
 /// "Gestionar Reportar Focos de Incendios" del mapa de navegación.
@@ -43,7 +43,9 @@ class _ReportesScreenState extends State<ReportesScreen> {
   }
 
   void _recargar() {
-    final reportes = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final reportes = _cargar()..ignore();
     setState(() {
       _reportes = reportes;
     });
@@ -146,8 +148,6 @@ class _TarjetaReporte extends StatelessWidget {
   /// Hay una validación o un rechazo en curso: los botones esperan.
   final bool bloqueado;
 
-  static final _fecha = DateFormat('d MMM y, h:mm a', 'es_CO');
-
   @override
   Widget build(BuildContext context) {
     final r = reporte;
@@ -178,9 +178,9 @@ class _TarjetaReporte extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(_fecha.format(r.fechaCreacion.toLocal()),
+                      Text(Formato.fechaHora(r.fechaCreacion),
                           style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
-                      Text('${p.latitude.toStringAsFixed(4)}, ${p.longitude.toStringAsFixed(4)}',
+                      Text('${Formato.coordenada(p.latitude, latitud: true)}, ${Formato.coordenada(p.longitude, latitud: false)}',
                           style: const TextStyle(fontSize: 13)),
                       if (r.distanciaKm != null)
                         Text('A ${r.distanciaKm!.toStringAsFixed(1)} km de quien reportó',

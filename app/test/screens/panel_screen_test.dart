@@ -16,8 +16,8 @@ http.Response _json(Object cuerpo, [int status = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode(cuerpo)), status, headers: {'content-type': 'application/json'});
 
 /// Abre el panel; las demás rutas muestran su nombre, para comprobar la navegación.
-Future<AuthProvider> _abrirPanel(WidgetTester t, String rol, {http.Response? perfil}) async {
-  t.view.physicalSize = const Size(1280, 1400);
+Future<AuthProvider> _abrirPanel(WidgetTester t, String rol, {http.Response? perfil, double ancho = 1280}) async {
+  t.view.physicalSize = Size(ancho, 1400);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
 
@@ -92,5 +92,13 @@ void main() {
   testWidgets('si el perfil no carga, lo dice', (t) async {
     await _abrirPanel(t, 'ciudadano', perfil: _json({'detail': 'x'}, 500));
     expect(find.text('El servidor de Vigía tuvo un problema. Inténtalo más tarde.'), findsOneWidget);
+  });
+
+  testWidgets('en el celular la barra usa íconos con tooltip y no se desborda', (t) async {
+    await _abrirPanel(t, 'ciudadano', ancho: 360);
+    expect(find.byTooltip('Mapa Interactivo'), findsOneWidget);
+    expect(find.byTooltip('Cerrar sesión'), findsOneWidget);
+    expect(find.text('Cerrar sesión'), findsNothing);
+    expect(t.takeException(), isNull);
   });
 }

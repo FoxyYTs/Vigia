@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -8,6 +7,8 @@ import 'package:share_plus/share_plus.dart';
 import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/lista_centrada.dart';
+import '../widgets/selector_periodo.dart';
 
 /// "Gestionar Informes" (UC8): informes de apoyo a la decisión en PDF, Excel
 /// y CSV, generados al vuelo por el backend con la jurisdicción del usuario.
@@ -26,7 +27,6 @@ class InformesScreen extends StatefulWidget {
 
 class _InformesScreenState extends State<InformesScreen> {
   // El detalle (CSV, Excel) admite hasta 92 días; el PDF, un año.
-  static const _periodos = [7, 30, 90, 365];
   static const _conjuntos = {'focos': 'Detecciones satelitales', 'alertas': 'Alertas', 'reportes': 'Reportes ciudadanos'};
   static const _tiposMime = {
     'pdf': 'application/pdf',
@@ -69,25 +69,15 @@ class _InformesScreenState extends State<InformesScreen> {
     final soloPdf = _dias > 92;
     return Scaffold(
       appBar: AppBar(title: const Text(InformesScreen.titulo)),
-      body: ListView(
-        // Centrado y con ancho máximo en pantallas anchas.
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 800) / 2)),
+      body: ListaCentrada(
+        maximo: ListaCentrada.lectura,
         children: [
-          const Text('Periodo (hasta hoy)', style: TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final d in _periodos)
-                ChoiceChip(
-                  label: Text(d == 365 ? '1 año' : '$d días'),
-                  selected: _dias == d,
-                  onSelected: _generando != null ? null : (_) => setState(() => _dias = d),
-                  selectedColor: VigiaColors.bosqueClaro,
-                ),
-            ],
+          Semantics(
+            header: true,
+            child: const Text('Periodo (hasta hoy)', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
+          const SizedBox(height: 8),
+          SelectorPeriodo(dias: _dias, onCambio: _generando != null ? null : (d) => setState(() => _dias = d)),
           if (soloPdf)
             const Padding(
               padding: EdgeInsets.only(top: 8),
@@ -171,7 +161,12 @@ class _Formato extends StatelessWidget {
                 children: [
                   Icon(icono, color: VigiaColors.bosque),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 6),

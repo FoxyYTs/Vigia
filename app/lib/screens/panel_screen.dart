@@ -33,32 +33,44 @@ class PanelScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final estrecho = MediaQuery.sizeOf(context).width < 600;
+    void irAlMapa() => Navigator.of(context).pushNamedAndRemoveUntil(Rutas.mapa, (_) => false);
+    Future<void> cerrarSesion() async {
+      await context.read<AuthProvider>().cerrarSesion();
+      if (!context.mounted) return;
+      irAlMapa();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesión cerrada.')));
+    }
 
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 64,
         title: const VigiaMarca(tamano: 36),
         actions: [
-          TextButton.icon(
-            style: TextButton.styleFrom(foregroundColor: Colors.white),
-            onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(Rutas.mapa, (_) => false),
-            icon: const Icon(Icons.map_outlined),
-            label: const Text('Mapa Interactivo'),
-          ),
-          const SizedBox(width: 4),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: VigiaColors.bosque),
-            onPressed: () async {
-              await context.read<AuthProvider>().cerrarSesion();
-              if (!context.mounted) return;
-              Navigator.of(context).pushNamedAndRemoveUntil(Rutas.mapa, (_) => false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Sesión cerrada.')),
-              );
-            },
-            icon: const Icon(Icons.logout),
-            label: const Text('Cerrar sesión'),
-          ),
+          // En el celular no caben el logo y dos botones con texto: solo íconos con tooltip.
+          if (estrecho) ...[
+            IconButton(
+              tooltip: 'Mapa Interactivo',
+              color: Colors.white,
+              onPressed: irAlMapa,
+              icon: const Icon(Icons.map_outlined),
+            ),
+            IconButton(tooltip: 'Cerrar sesión', color: Colors.white, onPressed: cerrarSesion, icon: const Icon(Icons.logout)),
+          ] else ...[
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+              onPressed: irAlMapa,
+              icon: const Icon(Icons.map_outlined),
+              label: const Text('Mapa Interactivo'),
+            ),
+            const SizedBox(width: 4),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: VigiaColors.bosque),
+              onPressed: cerrarSesion,
+              icon: const Icon(Icons.logout),
+              label: const Text('Cerrar sesión'),
+            ),
+          ],
           const SizedBox(width: 12),
         ],
       ),
@@ -150,11 +162,16 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.manage_accounts_outlined, color: VigiaColors.bosque),
-                    SizedBox(width: 10),
-                    Text('Gestionar Usuario', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                    const Icon(Icons.manage_accounts_outlined, color: VigiaColors.bosque),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: const Text('Gestionar Usuario', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -225,7 +242,10 @@ class _Bloque extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                Semantics(
+                  header: true,
+                  child: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
                 const SizedBox(height: 4),
                 Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
               ],

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,7 +7,10 @@ import '../data/models/estadisticas.dart';
 import '../data/models/foco.dart';
 import '../data/models/reporte.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
+import '../widgets/lista_centrada.dart';
+import '../widgets/selector_periodo.dart';
 
 /// "Gestionar Estadísticas" (UC7): incidentes por región y periodo, para
 /// administradores y staff. La API limita al administrador a su jurisdicción.
@@ -23,7 +24,6 @@ class EstadisticasScreen extends StatefulWidget {
 }
 
 class _EstadisticasScreenState extends State<EstadisticasScreen> {
-  static const _periodos = [7, 30, 90, 365];
 
   int _dias = 30;
   late Future<Estadisticas> _datos;
@@ -47,7 +47,9 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
 
   void _cambiarPeriodo(int dias) {
     _dias = dias;
-    final datos = _cargar();
+    // FutureBuilder lo escucha en el próximo cuadro: si falla antes, sin
+    // ignore() el error se reportaría como no manejado (la pantalla igual lo muestra).
+    final datos = _cargar()..ignore();
     setState(() {
       _datos = datos;
     });
@@ -56,38 +58,21 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(EstadisticasScreen.titulo)),
-      body: ListView(
-        // Centrado y con ancho máximo en pantallas anchas.
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: max(16, (MediaQuery.sizeOf(context).width - 1100) / 2)),
+      appBar: AppBar(
+        title: const Text(EstadisticasScreen.titulo),
+        actions: [
+          IconButton(tooltip: 'Recargar', onPressed: () => _cambiarPeriodo(_dias), icon: const Icon(Icons.refresh)),
+        ],
+      ),
+      body: ListaCentrada(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final d in _periodos)
-                ChoiceChip(
-                  label: Text(d == 365 ? '1 año' : '$d días'),
-                  selected: _dias == d,
-                  onSelected: (_) => _cambiarPeriodo(d),
-                  selectedColor: VigiaColors.bosqueClaro,
-                ),
-            ],
-          ),
+          SelectorPeriodo(dias: _dias, onCambio: _cambiarPeriodo),
           const SizedBox(height: 16),
-          FutureBuilder<Estadisticas>(
-            future: _datos,
-            builder: (context, snap) => switch (snap) {
-              AsyncSnapshot(hasError: true, :final error) => Text(
-                  error is ApiException ? error.mensaje : 'No se pudieron cargar las estadísticas.',
-                  style: const TextStyle(color: VigiaColors.error),
-                ),
-              AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => _Contenido(data!),
-              _ => const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-            },
+          EstadoCarga<Estadisticas>(
+            futuro: _datos,
+            mensajeError: 'No se pudieron cargar las estadísticas.',
+            onReintentar: () => _cambiarPeriodo(_dias),
+            contenido: _Contenido.new,
           ),
         ],
       ),
