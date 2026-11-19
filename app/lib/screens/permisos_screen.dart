@@ -212,6 +212,7 @@ class _EditarUsuarioState extends State<_EditarUsuario> {
           width: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DropdownButtonFormField<Rol>(
                 isExpanded: true,

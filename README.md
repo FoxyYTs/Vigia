@@ -108,10 +108,11 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
   verificado con login real. `python manage.py cargar_municipios --ejecutar` carga los 1.122
   municipios con código DANE y polígono (geoBoundaries + DIVIPOLA, ver `apps/usuarios/data/`)
   y la jurisdicción de Cornare.
-- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (247 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
-- 🟡 App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
-  JWT, panel y reportes ciudadanos (foto con cámara, GPS y pin; validación por el administrador).
-  Ver `app/README.md`. Falta el panel de administración (I6).
+- ✅ Modelos de dominio completos, API REST con JWT y permisos por rol (312 tests de backend, 99 % de cobertura; la app tiene sus propias pruebas en `app/test/`).
+- ✅ App Flutter: Mapa Interactivo público con capa de zonas de recurrencia, Iniciar Sesión con
+  JWT, reportes ciudadanos (foto con cámara, GPS y pin; validación por el administrador) y panel
+  de administración (I6): estadísticas, informes en PDF/Excel/CSV, históricos, bot de Telegram y
+  permisos. Ver `app/README.md`.
 - ✅ `MotorAlertas` (las 4 condiciones de alerta) y `DespachadorNotificaciones` por Telegram
   (canales público, privado e interno según la certeza de la alerta). Demo en vivo:
   `python manage.py simular_alertas` (y `--limpiar` para borrarla). El push (FCM) llega con la app móvil.
@@ -129,8 +130,7 @@ Diseño completo (modelo de datos, diagramas UML, estructura de repo). En implem
 - ✅ Producción en `https://vigia.foxyyts.qzz.io` (servidor propio con Docker Compose y túnel de
   Cloudflare, respaldo diario de la base). Ver [`DESPLIEGUE.md`](DESPLIEGUE.md).
 - 🟡 App Android `com.vigia.foxyyts` en prueba interna de Play Store.
-- ⬜ Panel de administración y generación de informes (I6),
-  fotos de reportes (I5b), push FCM.
+- ⬜ Fotos de reportes (I5b) y push FCM.
 
 ## Versiones y cambios
 

@@ -7,6 +7,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.6.0] — 2026-11-18 · Panel de administración (I6)
+
 ### Agregado
 - API: `GET /api/estadisticas/?desde=&hasta=` (I6, #16) con detecciones satelitales por fuente, departamento y día, alertas por disparador y reportes por estado. Solo para administradores y staff; el administrador de una entidad con polígonos ve solo su jurisdicción. Periodo máximo de 366 días.
 - App: "Gestionar Estadísticas" en el panel, con periodos de 7, 30, 90 y 365 días.
@@ -148,7 +150,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.5.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.6.0...develop
+[0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0
 [0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0
 [0.4.5]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.5
 [0.4.4]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.4.4

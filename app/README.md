@@ -29,8 +29,15 @@ Vigía ─┬─ Mapa Interactivo          /         sin cuenta
   con `flutter_secure_storage`. El access se renueva con el refresh al expirar.
 - **Panel (bloques "Gestionar X"):** "Gestionar Usuario" muestra el perfil real
   (`GET /api/auth/yo/`) y "Gestionar Reportar Focos de Incendios" abre los
-  reportes; los demás bloques están marcados como próximo incremento. Desde
-  aquí se cierra la sesión.
+  reportes. Desde aquí se cierra la sesión. El ciudadano solo ve esos dos; los
+  de gestión son para administradores y staff (`Rol.gestiona`, y
+  `RequiereSesion(gestion: true)` en sus rutas).
+- **Panel de administración (I6):** Estadísticas (`/estadisticas`, por periodo y
+  jurisdicción), Informes (`/informes`, PDF de hasta un año, Excel y CSV de hasta
+  92 días, con `share_plus`), Históricos (`/historicos`, UNGRD, IDEAM y FIRMS; el
+  staff actualiza la UNGRD), Bot de Telegram (`/bot-telegram`, estado de los
+  canales y mensaje de prueba del staff) y Permisos (`/permisos`, subpágina de
+  Gestionar Usuario: el staff cambia rol, entidad y cuenta activa).
 - **Reportes ciudadanos (`/reportes`):** el ciudadano toma la foto solo con la
   cámara (`image_picker`), la app toma su GPS (`geolocator`) y él pone el pin
   del incendio; ve sus reportes y su estado. El administrador ve la miniatura
@@ -46,7 +53,7 @@ lib/
 ├── data/models/                DTO de los serializers (Foco, Usuario, JWT)
 ├── data/storage/               almacenamiento de tokens (seguro / memoria)
 ├── providers/                  AuthProvider, FocosProvider (provider)
-├── screens/                    login, mapa, panel, reportes y rutas
+├── screens/                    login, mapa, panel, reportes, gestión (I6) y rutas
 └── widgets/                    mapa, filtros, detalle, marca
 design/                         capturas de Stitch e IDs (design/README.md)
 ```
@@ -127,8 +134,11 @@ flutter test
 - `test/screens/reportes_screen_test.dart`: acciones por rol (validar solo el
   administrador, crear solo el ciudadano), multipart del nuevo reporte y error
   de la API en el formulario.
+- `test/screens/{estadisticas,informes,historicos,bot_telegram,permisos}_screen_test.dart`:
+  pantallas del panel de administración (datos, errores de la API, acciones por
+  rol y recarga); `panel_screen_test.dart`, bloques por rol y navegación.
 - `test/providers/auth_provider_test.dart`: restaurar y renovar la sesión, cierre
-  ante 401 y la guarda `RequiereSesion` del panel.
+  ante 401 y la guarda `RequiereSesion` del panel (también por rol).
 - `test/providers/prediccion_provider_test.dart`: carga perezosa de la capa de
   predicción, paginación, cambio de mes, respuestas viejas y panel con leyenda.
 - `test/providers/historico_provider_test.dart`: geometría una sola vez, cambio de
