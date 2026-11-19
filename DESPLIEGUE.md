@@ -16,16 +16,26 @@ desarrollo también mandaría alertas reales al canal.
 
 ## Desplegar una versión
 
-Desde el portátil, con `main` ya actualizado (release por PR `develop` → `main`):
+Desde el portátil, en `main` actualizado y sin cambios locales (release por PR `develop` → `main`):
 
 ```bash
 export VIGIA_SERVIDOR=usuario@servidor
-scripts/desplegar.sh          # o scripts/desplegar.sh <rama> para probar otra rama
+scripts/desplegar.sh          # main; o scripts/desplegar.sh <rama|tag>
 ```
 
-El script compila la app web, hace `git pull` en el servidor, copia `app/build/web` con
-rsync, corre `docker compose up -d --build` (las migraciones se aplican al arrancar el
-backend) y comprueba que la API pública responda 200.
+El script:
+
+1. Se niega a seguir si el portátil tiene cambios o no está en el commit que se va a
+   desplegar: el build web se compila en el portátil y debe coincidir con el código del
+   servidor.
+2. Compila la app web.
+3. Corre `respaldar_bd.sh` en el servidor (respaldo previo al despliegue).
+4. Deja el servidor en ese commit exacto (`git checkout --detach`).
+5. Copia `app/build/web` con rsync.
+6. Corre `docker compose up -d --build --wait` (las migraciones se aplican al arrancar el
+   backend; `--wait` espera los healthchecks) y borra las imágenes viejas.
+7. Comprueba que la API y la web respondan 200 y que ningún contenedor quede `restarting`
+   o `unhealthy`.
 
 ## `.env` del servidor (`~/Vigia/.env`, permisos 600)
 
@@ -40,7 +50,16 @@ Parte de `.env.example`. Diferencias con el portátil:
 
 ## Respaldos
 
-`scripts/respaldar_bd.sh` corre a diario por cron. Hace un `pg_dump -Fc` y conserva 14 días.
+`scripts/respaldar_bd.sh` corre a diario por cron (02:30) y antes de cada despliegue. Hace un
+`pg_dump -Fc` en `~/backups/vigia` y conserva 14 días. Para el cron:
+
+```
+30 2 * * * $HOME/Vigia/scripts/respaldar_bd.sh >> $HOME/respaldo.log 2>&1
+```
+
+Los respaldos están en el mismo disco del servidor: para sobrevivir a una falla del disco
+conviene copiarlos a otro equipo (pendiente). Para comprobar que un respaldo sirve:
+`docker compose exec -T db pg_restore --list < ruta/al/respaldo.dump | head`.
 
 Restaurar un respaldo:
 
@@ -57,11 +76,13 @@ Las fotos de los reportes están en el volumen `vigia_media_files`. No entran en
 ## Volver a la versión anterior
 
 ```bash
-ssh "$VIGIA_SERVIDOR" 'cd ~/Vigia && git checkout v0.X.Y && docker compose up -d --build'
+git checkout v0.X.Y
+scripts/desplegar.sh v0.X.Y
 ```
 
-Si la versión nueva traía migraciones, primero hay que restaurar el respaldo de la base del
-día del despliegue.
+Así vuelven juntos el código del servidor y la app web (que no está en git: se compila en el
+portátil). Si la versión nueva traía migraciones, antes hay que restaurar el respaldo que el
+script tomó al desplegarla (el más reciente de `~/backups/vigia` antes de esa hora).
 
 ## Pendientes de configuración (panel de Cloudflare)
 
