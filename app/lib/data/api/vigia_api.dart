@@ -80,6 +80,40 @@ class VigiaApi {
         ),
       );
 
+  /// Registro público: siempre crea un ciudadano (`RegistroSerializer`). La
+  /// aceptación de la política de datos es obligatoria (Ley 1581).
+  Future<void> registrar({
+    required String usuario,
+    required String correo,
+    required String contrasena,
+    required bool aceptoPolitica,
+    int? municipio,
+  }) =>
+      _enviar(() => _cliente.post(
+            baseUrl.resolve('auth/registro/'),
+            headers: _cabeceras(),
+            body: jsonEncode({
+              'username': usuario,
+              'email': correo,
+              'password': contrasena,
+              'municipio_residencia': municipio,
+              'acepto_politica': aceptoPolitica,
+            }),
+          ));
+
+  /// Catálogo de municipios para el formulario de registro (público).
+  Future<List<Municipio>> municipios() async => [
+        for (final m in await _enviarLista(() => _cliente.get(baseUrl.resolve('municipios/'), headers: _cabeceras())))
+          Municipio.fromJson(m as Map<String, dynamic>),
+      ];
+
+  /// Elimina la cuenta: el backend anonimiza los datos personales y revoca
+  /// las sesiones (`DELETE /api/auth/yo/`, responde 204 sin cuerpo).
+  Future<void> eliminarCuenta(String access) async {
+    final r = await _ejecutar(() => _cliente.delete(baseUrl.resolve('auth/yo/'), headers: _cabeceras(access)));
+    if (r.statusCode != 204) throw _error(r.statusCode, _decodificar(r), 'Necesitas iniciar sesión para continuar.');
+  }
+
   Future<Usuario> obtenerPerfil(String access) async {
     final json = await _enviar(
       () => _cliente.get(baseUrl.resolve('auth/yo/'), headers: _cabeceras(access)),

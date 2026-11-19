@@ -16,16 +16,21 @@ http.Response _json(Object cuerpo, [int status = 200]) =>
     http.Response.bytes(utf8.encode(jsonEncode(cuerpo)), status, headers: {'content-type': 'application/json'});
 
 /// Abre el panel; las demás rutas muestran su nombre, para comprobar la navegación.
-Future<AuthProvider> _abrirPanel(WidgetTester t, String rol, {http.Response? perfil, double ancho = 1280}) async {
+Future<AuthProvider> _abrirPanel(WidgetTester t, String rol,
+    {http.Response? perfil, double ancho = 1280, List<http.Request>? pedidas}) async {
   t.view.physicalSize = Size(ancho, 1400);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
 
   final api = VigiaApi(
     baseUrl: Uri.parse('https://vigia.test/api/'),
-    cliente: MockClient((r) async => r.url.path.endsWith('auth/token/')
-        ? _json({'access': jwtFalso(username: 'ana', rol: rol), 'refresh': 'r'})
-        : perfil ?? _json({'id': 1, 'username': 'ana', 'email': 'ana@vigia.test', 'rol': rol})),
+    cliente: MockClient((r) async {
+      pedidas?.add(r);
+      if (r.method == 'DELETE') return http.Response('', 204);
+      return r.url.path.endsWith('auth/token/')
+          ? _json({'access': jwtFalso(username: 'ana', rol: rol), 'refresh': 'r'})
+          : perfil ?? _json({'id': 1, 'username': 'ana', 'email': 'ana@vigia.test', 'rol': rol});
+    }),
   );
   final auth = AuthProvider(api: api, almacen: AlmacenTokensMemoria());
   await auth.iniciarSesion('ana', 'clave');
@@ -100,5 +105,27 @@ void main() {
     expect(find.byTooltip('Cerrar sesión'), findsOneWidget);
     expect(find.text('Cerrar sesión'), findsNothing);
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets('el ciudadano elimina su cuenta tras confirmar; el administrador no tiene la opción', (t) async {
+    final pedidas = <http.Request>[];
+    final auth = await _abrirPanel(t, 'ciudadano', pedidas: pedidas);
+
+    await t.tap(find.text('Eliminar mi cuenta'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Cancelar'));
+    await t.pumpAndSettle();
+    expect(pedidas.where((r) => r.method == 'DELETE'), isEmpty);
+
+    await t.tap(find.text('Eliminar mi cuenta'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Eliminar cuenta'));
+    await t.pumpAndSettle();
+    expect(pedidas.singleWhere((r) => r.method == 'DELETE').url.path, '/api/auth/yo/');
+    expect(auth.estado, EstadoSesion.anonima);
+    expect(find.text('Tu cuenta fue eliminada.'), findsOneWidget);
+
+    await _abrirPanel(t, 'administrador');
+    expect(find.text('Eliminar mi cuenta'), findsNothing);
   });
 }
