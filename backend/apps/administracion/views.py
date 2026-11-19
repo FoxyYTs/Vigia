@@ -25,6 +25,10 @@ class PeriodoSerializer(serializers.Serializer):
         desde = datos.get("desde") or hasta - timedelta(days=29)
         if desde > hasta:
             raise serializers.ValidationError({"desde": "Debe ser anterior o igual a «hasta»."})
+        # Un día de margen por el huso horario del dispositivo; sin tope, 9999-12-31
+        # desbordaba la fecha (500).
+        if hasta > timezone.localdate() + timedelta(days=1):
+            raise serializers.ValidationError({"hasta": "No puede ser una fecha futura."})
         if (hasta - desde).days >= estadisticas.DIAS_MAXIMOS:
             raise serializers.ValidationError({"desde": f"El periodo máximo es de {estadisticas.DIAS_MAXIMOS} días."})
         return {"desde": desde, "hasta": hasta}

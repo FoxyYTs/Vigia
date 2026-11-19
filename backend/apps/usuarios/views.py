@@ -116,10 +116,14 @@ class GestionUsuarioViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, view
         return super().update(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        estaba_activo = serializer.instance.is_active
-        usuario = serializer.save()
-        # Una cuenta desactivada no debe poder renovar su sesión.
-        if estaba_activo and not usuario.is_active:
+        rol_antes, activo_antes = serializer.instance.rol, serializer.instance.is_active
+        rol = serializer.validated_data.get("rol", rol_antes)
+        # El acceso al Django Admin va con el rol: un staff degradado no debe conservarlo.
+        usuario = serializer.save(is_staff=rol == Usuario.Rol.STAFF)
+        # El rol viaja en el JWT y se copia en cada renovación: si cambia, o si
+        # la cuenta se desactiva, se cierran las sesiones para que vuelva a
+        # entrar con el rol nuevo (o no pueda entrar).
+        if usuario.rol != rol_antes or (activo_antes and not usuario.is_active):
             _revocar_sesiones(usuario)
 
 

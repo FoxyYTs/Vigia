@@ -91,7 +91,10 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Administrador').last);
     await t.pumpAndSettle();
-    await t.tap(find.text('Sin entidad (todo el país)'));
+    // Al promover hay que elegir el alcance: Guardar queda deshabilitado.
+    expect(t.widget<FilledButton>(find.widgetWithText(FilledButton, 'Guardar')).onPressed, isNull);
+    expect(find.text('Al cambiar el rol se cerrarán sus sesiones abiertas.'), findsOneWidget);
+    await t.tap(find.text('Elige su alcance'));
     await t.pumpAndSettle();
     await t.tap(find.text('Corantioquia').last);
     await t.pumpAndSettle();
@@ -128,5 +131,25 @@ void main() {
   testWidgets('si la lista no carga, lo dice', (t) async {
     await _montar(t, rol: 'staff', responder: (r) => _json({'detail': 'x'}, 500));
     expect(find.text('El servidor de Vigía tuvo un problema. Inténtalo más tarde.'), findsOneWidget);
+  });
+
+  testWidgets('un administrador nacional se guarda sin entidad', (t) async {
+    final pedidas = await _montar(t, rol: 'staff');
+
+    await t.tap(find.byTooltip('Editar permisos de carla'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Ciudadano').last);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Administrador').last);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Elige su alcance'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Sin entidad (todo el país)').last);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Guardar'));
+    await t.pumpAndSettle();
+
+    final patch = pedidas.firstWhere((r) => r.method == 'PATCH');
+    expect(jsonDecode(patch.body), containsPair('entidad', null));
   });
 }

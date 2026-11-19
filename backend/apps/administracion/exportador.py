@@ -15,6 +15,7 @@ from datetime import date
 from django.db.models import Count, F, FloatField, Func, Subquery
 from django.utils import timezone
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
@@ -36,11 +37,13 @@ FUENTES = {"NASA_FIRMS": "NASA FIRMS", "INPE_QUEIMADAS": "INPE QUEIMADAS"}
 
 
 def _texto_seguro(valor):
-    """Evita la inyección de fórmulas en Excel/LibreOffice: la descripción de
-    un reporte la escribe el ciudadano y podría empezar por "=", "+", etc."""
-    if isinstance(valor, str) and valor[:1] in ("=", "+", "-", "@", "\t", "\r"):
-        return "'" + valor
-    return valor
+    """La descripción de un reporte la escribe el ciudadano: se quitan los
+    caracteres de control (openpyxl los rechaza y el Excel entero fallaba) y
+    se neutraliza la inyección de fórmulas si empieza por "=", "+", etc."""
+    if not isinstance(valor, str):
+        return valor
+    valor = ILLEGAL_CHARACTERS_RE.sub("", valor)
+    return "'" + valor if valor[:1] in ("=", "+", "-", "@", "\t", "\r") else valor
 
 
 def _coordenada(funcion):
@@ -89,7 +92,11 @@ class ExportadorDatos:
         return encabezados, filas
 
     def _filas_alertas(self):
-        qs = self._alertas.select_related("municipio").annotate(reportes_n=Count("reportes")).order_by("fecha_creacion")
+        # Sin el polígono del municipio: solo se leen el nombre y el departamento.
+        qs = (
+            self._alertas.select_related("municipio").defer("municipio__geom")
+            .annotate(reportes_n=Count("reportes")).order_by("fecha_creacion")
+        )
         encabezados = ["id", "fecha_creacion", "disparador", "latitud", "longitud", "municipio", "departamento",
                        "foco_id", "reportes"]
         filas = (

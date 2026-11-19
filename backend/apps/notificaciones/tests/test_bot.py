@@ -80,6 +80,12 @@ def test_staff_envia_un_mensaje_de_prueba(api_como, staff, telegram):
     assert r.status_code == 200
     assert post.call_args.kwargs["json"]["chat_id"] == "-100222"
     assert "staff1" in post.call_args.kwargs["json"]["text"]
+
+
+def test_la_prueba_al_canal_publico_no_muestra_quien_la_envio(api_como, staff, telegram):
+    with patch("apps.notificaciones.despachador.requests.post", return_value=Mock(ok=True)) as post:
+        api_como(staff).post("/api/bot-telegram/probar/", {"canal": Canal.TELEGRAM_PUBLICO}, format="json")
+    assert "staff1" not in post.call_args.kwargs["json"]["text"]
     assert not Notificacion.objects.exists()
 
 
@@ -90,9 +96,11 @@ def test_prueba_a_un_canal_sin_configurar_falla(api_como, staff, telegram):
     assert r.status_code == 502
 
 
-@pytest.mark.parametrize("canal", ["push_app", "", None])
-def test_prueba_con_canal_invalido(api_como, staff, telegram, canal):
-    assert api_como(staff).post("/api/bot-telegram/probar/", {"canal": canal}, format="json").status_code == 400
+@pytest.mark.parametrize(
+    "cuerpo", [{"canal": "push_app"}, {"canal": ""}, {"canal": None}, {"canal": ["telegram_publico"]}, []]
+)
+def test_prueba_con_canal_invalido(api_como, staff, telegram, cuerpo):
+    assert api_como(staff).post("/api/bot-telegram/probar/", cuerpo, format="json").status_code == 400
 
 
 def test_solo_el_staff_envia_pruebas(api_como, administrador, telegram):

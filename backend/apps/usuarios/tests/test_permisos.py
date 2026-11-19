@@ -109,3 +109,25 @@ def test_entidades_ordenadas(api_como, staff, entidad, otra_entidad):
         {"id": entidad.pk, "nombre": "Cornare"},
         {"id": otra_entidad.pk, "nombre": "Corpoamazonia"},
     ]
+
+
+def test_el_rol_staff_va_con_el_acceso_al_django_admin(api_como, staff, ciudadano):
+    otro = Usuario.objects.create_user("staff2", rol=Rol.STAFF, is_staff=True)
+    cliente = api_como(staff)
+    _patch(cliente, otro, {"rol": "ciudadano"})
+    _patch(cliente, ciudadano, {"rol": "staff"})
+    otro.refresh_from_db()
+    ciudadano.refresh_from_db()
+    assert not otro.is_staff and ciudadano.is_staff
+
+
+def test_cambiar_el_rol_cierra_las_sesiones(api_como, staff, ciudadano):
+    refresco = RefreshToken.for_user(ciudadano)
+    _patch(api_como(staff), ciudadano, {"rol": "administrador"})
+    assert BlacklistedToken.objects.filter(token__jti=refresco["jti"]).exists()
+
+
+def test_cambiar_solo_la_entidad_no_cierra_las_sesiones(api_como, staff, administrador, otra_entidad):
+    refresco = RefreshToken.for_user(administrador)
+    _patch(api_como(staff), administrador, {"entidad": otra_entidad.pk})
+    assert not BlacklistedToken.objects.filter(token__jti=refresco["jti"]).exists()
