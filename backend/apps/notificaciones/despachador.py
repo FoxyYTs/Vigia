@@ -135,17 +135,21 @@ class DespachadorNotificaciones:
 
     def despachar(self, alerta: Alerta) -> list[Notificacion]:
         """Una `Notificacion` por canal. Ya enviados no se repiten, para
-        que un reintento de la tarea no duplique mensajes."""
+        que un reintento de la tarea no duplique mensajes, y un reintento
+        actualiza la fila fallida en vez de sumar otra (si no, los fallos de
+        la pantalla del bot se contaban hasta 4 veces)."""
         notificaciones = []
         for canal in RUTEO[alerta.tipo_disparador]:
-            if alerta.notificaciones.filter(canal=canal, estado=Notificacion.Estado.ENVIADO).exists():
+            del_canal = alerta.notificaciones.filter(canal=canal, usuario=None)
+            if del_canal.filter(estado=Notificacion.Estado.ENVIADO).exists():
                 continue
+            previa = del_canal.order_by("-fecha_envio").first()
             ok = self.notificador.enviar(alerta, getattr(settings, self.DESTINOS[canal]))
-            notificaciones.append(
-                Notificacion.objects.create(
-                    alerta=alerta,
-                    canal=canal,
-                    estado=Notificacion.Estado.ENVIADO if ok else Notificacion.Estado.FALLIDO,
-                )
-            )
+            estado = Notificacion.Estado.ENVIADO if ok else Notificacion.Estado.FALLIDO
+            if previa:
+                previa.estado, previa.fecha_envio = estado, timezone.now()
+                previa.save(update_fields=["estado", "fecha_envio"])
+                notificaciones.append(previa)
+            else:
+                notificaciones.append(Notificacion.objects.create(alerta=alerta, canal=canal, estado=estado))
         return notificaciones

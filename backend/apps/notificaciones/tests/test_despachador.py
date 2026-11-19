@@ -140,4 +140,13 @@ def test_tarea_reintenta_hasta_el_maximo_si_telegram_falla(crear_alerta):
     alerta = crear_alerta(Tipo.DETECCION_SATELITAL)
     with patch.object(NotificadorTelegram, "enviar", return_value=False):
         assert despachar_alerta.apply(args=[alerta.pk]).get() == 0
-    assert Notificacion.objects.filter(estado=Estado.FALLIDO).count() == 1 + despachar_alerta.max_retries
+    # Cada reintento actualiza la misma fila: un fallo por alerta y canal.
+    assert Notificacion.objects.filter(estado=Estado.FALLIDO).count() == 1
+
+
+def test_reintento_exitoso_marca_como_enviada_la_fila_fallida(crear_alerta):
+    alerta = crear_alerta(Tipo.DETECCION_SATELITAL)
+    DespachadorNotificaciones(Mock(enviar=Mock(return_value=False))).despachar(alerta)
+    [n] = DespachadorNotificaciones(Mock(enviar=Mock(return_value=True))).despachar(alerta)
+    assert n.estado == Estado.ENVIADO
+    assert list(alerta.notificaciones.values_list("estado", flat=True)) == [Estado.ENVIADO]

@@ -135,4 +135,10 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Telegram no aceptó el mensaje.'), findsOneWidget);
   });
+
+  testWidgets('un JSON inesperado se muestra como error, sin romper la pantalla', (t) async {
+    await _montar(t, rol: 'administrador', responder: (r) => _json({'bot': 7}));
+    expect(find.textContaining('No se pudo cargar'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
 }
