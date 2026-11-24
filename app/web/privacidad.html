@@ -3,67 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1B5E3A">
   <title>Vigía · Política de tratamiento de datos</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="privacidad.css">
 </head>
 <body>
-<main>
-  <p><a href="./">← Volver a Vigía</a></p>
-  <h1>Política de tratamiento de datos personales</h1>
-  <p class="version">Versión 2026-11-02 · Ley 1581 de 2012 y Decreto 1377 de 2013</p>
+<header class="cabecera">
+  <div class="contenedor">
+    <a class="marca" href="./">
+      <img src="icons/Icon-192.png" alt="" width="40" height="40">
+      <span>Vigía</span>
+    </a>
+    <h1>Política de tratamiento de datos personales</h1>
+    <p class="version">Versión 2026-11-02 · Ley 1581 de 2012 y Decreto 1377 de 2013</p>
+  </div>
+</header>
 
-  <h2>1. Responsable</h2>
-  <p>Vigía es un proyecto académico del programa de Ingeniería Informática del Politécnico
-  Colombiano Jaime Isaza Cadavid, desarrollado por José Andrés Daza Gallego. Contacto para
-  consultas y reclamos: <strong>foxy200442@gmail.com</strong>.</p>
+<main class="contenedor">
+  <nav class="indice" aria-label="Contenido">
+    <ol>
+      <li><a href="#responsable">Responsable</a></li>
+      <li><a href="#datos">Qué datos se tratan</a></li>
+      <li><a href="#usos">Para qué se usan</a></li>
+      <li><a href="#retencion">Cuánto tiempo se guardan</a></li>
+      <li><a href="#derechos">Tus derechos</a></li>
+      <li><a href="#autorizacion">Autorización</a></li>
+    </ol>
+  </nav>
 
-  <h2>2. Qué datos se tratan</h2>
-  <ul>
-    <li><strong>Cuenta:</strong> nombre de usuario, correo electrónico, contraseña (guardada
-      como hash, nunca en texto plano) y, si lo indicas, tu municipio de residencia.</li>
-    <li><strong>Reportes de incendio:</strong> la foto que tomas, la ubicación del incendio que
-      marcas en el mapa, tu ubicación al enviar el reporte y una descripción opcional.</li>
-    <li><strong>Datos de la foto:</strong> la fecha y la ubicación en que se tomó (metadatos
-      EXIF). Se guardan aparte para detectar reportes falsos y <em>no se publican</em>: la foto
-      que se almacena y se muestra está limpia de esos metadatos.</li>
-    <li><strong>Analítica:</strong> solo si la aceptas, Google Analytics registra de forma
-      agregada cómo se usa el mapa.</li>
-  </ul>
+  <section id="responsable">
+    <h2><span class="num">1</span>Responsable</h2>
+    <p>Vigía es un proyecto académico del programa de Ingeniería Informática del Politécnico
+    Colombiano Jaime Isaza Cadavid, desarrollado por José Andrés Daza Gallego. Contacto para
+    consultas y reclamos: <a href="mailto:foxy200442@gmail.com"><strong>foxy200442@gmail.com</strong></a>.</p>
+  </section>
 
-  <h2>3. Para qué se usan</h2>
-  <ul>
-    <li>Generar alertas tempranas de incendios forestales y avisar a las entidades públicas
-      (corporaciones autónomas regionales) de la zona.</li>
-    <li>Validar que un reporte sea real antes de difundirlo.</li>
-    <li>Elaborar estadísticas e informes agregados de apoyo a la toma de decisiones.</li>
-  </ul>
-  <p>Tu ubicación al reportar solo la ven tú y los administradores de la entidad con
-  jurisdicción en el lugar del incendio. Las fotos solo las ven quienes tienen permiso sobre el
-  reporte. Los canales públicos de alertas nunca publican tu identidad ni tu ubicación.</p>
+  <section id="datos">
+    <h2><span class="num">2</span>Qué datos se tratan</h2>
+    <ul>
+      <li><strong>Cuenta:</strong> nombre de usuario, correo electrónico, contraseña (guardada
+        como hash, nunca en texto plano) y, si lo indicas, tu municipio de residencia.</li>
+      <li><strong>Reportes de incendio:</strong> la foto que tomas, la ubicación del incendio que
+        marcas en el mapa, tu ubicación al enviar el reporte y una descripción opcional.</li>
+      <li><strong>Datos de la foto:</strong> la fecha y la ubicación en que se tomó (metadatos
+        EXIF). Se guardan aparte para detectar reportes falsos y <em>no se publican</em>: la foto
+        que se almacena y se muestra está limpia de esos metadatos.</li>
+      <li><strong>Analítica:</strong> solo si la aceptas, Google Analytics registra de forma
+        agregada cómo se usa el mapa.</li>
+    </ul>
+  </section>
 
-  <h2>4. Cuánto tiempo se guardan</h2>
-  <ul>
-    <li>Foto completa de un reporte <strong>rechazado</strong>: 7 días.</li>
-    <li>Foto completa de un reporte <strong>sin validar</strong>: 30 días.</li>
-    <li>Foto completa de un reporte <strong>validado</strong>: 90 días.</li>
-    <li>Después queda solo una miniatura del reporte como evidencia.</li>
-  </ul>
+  <section id="usos">
+    <h2><span class="num">3</span>Para qué se usan</h2>
+    <ul>
+      <li>Generar alertas tempranas de incendios forestales y avisar a las entidades públicas
+        (corporaciones autónomas regionales) de la zona.</li>
+      <li>Validar que un reporte sea real antes de difundirlo.</li>
+      <li>Elaborar estadísticas e informes agregados de apoyo a la toma de decisiones.</li>
+    </ul>
+    <p class="nota">Tu ubicación al reportar solo la ven tú y los administradores de la entidad con
+    jurisdicción en el lugar del incendio. Las fotos solo las ven quienes tienen permiso sobre el
+    reporte. Los canales públicos de alertas nunca publican tu identidad ni tu ubicación.</p>
+  </section>
 
-  <h2>5. Tus derechos</h2>
-  <p>Puedes conocer, actualizar y rectificar tus datos, pedir prueba de esta autorización,
-  saber qué uso se les ha dado, revocar la autorización y pedir que se supriman. Para
-  <strong>eliminar tu cuenta</strong> usa «Eliminar mi cuenta» en Gestionar Usuario (en la app o en
-  la web), o escribe al correo de contacto desde el correo de tu cuenta, con tu nombre de usuario:
-  tus datos personales se borran y los reportes que enviaste se conservan sin ningún dato que te
-  identifique, porque son evidencia de incidentes. Las demás
-  solicitudes también se hacen por ese correo; se responde en los plazos de la Ley 1581 (10 días hábiles para consultas y 15 para reclamos).</p>
+  <section id="retencion">
+    <h2><span class="num">4</span>Cuánto tiempo se guardan</h2>
+    <ul class="plazos">
+      <li class="rechazado"><span>Foto completa de un reporte <strong>rechazado</strong></span><b>7 días</b></li>
+      <li class="pendiente"><span>Foto completa de un reporte <strong>sin validar</strong></span><b>30 días</b></li>
+      <li class="validado"><span>Foto completa de un reporte <strong>validado</strong></span><b>90 días</b></li>
+    </ul>
+    <p>Después queda solo una miniatura del reporte como evidencia.</p>
+  </section>
 
-  <h2>6. Autorización</h2>
-  <p>Vigía está dirigido a personas mayores de 18 años; no se crean cuentas de menores de
-  edad.</p>
-  <p>Al crear una cuenta marcas expresamente que aceptas esta política; el sistema guarda la
-  versión y la fecha en que lo hiciste. Si la política cambia, se publicará
-  aquí una versión nueva con su fecha.</p>
+  <section id="derechos">
+    <h2><span class="num">5</span>Tus derechos</h2>
+    <p>Puedes conocer, actualizar y rectificar tus datos, pedir prueba de esta autorización,
+    saber qué uso se les ha dado, revocar la autorización y pedir que se supriman. Para
+    <strong>eliminar tu cuenta</strong> usa «Eliminar mi cuenta» en Gestionar Usuario (en la app o en
+    la web), o escribe al correo de contacto desde el correo de tu cuenta, con tu nombre de usuario:
+    tus datos personales se borran y los reportes que enviaste se conservan sin ningún dato que te
+    identifique, porque son evidencia de incidentes. Las demás
+    solicitudes también se hacen por ese correo; se responde en los plazos de la Ley 1581 (10 días hábiles para consultas y 15 para reclamos).</p>
+  </section>
+
+  <section id="autorizacion">
+    <h2><span class="num">6</span>Autorización</h2>
+    <p>Vigía está dirigido a personas mayores de 18 años; no se crean cuentas de menores de
+    edad.</p>
+    <p>Al crear una cuenta marcas expresamente que aceptas esta política; el sistema guarda la
+    versión y la fecha en que lo hiciste. Si la política cambia, se publicará
+    aquí una versión nueva con su fecha.</p>
+  </section>
 </main>
+
+<footer class="pie">
+  <div class="contenedor">
+    <a href="./">← Volver a Vigía</a>
+    <span>Proyecto académico · Politécnico Colombiano Jaime Isaza Cadavid</span>
+  </div>
+</footer>
 </body>
 </html>
