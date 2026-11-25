@@ -28,7 +28,7 @@ void main() {
   });
 
   test('al acercar se separan y nunca se pierde un foco', () {
-    for (final zoom in [4, 8, 12, 16]) {
+    for (final zoom in [4, 8, zoomSinAgrupar, 16]) {
       expect(agruparFocos(focos, zoom).expand((g) => g.focos), unorderedEquals(focos));
     }
     expect(agruparFocos(focos, 16), hasLength(4));

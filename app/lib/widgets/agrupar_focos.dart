@@ -4,7 +4,11 @@ import 'package:latlong2/latlong.dart';
 import '../data/models/foco.dart';
 
 /// Desde este zoom los focos se dibujan sueltos.
-const zoomSinAgrupar = 12;
+const zoomSinAgrupar = 9;
+
+/// Las celdas con menos focos se dibujan sueltas: agrupar 2 o 3 esconde más
+/// de lo que ordena.
+const tamanoMinimoGrupo = 5;
 
 /// Focos que caen en la misma celda de la pantalla.
 class GrupoFocos {
@@ -34,7 +38,7 @@ class GrupoFocos {
 ///
 /// shortcut: rejilla fija, así dos focos vecinos a lados de una frontera de
 /// celda quedan en grupos distintos; pasar a supercluster si eso molesta.
-List<GrupoFocos> agruparFocos(List<Foco> focos, int zoom, {double celda = 80, Crs crs = const Epsg3857()}) {
+List<GrupoFocos> agruparFocos(List<Foco> focos, int zoom, {double celda = 60, Crs crs = const Epsg3857()}) {
   final escala = crs.scale(zoom.toDouble());
   final celdas = <(int, int), List<Foco>>{};
   for (final f in focos) {
