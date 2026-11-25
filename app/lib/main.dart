@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
@@ -60,6 +61,14 @@ class VigiaApp extends StatelessWidget {
           theme: construirTemaVigia(),
           darkTheme: construirTemaVigia(brillo: Brightness.dark),
           themeMode: context.select<PreferenciasProvider, ThemeMode>((p) => p.tema),
+          // Íconos de la barra de estado según el tema de la app y no el del
+          // sistema (en el login, sin AppBar, quedaban blancos sobre claro).
+          builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+            value: Theme.of(context).brightness == Brightness.dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark,
+            child: child!,
+          ),
           locale: const Locale('es', 'CO'),
           supportedLocales: const [Locale('es', 'CO'), Locale('es')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
