@@ -124,8 +124,8 @@ double _radio(Foco f) {
   return ((4 + math.min(6, math.log(frp + 1) * 1.4)) * 2).roundToDouble() / 2;
 }
 
-/// Focos sueltos como círculos y, con zoom menor a [zoomSinAgrupar], los
-/// cercanos agrupados en un círculo con el conteo (#94).
+/// Focos sueltos como círculos y, con zoom menor a [zoomSinAgrupar], las
+/// celdas con al menos [tamanoMinimoGrupo] focos agrupadas en un círculo con el conteo (#94).
 class _CapaFocos extends StatefulWidget {
   const _CapaFocos({required this.focos, required this.hit});
 
@@ -149,7 +149,7 @@ class _CapaFocosState extends State<_CapaFocos> {
     _focosPrevios = widget.focos;
     _zoomPrevio = zoom;
     final grupos = zoom >= zoomSinAgrupar ? const <GrupoFocos>[] : agruparFocos(widget.focos, zoom);
-    final agrupados = Set<Foco>.identity()..addAll([for (final g in grupos) if (g.focos.length > 1) ...g.focos]);
+    final agrupados = Set<Foco>.identity()..addAll([for (final g in grupos) if (g.focos.length >= tamanoMinimoGrupo) ...g.focos]);
     _sueltos = [
       // Los más antiguos primero: los recientes quedan dibujados encima.
       for (final f in widget.focos.reversed)
@@ -167,7 +167,7 @@ class _CapaFocosState extends State<_CapaFocos> {
     ];
     _grupos = [
       for (final g in grupos)
-        if (g.focos.length > 1) _MarcaGrupo.marker(g),
+        if (g.focos.length >= tamanoMinimoGrupo) _MarcaGrupo.marker(g),
     ];
   }
 
