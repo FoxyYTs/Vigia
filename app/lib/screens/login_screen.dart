@@ -285,7 +285,11 @@ class _FormularioLoginState extends State<FormularioLogin> {
                       : const Icon(Icons.login),
                   label: Text(auth.enviando ? 'Ingresando…' : 'Ingresar'),
                 ),
-                const SizedBox(height: 12),
+                TextButton(
+                  key: const Key('boton-recuperar'),
+                  onPressed: () => Navigator.of(context).pushNamed(Rutas.recuperar),
+                  child: const Text('¿Olvidaste tu contraseña?'),
+                ),
                 // "Iniciar Sesión/Registrar cuenta" en el mapa de navegación.
                 Wrap(
                   alignment: WrapAlignment.center,
