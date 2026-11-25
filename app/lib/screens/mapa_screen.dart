@@ -90,6 +90,7 @@ class _MapaScreenState extends State<MapaScreen> {
           right: 12,
           child: Column(
             children: [
+              BotonBrujula(mapa: _mapa),
               _BotonMapa(icono: Icons.center_focus_strong, texto: 'Centrar en Colombia', onPressed: _centrar),
               const SizedBox(height: 8),
               _BotonMapa(icono: Icons.add, texto: 'Acercar', onPressed: () => _zoom(1)),
@@ -203,18 +204,51 @@ class _AccionesSesion extends StatelessWidget {
 }
 
 class _BotonMapa extends StatelessWidget {
-  const _BotonMapa({required this.icono, required this.texto, required this.onPressed});
+  const _BotonMapa({required this.icono, required this.texto, required this.onPressed, this.giro = 0});
 
   final IconData icono;
   final String texto;
   final VoidCallback onPressed;
+
+  /// Ángulo del ícono en radianes.
+  final double giro;
 
   @override
   Widget build(BuildContext context) => Material(
         color: Colors.white,
         elevation: 2,
         borderRadius: BorderRadius.circular(8),
-        child: IconButton(tooltip: texto, icon: Icon(icono, color: VigiaColors.bosque), onPressed: onPressed),
+        child: IconButton(
+          tooltip: texto,
+          icon: Transform.rotate(angle: giro, child: Icon(icono, color: VigiaColors.bosque)),
+          onPressed: onPressed,
+        ),
+      );
+}
+
+/// Brújula (#93): aparece solo con el mapa girado, apunta al norte y al
+/// tocarla lo devuelve a su orientación.
+class BotonBrujula extends StatelessWidget {
+  const BotonBrujula({super.key, required this.mapa});
+
+  final MapController mapa;
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<MapEvent>(
+        stream: mapa.mapEventStream,
+        builder: (context, evento) {
+          final camara = evento.data?.camera;
+          if (camara == null || (camara.rotation % 360).abs() < 0.5) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _BotonMapa(
+              icono: Icons.navigation,
+              texto: 'Orientar al norte',
+              giro: camara.rotationRad,
+              onPressed: () => mapa.rotate(0),
+            ),
+          );
+        },
       );
 }
 

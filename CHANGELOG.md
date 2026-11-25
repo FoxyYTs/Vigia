@@ -13,6 +13,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - AAB de Play compilado con `--obfuscate --split-debug-info` (`libapp.so` un 17 % más liviano); el procedimiento está en `DESPLIEGUE.md`.
 
 ### Agregado
+- App: brújula en el mapa: aparece al girarlo con dos dedos, apunta al norte y al tocarla lo endereza.
 - App: prueba de rendimiento del mapa en un celular real (`integration_test/rendimiento_mapa_test.dart`).
 
 ### Corregido
