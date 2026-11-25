@@ -58,6 +58,11 @@ class _MapaFocosState extends State<MapaFocos> {
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
 
+    final teselas = TileLayer(
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName: 'com.vigia.foxyyts',
+    );
+
     return Semantics(
       label: 'Mapa de Colombia con ${focos.length} focos de calor. '
           'Usa el panel de filtros para cambiar el rango y la fuente.',
@@ -73,12 +78,12 @@ class _MapaFocosState extends State<MapaFocos> {
           onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.vigia.foxyyts',
-            // OSM no tiene teselas oscuras: se invierten los colores.
-            tileBuilder: Theme.of(context).brightness == Brightness.dark ? darkModeTileBuilder : null,
-          ),
+          // OSM no tiene teselas oscuras: se invierten los colores de toda la
+          // capa (por tesela quedaban líneas claras entre ellas).
+          if (Theme.of(context).brightness == Brightness.dark)
+            darkModeTilesContainerBuilder(context, teselas)
+          else
+            teselas,
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.
           if (zonas.isNotEmpty)
@@ -101,9 +106,15 @@ class _MapaFocosState extends State<MapaFocos> {
           ),
           const _AnilloSeleccion(),
           // Plegable: en pantallas angostas la línea completa se cortaba.
-          const RichAttributionWidget(
+          RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
-            attributions: [
+            // El botón de flutter_map es negro fijo y no se ve en modo oscuro.
+            openButton: (context, abrir) => IconButton(
+              tooltip: 'Fuentes y atribuciones',
+              onPressed: abrir,
+              icon: Icon(Icons.info_outlined, color: Theme.of(context).colorScheme.onSurface),
+            ),
+            attributions: const [
               TextSourceAttribution('OpenStreetMap contributors'),
               TextSourceAttribution('NASA FIRMS', prependCopyright: false),
               TextSourceAttribution('INPE', prependCopyright: false),
@@ -241,7 +252,7 @@ class _AnilloSeleccion extends StatelessWidget {
           point: seleccionado.posicion,
           radius: _radio(seleccionado) + 6,
           color: Colors.transparent,
-          borderColor: const Color(0xFF1A1F1C),
+          borderColor: Theme.of(context).colorScheme.onSurface,
           borderStrokeWidth: 2.5,
         ),
       ],

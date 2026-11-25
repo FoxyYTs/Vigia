@@ -21,6 +21,7 @@ class VigiaColors {
   /// leyenda: el color nunca es la única señal).
   static const firms = Color(0xFFD9531E);
   static const inpe = Color(0xFF7B1E5A);
+  static const inpeOscuro = Color(0xFFE08BC4); // INPE en íconos con el tema oscuro
 }
 
 /// Tema claro u oscuro con la misma marca. Las pantallas toman sus colores

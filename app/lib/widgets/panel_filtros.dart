@@ -48,7 +48,7 @@ class PanelFiltros extends StatelessWidget {
             ),
             for (final f in FuenteSatelital.values)
               ChoiceChip(
-                avatar: _Punto(colorFuente(f)),
+                avatar: _Punto(colorFuente(f, Theme.of(context).brightness)),
                 label: Text(f.etiqueta),
                 selected: p.fuente == f,
                 onSelected: (_) => p.cambiarFuente(f),
@@ -68,8 +68,12 @@ class PanelFiltros extends StatelessWidget {
   }
 }
 
-Color colorFuente(FuenteSatelital? f) =>
-    f == FuenteSatelital.inpeQueimadas ? VigiaColors.inpe : VigiaColors.firms;
+/// Con [brillo] oscuro, INPE se aclara para íconos y leyendas (el morado da
+/// 1,5:1 sobre el fondo oscuro). Los círculos del mapa no lo necesitan: llevan
+/// borde blanco.
+Color colorFuente(FuenteSatelital? f, [Brightness brillo = Brightness.light]) => f == FuenteSatelital.inpeQueimadas
+    ? (brillo == Brightness.dark ? VigiaColors.inpeOscuro : VigiaColors.inpe)
+    : VigiaColors.firms;
 
 /// Tramos de probabilidad de la capa de predicción (de menor a mayor).
 const tramosPuntaje = [
@@ -357,7 +361,7 @@ class ContadorFocos extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [
-                      _Punto(colorFuente(f)),
+                      _Punto(colorFuente(f, Theme.of(context).brightness)),
                       const SizedBox(width: 8),
                       Expanded(child: Text(f.etiqueta)),
                       Text(Formato.entero(p.contarPorFuente(f)),
@@ -397,7 +401,7 @@ class Leyenda extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                _Punto(colorFuente(f), tamano: 14),
+                _Punto(colorFuente(f, Theme.of(context).brightness), tamano: 14),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

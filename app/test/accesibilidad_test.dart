@@ -81,6 +81,10 @@ void main() {
       ]) {
         expect(contraste(texto, fondo), greaterThanOrEqualTo(4.5), reason: '$texto sobre $fondo');
       }
+      // Íconos y leyendas de cada fuente: componente gráfico, basta 3:1.
+      for (final f in FuenteSatelital.values) {
+        expect(contraste(colorFuente(f, brillo), c.surface), greaterThanOrEqualTo(3), reason: '$f');
+      }
       // Barra de progreso de Estadísticas: componente gráfico, basta 3:1.
       expect(contraste(c.secondary, c.tertiaryContainer), greaterThanOrEqualTo(3));
     });

@@ -359,7 +359,7 @@ class ListaFocos extends StatelessWidget {
             itemBuilder: (_, i) {
               final f = focos[i];
               return ListTile(
-                leading: Icon(Icons.local_fire_department, color: colorFuente(f.fuente)),
+                leading: Icon(Icons.local_fire_department, color: colorFuente(f.fuente, Theme.of(context).brightness)),
                 title: Text('${f.fuente?.etiqueta ?? 'Fuente desconocida'} · ${Formato.fechaHora(f.fechaHora)}'),
                 subtitle: Text(
                   '${Formato.coordenada(f.posicion.latitude, latitud: true)}, '

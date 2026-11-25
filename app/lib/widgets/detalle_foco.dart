@@ -35,7 +35,7 @@ class DetalleFoco extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.local_fire_department, color: colorFuente(foco.fuente)),
+                Icon(Icons.local_fire_department, color: colorFuente(foco.fuente, Theme.of(context).brightness)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Semantics(
