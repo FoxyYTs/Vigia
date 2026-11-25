@@ -75,6 +75,13 @@ def test_una_contrasena_debil_no_gasta_el_codigo(api, con_correo):
     assert r.status_code == 200
 
 
+def test_una_cuenta_recibe_como_maximo_tres_codigos_por_hora(api, con_correo):
+    """Límite por cuenta: el de la IP se evade cambiando de IP."""
+    for _ in range(recuperacion.CODIGOS_POR_HORA):
+        _pedir_codigo(api).assert_called_once()
+    _pedir_codigo(api).assert_not_called()
+
+
 def test_cuenta_eliminada_no_recibe_codigo(api, con_correo):
     con_correo.is_active = False
     con_correo.save()

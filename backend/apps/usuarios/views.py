@@ -59,8 +59,9 @@ class RecuperarSolicitudView(generics.GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if usuario := _cuenta_por_correo(serializer.validated_data["email"]):
-            enviar_codigo_recuperacion.delay(usuario.email, usuario.username, generar_codigo(usuario))
+        usuario = _cuenta_por_correo(serializer.validated_data["email"])
+        if usuario and (codigo := generar_codigo(usuario)):
+            enviar_codigo_recuperacion.delay(usuario.email, usuario.username, codigo)
         return Response({"detail": "Si el correo está registrado, te llegará un código de 6 dígitos."})
 
 
