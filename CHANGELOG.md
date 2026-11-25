@@ -13,7 +13,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - AAB de Play compilado con `--obfuscate --split-debug-info` (`libapp.so` un 17 % más liviano); el procedimiento está en `DESPLIEGUE.md`.
 
 ### Agregado
-- App: modo oscuro, con selector Sistema/Claro/Oscuro en la barra del mapa (por defecto, el del sistema). Las pantallas toman los colores del tema (el claro queda igual) y los tiles del mapa se invierten. Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
+- App: modo oscuro, con selector Sistema/Claro/Oscuro en la barra del mapa (por defecto, el del sistema). Las pantallas toman los colores del tema (el claro queda igual); el mapa usa el estilo oscuro de Stadia Maps (clave en `STADIA_API_KEY` para Android; en web autoriza por dominio). Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
 - App: con zoom menor a 9, las zonas con 5 focos o más se agrupan en un círculo con el conteo; tocarlo acerca el mapa a ellos. Se puede desactivar en Filtros. Con 31 días, el raster en el celular baja a ~10 ms por frame.
 - App: brújula en el mapa: aparece al girarlo con dos dedos, apunta al norte y al tocarla lo endereza.
 - App: prueba de rendimiento del mapa en un celular real (`integration_test/rendimiento_mapa_test.dart`).

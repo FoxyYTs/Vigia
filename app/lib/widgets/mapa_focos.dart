@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../config/app_config.dart';
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
@@ -13,6 +15,13 @@ import '../providers/preferencias_provider.dart';
 import 'agrupar_focos.dart';
 import 'formato.dart';
 import 'panel_filtros.dart' show colorFuente, colorPuntaje, coloresHistorico;
+
+/// Stadia en web (autoriza por dominio) o con clave; sin clave en Android
+/// (builds de desarrollo) Stadia responde 401, así que va el gris oscuro de Esri.
+final _teselasOscuras = kIsWeb || AppConfig.stadiaApiKey.isNotEmpty
+    ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
+        '${AppConfig.stadiaApiKey.isEmpty ? '' : '?api_key=${AppConfig.stadiaApiKey}'}'
+    : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 
 /// Rectángulo que contiene el territorio continental e insular de Colombia.
 final limitesColombia = LatLngBounds(const LatLng(-4.3, -79.2), const LatLng(13.6, -66.8));
@@ -77,23 +86,12 @@ class _MapaFocosState extends State<MapaFocos> {
         ),
         children: [
           // OSM no tiene estilo oscuro (invertir sus colores lo dejaba en
-          // negativo): en oscuro va el lienzo gris oscuro de Esri.
-          if (oscuro) ...[
-            TileLayer(
-              urlTemplate:
-                  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-              userAgentPackageName: 'com.vigia.foxyyts',
-            ),
-            TileLayer(
-              urlTemplate:
-                  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-              userAgentPackageName: 'com.vigia.foxyyts',
-            ),
-          ] else
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.vigia.foxyyts',
-            ),
+          // negativo). En oscuro va Stadia Alidade Smooth Dark, hecho con datos de OSM.
+          TileLayer(
+            urlTemplate: oscuro ? _teselasOscuras : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            retinaMode: oscuro && RetinaMode.isHighDensity(context),
+            userAgentPackageName: 'com.vigia.foxyyts',
+          ),
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.
           if (zonas.isNotEmpty)
@@ -126,7 +124,7 @@ class _MapaFocosState extends State<MapaFocos> {
             ),
             attributions: [
               const TextSourceAttribution('OpenStreetMap contributors'),
-              if (oscuro) const TextSourceAttribution('Esri, HERE, Garmin, © OpenStreetMap contributors'),
+              if (oscuro) const TextSourceAttribution('Stadia Maps, OpenMapTiles'),
               const TextSourceAttribution('NASA FIRMS', prependCopyright: false),
               const TextSourceAttribution('INPE', prependCopyright: false),
               const TextSourceAttribution('UNGRD', prependCopyright: false),
