@@ -24,6 +24,9 @@ class MapaScreen extends StatefulWidget {
 
 class _MapaScreenState extends State<MapaScreen> {
   final _mapa = MapController();
+  // Misma instancia en cada build: los cambios de FocosProvider que redibujan
+  // esta pantalla (selección, carga) no reconstruyen el mapa.
+  late final _mapaFocos = MapaFocos(controller: _mapa);
 
   @override
   void initState() {
@@ -77,7 +80,7 @@ class _MapaScreenState extends State<MapaScreen> {
 
     final areaMapa = Stack(
       children: [
-        MapaFocos(controller: _mapa),
+        _mapaFocos,
         if (p.cargando)
           const Positioned(top: 0, left: 0, right: 0, child: LinearProgressIndicator(minHeight: 3)),
         // Controles accesibles por teclado y lector de pantalla (#33): el mapa
