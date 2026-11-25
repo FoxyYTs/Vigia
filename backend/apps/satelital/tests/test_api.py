@@ -75,6 +75,12 @@ def test_los_focos_vienen_paginados(api):
     assert r.data["count"] == 3 and len(r.data["results"]) == 2 and r.data["next"]
 
 
+def test_paginas_con_la_misma_hora_no_repiten_ni_omiten_focos(api):
+    ids = {_foco(lon=-75.37 - i * 0.01).id for i in range(7)}  # todos a la misma hora
+    vistos = [f["id"] for n in (1, 2, 3, 4) for f in api.get(f"/api/focos/?page_size=2&page={n}").data["results"]]
+    assert sorted(vistos) == sorted(ids)
+
+
 def test_focos_no_se_escribe_por_la_api(api_como, administrador):
     assert api_como(administrador).post("/api/focos/", {}).status_code == 405
 
