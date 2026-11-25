@@ -7,6 +7,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Corregido
+- Bot de Telegram: las detecciones satelitales sin confirmar ya no salen una por una (llegaron a 350 mensajes al día al canal privado y Telegram bloqueó el bot por reportes de spam). Ahora van en un solo resumen sin sonido por cada ingesta (cada 3 h como máximo), contado por departamento y municipio. Las alertas confirmadas y la acumulación de reportes siguen saliendo una por una.
+
 ## [0.7.0] — 2026-11-19 · Registro en la app y pulido
 
 ### Agregado
