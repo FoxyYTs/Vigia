@@ -59,10 +59,7 @@ class _MapaFocosState extends State<MapaFocos> {
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
 
-    final teselas = TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'com.vigia.foxyyts',
-    );
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
 
     return Semantics(
       label: 'Mapa de Colombia con ${focos.length} focos de calor. '
@@ -79,12 +76,24 @@ class _MapaFocosState extends State<MapaFocos> {
           onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
-          // OSM no tiene teselas oscuras: se invierten los colores de toda la
-          // capa (por tesela quedaban líneas claras entre ellas).
-          if (Theme.of(context).brightness == Brightness.dark)
-            darkModeTilesContainerBuilder(context, teselas)
-          else
-            teselas,
+          // OSM no tiene estilo oscuro (invertir sus colores lo dejaba en
+          // negativo): en oscuro va el lienzo gris oscuro de Esri.
+          if (oscuro) ...[
+            TileLayer(
+              urlTemplate:
+                  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+              userAgentPackageName: 'com.vigia.foxyyts',
+            ),
+            TileLayer(
+              urlTemplate:
+                  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+              userAgentPackageName: 'com.vigia.foxyyts',
+            ),
+          ] else
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.vigia.foxyyts',
+            ),
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.
           if (zonas.isNotEmpty)
@@ -115,14 +124,15 @@ class _MapaFocosState extends State<MapaFocos> {
               onPressed: abrir,
               icon: Icon(Icons.info_outlined, color: Theme.of(context).colorScheme.onSurface),
             ),
-            attributions: const [
-              TextSourceAttribution('OpenStreetMap contributors'),
-              TextSourceAttribution('NASA FIRMS', prependCopyright: false),
-              TextSourceAttribution('INPE', prependCopyright: false),
-              TextSourceAttribution('UNGRD', prependCopyright: false),
-              TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
-              TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
-              TextSourceAttribution('Modelo Vigía', prependCopyright: false),
+            attributions: [
+              const TextSourceAttribution('OpenStreetMap contributors'),
+              if (oscuro) const TextSourceAttribution('Esri, HERE, Garmin, © OpenStreetMap contributors'),
+              const TextSourceAttribution('NASA FIRMS', prependCopyright: false),
+              const TextSourceAttribution('INPE', prependCopyright: false),
+              const TextSourceAttribution('UNGRD', prependCopyright: false),
+              const TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
+              const TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
+              const TextSourceAttribution('Modelo Vigía', prependCopyright: false),
             ],
           ),
         ],
