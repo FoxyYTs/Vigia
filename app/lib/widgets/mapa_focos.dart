@@ -9,6 +9,7 @@ import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
+import '../providers/preferencias_provider.dart';
 import 'agrupar_focos.dart';
 import 'formato.dart';
 import 'panel_filtros.dart' show colorFuente, colorPuntaje, coloresHistorico;
@@ -152,16 +153,18 @@ class _CapaFocos extends StatefulWidget {
 class _CapaFocosState extends State<_CapaFocos> {
   List<Foco>? _focosPrevios;
   int? _zoomPrevio;
+  bool? _agruparPrevio;
   List<CircleMarker<Foco>> _sueltos = const [];
   List<Marker> _grupos = const [];
 
   /// Solo se reagrupa al cambiar la lista o el zoom entero, no en cada frame
   /// del arrastre.
-  void _agrupar(int zoom) {
-    if (identical(widget.focos, _focosPrevios) && zoom == _zoomPrevio) return;
+  void _agrupar(int zoom, bool agrupar) {
+    if (identical(widget.focos, _focosPrevios) && zoom == _zoomPrevio && agrupar == _agruparPrevio) return;
     _focosPrevios = widget.focos;
     _zoomPrevio = zoom;
-    final grupos = zoom >= zoomSinAgrupar ? const <GrupoFocos>[] : agruparFocos(widget.focos, zoom);
+    _agruparPrevio = agrupar;
+    final grupos = !agrupar || zoom >= zoomSinAgrupar ? const <GrupoFocos>[] : agruparFocos(widget.focos, zoom);
     final agrupados = Set<Foco>.identity()..addAll([for (final g in grupos) if (g.focos.length >= tamanoMinimoGrupo) ...g.focos]);
     _sueltos = [
       // Los más antiguos primero: los recientes quedan dibujados encima.
@@ -186,7 +189,10 @@ class _CapaFocosState extends State<_CapaFocos> {
 
   @override
   Widget build(BuildContext context) {
-    _agrupar(MapCamera.of(context).zoom.floor());
+    _agrupar(
+      MapCamera.of(context).zoom.floor(),
+      context.select<PreferenciasProvider, bool>((p) => p.agruparFocos),
+    );
     return Stack(
       children: [
         RepaintBoundary(child: CircleLayer<Foco>(hitNotifier: widget.hit, circles: _sueltos)),

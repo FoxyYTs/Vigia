@@ -7,6 +7,7 @@ import '../data/models/historico.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
+import '../providers/preferencias_provider.dart';
 import 'formato.dart';
 
 /// Filtros, contador y leyenda del Mapa Interactivo. Se usa como panel
@@ -54,6 +55,15 @@ class PanelFiltros extends StatelessWidget {
                 onSelected: (_) => p.cambiarFuente(f),
               ),
           ],
+        ),
+        const SizedBox(height: 20),
+        const _Titulo('Visualización'),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Agrupar focos cercanos'),
+          subtitle: const Text('Con el mapa alejado, un círculo con el número de focos'),
+          value: context.watch<PreferenciasProvider>().agruparFocos,
+          onChanged: context.read<PreferenciasProvider>().cambiarAgruparFocos,
         ),
         const SizedBox(height: 20),
         const PanelPrediccion(),

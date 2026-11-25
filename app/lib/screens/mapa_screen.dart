@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/focos_provider.dart';
+import '../providers/preferencias_provider.dart';
 import '../data/models/foco.dart';
 import '../widgets/detalle_foco.dart';
 import '../widgets/formato.dart';
@@ -138,7 +139,7 @@ class _MapaScreenState extends State<MapaScreen> {
               const Text('Mapa Interactivo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           ],
         ),
-        actions: const [_AccionesSesion(), SizedBox(width: 12)],
+        actions: const [_SelectorTema(), SizedBox(width: 4), _AccionesSesion(), SizedBox(width: 12)],
       ),
       floatingActionButton: ancho || p.seleccionado != null
           ? null
@@ -166,6 +167,29 @@ class _MapaScreenState extends State<MapaScreen> {
               ],
             )
           : areaMapa,
+    );
+  }
+}
+
+/// Tema de la app: el del sistema (por defecto), claro u oscuro.
+class _SelectorTema extends StatelessWidget {
+  const _SelectorTema();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<PreferenciasProvider>();
+    return PopupMenuButton<ThemeMode>(
+      tooltip: 'Tema',
+      icon: const Icon(Icons.brightness_6_outlined, color: Colors.white),
+      onSelected: p.cambiarTema,
+      itemBuilder: (_) => [
+        for (final (modo, etiqueta) in const [
+          (ThemeMode.system, 'Según el sistema'),
+          (ThemeMode.light, 'Claro'),
+          (ThemeMode.dark, 'Oscuro'),
+        ])
+          CheckedPopupMenuItem(value: modo, checked: p.tema == modo, child: Text(etiqueta)),
+      ],
     );
   }
 }
