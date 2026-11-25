@@ -7,10 +7,13 @@ máximo contra un millón de combinaciones."""
 
 import hashlib
 import hmac
+import logging
 import secrets
 
 from django.conf import settings
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 VIGENCIA_SEGUNDOS = 15 * 60
 INTENTOS_MAXIMOS = 5
@@ -32,6 +35,10 @@ def generar_codigo(usuario) -> str | None:
     clave_huella, clave_intentos, clave_emitidos = _claves(usuario)
     cache.add(clave_emitidos, 0, 60 * 60)
     if cache.incr(clave_emitidos) > CODIGOS_POR_HORA:
+        # Compromiso aceptado: alguien que conozca el correo puede gastar el
+        # cupo y bloquear la recuperación del dueño hasta una hora; subirlo
+        # abriría la fuerza bruta. Queda en el log por si se repite.
+        logger.warning("Recuperación: la cuenta %s llegó al tope de %s códigos por hora.", usuario.pk, CODIGOS_POR_HORA)
         return None
     codigo = f"{secrets.randbelow(10**6):06d}"
     cache.set_many({clave_huella: _huella(codigo), clave_intentos: 0}, VIGENCIA_SEGUNDOS)
