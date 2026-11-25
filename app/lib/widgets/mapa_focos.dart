@@ -76,6 +76,8 @@ class _MapaFocosState extends State<MapaFocos> {
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.vigia.foxyyts',
+            // OSM no tiene teselas oscuras: se invierten los colores.
+            tileBuilder: Theme.of(context).brightness == Brightness.dark ? darkModeTileBuilder : null,
           ),
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.

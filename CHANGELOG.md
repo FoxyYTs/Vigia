@@ -13,6 +13,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - AAB de Play compilado con `--obfuscate --split-debug-info` (`libapp.so` un 17 % más liviano); el procedimiento está en `DESPLIEGUE.md`.
 
 ### Agregado
+- App: modo oscuro que sigue el ajuste del sistema. Las pantallas toman los colores del tema (el claro queda igual) y los tiles del mapa se invierten. Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
 - App: con zoom menor a 12, los focos cercanos se agrupan en un círculo con el conteo; tocarlo acerca el mapa a ellos. Con 31 días, el raster en el celular baja a ~10 ms por frame.
 - App: brújula en el mapa: aparece al girarlo con dos dedos, apunta al norte y al tocarla lo endereza.
 - App: prueba de rendimiento del mapa en un celular real (`integration_test/rendimiento_mapa_test.dart`).

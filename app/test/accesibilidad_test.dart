@@ -3,6 +3,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,7 +27,7 @@ final _api = VigiaApi(
   cliente: MockClient((_) async => http.Response(jsonEncode({'meses': []}), 200)),
 );
 
-Future<void> _cumplePautas(WidgetTester t, Widget pantalla) async {
+Future<void> _cumplePautas(WidgetTester t, Widget pantalla, {Brightness brillo = Brightness.light}) async {
   final semantica = t.ensureSemantics();
   await t.pumpWidget(MultiProvider(
     providers: [
@@ -35,7 +36,7 @@ Future<void> _cumplePautas(WidgetTester t, Widget pantalla) async {
       ChangeNotifierProvider(create: (_) => PrediccionProvider(api: _api)),
       ChangeNotifierProvider(create: (_) => HistoricoProvider(api: _api)),
     ],
-    child: MaterialApp(theme: construirTemaVigia(), home: pantalla),
+    child: MaterialApp(theme: construirTemaVigia(brillo: brillo), home: pantalla),
   ));
   await t.pumpAndSettle();
   await expectLater(t, meetsGuideline(androidTapTargetGuideline));
@@ -45,12 +46,45 @@ Future<void> _cumplePautas(WidgetTester t, Widget pantalla) async {
 }
 
 void main() {
-  testWidgets('inicio de sesión', (t) => _cumplePautas(t, const LoginScreen()));
+  for (final brillo in Brightness.values) {
+    testWidgets('inicio de sesión (${brillo.name})', (t) => _cumplePautas(t, const LoginScreen(), brillo: brillo));
 
-  testWidgets('paneles de predicción e histórico', (t) => _cumplePautas(
-        t,
-        const Scaffold(body: SingleChildScrollView(child: Column(children: [PanelPrediccion(), PanelHistorico()]))),
-      ));
+    testWidgets('paneles de predicción e histórico (${brillo.name})', (t) => _cumplePautas(
+          t,
+          const Scaffold(body: SingleChildScrollView(child: Column(children: [PanelPrediccion(), PanelHistorico()]))),
+          brillo: brillo,
+        ));
+  }
+
+  // textContrastGuideline solo mira el texto pintado; aquí van los pares del
+  // esquema que usan las pantallas, en los dos temas (texto ≥ 4,5:1).
+  for (final brillo in Brightness.values) {
+    test('contraste del esquema ${brillo.name}', () {
+      final tema = construirTemaVigia(brillo: brillo);
+      final c = tema.colorScheme;
+      double contraste(Color a, Color b) {
+        final (la, lb) = (a.computeLuminance(), b.computeLuminance());
+        return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+      }
+
+      for (final fondo in [c.surface, tema.scaffoldBackgroundColor, tema.cardTheme.color!]) {
+        for (final texto in [c.onSurface, c.onSurfaceVariant, c.primary, c.secondary, c.error]) {
+          expect(contraste(texto, fondo), greaterThanOrEqualTo(4.5), reason: '$texto sobre $fondo');
+        }
+        expect(contraste(c.outline, fondo), greaterThanOrEqualTo(3), reason: 'bordes de los campos');
+      }
+      for (final (texto, fondo) in [
+        (c.onPrimary, c.primary),
+        (c.onPrimaryContainer, c.primaryContainer),
+        (c.onErrorContainer, c.errorContainer),
+        (c.onTertiaryContainer, c.tertiaryContainer),
+      ]) {
+        expect(contraste(texto, fondo), greaterThanOrEqualTo(4.5), reason: '$texto sobre $fondo');
+      }
+      // Barra de progreso de Estadísticas: componente gráfico, basta 3:1.
+      expect(contraste(c.secondary, c.tertiaryContainer), greaterThanOrEqualTo(3));
+    });
+  }
 
   testWidgets('lista de focos (alternativa al mapa)', (t) async {
     final foco = Foco(

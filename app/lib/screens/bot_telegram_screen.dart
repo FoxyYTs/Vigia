@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/bot_telegram.dart';
 import '../data/models/estadisticas.dart';
@@ -85,9 +84,9 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
 
   List<Widget> _contenido(EstadoBot d, bool staff) {
     final (icono, color, texto) = switch ((d.bot, d.tokenConfigurado)) {
-      (final String nombre, _) => (Icons.check_circle, VigiaColors.bosque, 'El bot @$nombre está activo.'),
-      (null, true) => (Icons.error, VigiaColors.error, 'Telegram no reconoce el token del bot o no responde.'),
-      (null, false) => (Icons.error, VigiaColors.error, 'El bot no tiene token: las alertas no salen por Telegram.'),
+      (final String nombre, _) => (Icons.check_circle, Theme.of(context).colorScheme.primary, 'El bot @$nombre está activo.'),
+      (null, true) => (Icons.error, Theme.of(context).colorScheme.error, 'Telegram no reconoce el token del bot o no responde.'),
+      (null, false) => (Icons.error, Theme.of(context).colorScheme.error, 'El bot no tiene token: las alertas no salen por Telegram.'),
     };
     final recientes = d.recientes;
     return [
@@ -134,7 +133,7 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
               ),
               const SizedBox(height: 8),
               if (recientes.isEmpty)
-                const Text('Todavía no hay envíos.', style: TextStyle(color: VigiaColors.textoSecundario))
+                Text('Todavía no hay envíos.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))
               else
                 for (final n in recientes)
                   ListTile(
@@ -142,7 +141,7 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
                       n.fallido ? Icons.error_outline : Icons.check,
-                      color: n.fallido ? VigiaColors.error : VigiaColors.bosque,
+                      color: n.fallido ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
                     ),
                     title: Text([tiposAlerta[n.tipoAlerta] ?? n.tipoAlerta, ?n.municipio].join(' · ')),
                     subtitle: Text(
@@ -171,7 +170,7 @@ class _Canal extends StatelessWidget {
     final configurado = c.configurado;
     final ultimo = c.ultimoEnvio;
     final fallidos = c.fallidos7d;
-    const secundario = TextStyle(color: VigiaColors.textoSecundario);
+    final secundario = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -181,7 +180,7 @@ class _Canal extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.send_outlined, color: VigiaColors.bosque),
+                Icon(Icons.send_outlined, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Semantics(
@@ -191,19 +190,19 @@ class _Canal extends StatelessWidget {
                 ),
                 Chip(
                   label: Text(configurado ? 'Configurado' : 'Sin configurar'),
-                  backgroundColor: configurado ? VigiaColors.bosqueClaro : VigiaColors.fuegoClaro,
+                  backgroundColor: configurado ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.tertiaryContainer,
                   side: BorderSide.none,
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text('Recibe:', style: secundario),
+            Text('Recibe:', style: secundario),
             for (final t in c.alertas) Text('• ${tiposAlerta[t] ?? t}'),
             const SizedBox(height: 8),
             Text(
               'Últimos 7 días: ${Formato.entero(c.enviados7d)} enviados'
               '${fallidos > 0 ? ' · ${Formato.entero(fallidos)} fallidos' : ''}',
-              style: TextStyle(color: fallidos > 0 ? VigiaColors.error : null),
+              style: TextStyle(color: fallidos > 0 ? Theme.of(context).colorScheme.error : null),
             ),
             Text(
               ultimo == null ? 'Sin envíos todavía.' : 'Último envío: ${Formato.fechaHora(ultimo)}',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/historicos.dart';
 import '../data/models/usuario.dart';
@@ -162,7 +161,7 @@ class _Fuente extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const encabezado = TextStyle(fontWeight: FontWeight.w700, color: VigiaColors.textoSecundario, fontSize: 13);
+    final encabezado = TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13);
     Widget celda(String texto, {TextStyle? estilo, bool numero = true}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Text(texto, style: estilo, textAlign: numero ? TextAlign.end : TextAlign.start),
@@ -176,7 +175,7 @@ class _Fuente extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icono, color: VigiaColors.bosque),
+                Icon(icono, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Semantics(
@@ -187,17 +186,17 @@ class _Fuente extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario)),
+            Text(detalle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             if (resumen.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(resumen.join(' · '), style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
             const SizedBox(height: 8),
             if (filas.isEmpty)
-              const Text('Sin datos cargados.', style: TextStyle(color: VigiaColors.textoSecundario))
+              Text('Sin datos cargados.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))
             else
               Table(
-                border: const TableBorder(horizontalInside: BorderSide(color: VigiaColors.borde)),
+                border: TableBorder(horizontalInside: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
                 children: [
                   TableRow(children: [
                     celda('Año', estilo: encabezado, numero: false),

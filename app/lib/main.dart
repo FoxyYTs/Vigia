@@ -48,6 +48,8 @@ class VigiaApp extends StatelessWidget {
         title: 'Vigía',
         debugShowCheckedModeBanner: false,
         theme: construirTemaVigia(),
+        darkTheme: construirTemaVigia(brillo: Brightness.dark),
+        themeMode: ThemeMode.system,
         locale: const Locale('es', 'CO'),
         supportedLocales: const [Locale('es', 'CO'), Locale('es')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,

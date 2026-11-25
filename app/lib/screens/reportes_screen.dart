@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/reporte.dart';
 import '../data/models/usuario.dart';
@@ -97,7 +96,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
           builder: (context, snap) => switch (snap) {
             AsyncSnapshot(hasError: true, :final error) => _Mensaje(
                 error is ApiException ? error.mensaje : 'No se pudieron cargar los reportes.',
-                color: VigiaColors.error,
+                color: Theme.of(context).colorScheme.error,
               ),
             AsyncSnapshot(hasData: true, :final data) when data!.isEmpty => _Mensaje(
                 rol == Rol.ciudadano
@@ -126,16 +125,18 @@ class _ReportesScreenState extends State<ReportesScreen> {
 }
 
 class _Mensaje extends StatelessWidget {
-  const _Mensaje(this.texto, {this.color = VigiaColors.textoSecundario});
+  const _Mensaje(this.texto, {this.color});
 
   final String texto;
-  final Color color;
+
+  /// Por defecto, el color de texto secundario del tema.
+  final Color? color;
 
   // ListView para que RefreshIndicator funcione también sin datos.
   @override
   Widget build(BuildContext context) => ListView(
         padding: const EdgeInsets.all(32),
-        children: [Text(texto, textAlign: TextAlign.center, style: TextStyle(color: color))],
+        children: [Text(texto, textAlign: TextAlign.center, style: TextStyle(color: color ?? Theme.of(context).colorScheme.onSurfaceVariant))],
       );
 }
 
@@ -179,12 +180,12 @@ class _TarjetaReporte extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(Formato.fechaHora(r.fechaCreacion),
-                          style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                       Text('${Formato.coordenada(p.latitude, latitud: true)}, ${Formato.coordenada(p.longitude, latitud: false)}',
                           style: const TextStyle(fontSize: 13)),
                       if (r.distanciaKm != null)
                         Text('A ${r.distanciaKm!.toStringAsFixed(1)} km de quien reportó',
-                            style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                       if (r.descripcion.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(r.descripcion),
@@ -204,7 +205,7 @@ class _TarjetaReporte extends StatelessWidget {
                       onPressed: bloqueado ? null : () => onResolver!(false),
                       icon: const Icon(Icons.close),
                       label: const Text('Rechazar'),
-                      style: TextButton.styleFrom(foregroundColor: VigiaColors.error),
+                      style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
@@ -230,9 +231,9 @@ class _EtiquetaEstado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (fondo, texto) = switch (estado) {
-      EstadoReporte.pendiente => (VigiaColors.superficie, VigiaColors.textoSecundario),
-      EstadoReporte.validado => (VigiaColors.bosqueClaro, VigiaColors.bosqueOscuro),
-      EstadoReporte.rechazado => (VigiaColors.fuegoClaro, VigiaColors.error),
+      EstadoReporte.pendiente => (Theme.of(context).scaffoldBackgroundColor, Theme.of(context).colorScheme.onSurfaceVariant),
+      EstadoReporte.validado => (Theme.of(context).colorScheme.primaryContainer, Theme.of(context).colorScheme.onPrimaryContainer),
+      EstadoReporte.rechazado => (Theme.of(context).colorScheme.errorContainer, Theme.of(context).colorScheme.onErrorContainer),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -270,8 +271,8 @@ class _MiniaturaState extends State<_Miniatura> {
     Widget sinFoto(IconData icono) => Container(
           width: lado,
           height: lado,
-          color: VigiaColors.superficie,
-          child: Icon(icono, color: VigiaColors.textoSecundario),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Icon(icono, color: Theme.of(context).colorScheme.onSurfaceVariant),
         );
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),

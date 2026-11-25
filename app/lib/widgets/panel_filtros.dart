@@ -133,7 +133,7 @@ class PanelPrediccion extends StatelessWidget {
           if (p.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(p.error!, style: const TextStyle(color: VigiaColors.error)),
+              child: Text(p.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           const SizedBox(height: 12),
           for (final (_, etiqueta, color) in tramosPuntaje.reversed)
@@ -152,7 +152,7 @@ class PanelPrediccion extends StatelessWidget {
             'Probabilidad de detecciones satelitales según el historial 2019–hoy, en celdas de ~11 km. '
             'No es un pronóstico del clima.'
             '${p.fechaModelo == null ? '' : ' Modelo actualizado el ${Formato.fecha(p.fechaModelo!)}.'}',
-            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ],
@@ -242,7 +242,7 @@ class PanelHistorico extends StatelessWidget {
           if (h.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(h.error!, style: const TextStyle(color: VigiaColors.error)),
+              child: Text(h.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           const SizedBox(height: 12),
           for (final (i, etiqueta) in etiquetasClases(h.cortes, h.indicador).indexed.toList().reversed)
@@ -262,7 +262,7 @@ class PanelHistorico extends StatelessWidget {
                 ? 'Incendios forestales reportados a la UNGRD (2019–2024). Son reportes de emergencias: '
                     'un municipio sin color puede tener incendios que no se reportaron.'
                 : 'Hectáreas de bosque natural deforestadas en el año, según el monitoreo del IDEAM (SMByC).',
-            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ],
@@ -305,7 +305,7 @@ class _SelectorCorte extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               'Del ${Formato.fechaHora(desde)} al ${Formato.fechaHora(corte)}',
-              style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
       ],
@@ -339,16 +339,16 @@ class ContadorFocos extends StatelessWidget {
                       text: Formato.entero(p.total),
                       style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
                     ),
-                    const TextSpan(text: '  focos', style: TextStyle(color: VigiaColors.textoSecundario)),
+                    TextSpan(text: '  focos', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ]),
                 ),
-              const Text('en el rango seleccionado', style: TextStyle(color: VigiaColors.textoSecundario)),
+              Text('en el rango seleccionado', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               if (p.truncado) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Se dibujan los ${Formato.entero(p.focos.length)} más recientes. '
                   'Acota el rango para ver el resto.',
-                  style: const TextStyle(fontSize: 12, color: VigiaColors.fuego, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600),
                 ),
               ],
               const SizedBox(height: 12),
@@ -369,7 +369,7 @@ class ContadorFocos extends StatelessWidget {
                 const Divider(height: 20),
                 Text(
                   'Último foco cargado: ${Formato.fechaHora(p.ultimoDisponible!)}',
-                  style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ],
@@ -404,16 +404,16 @@ class Leyenda extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(f.etiqueta, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text(detalle, style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario)),
+                      Text(detalle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-        const Text(
+        Text(
           'El tamaño del círculo crece con la potencia radiativa del fuego (FRP).',
-          style: TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ],
     );
