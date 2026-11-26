@@ -56,6 +56,13 @@ def test_login_devuelve_tokens_con_el_rol(api, administrador):
     assert claims["rol"] == "administrador" and claims["username"] == "admin1"
 
 
+def test_login_por_la_api_registra_el_ultimo_inicio_de_sesion(api, ciudadano):
+    assert ciudadano.last_login is None
+    assert api.post("/api/auth/token/", {"username": "ciudadano1", "password": "clave-segura-1"}).status_code == 200
+    ciudadano.refresh_from_db()
+    assert ciudadano.last_login is not None
+
+
 def test_login_con_clave_incorrecta(api, ciudadano):
     assert api.post("/api/auth/token/", {"username": "ciudadano1", "password": "mala"}).status_code == 401
 
