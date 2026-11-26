@@ -84,6 +84,32 @@ Así vuelven juntos el código del servidor y la app web (que no está en git: s
 portátil). Si la versión nueva traía migraciones, antes hay que restaurar el respaldo que el
 script tomó al desplegarla (el más reciente de `~/backups/vigia` antes de esa hora).
 
+## App Android (AAB para Play Store)
+
+Desde `app/`, con `app/android/key.properties` apuntando a la clave de subida:
+
+```bash
+V=0.X.Y+N   # la versión de pubspec.yaml
+flutter build appbundle --release --obfuscate \
+  --split-debug-info=$HOME/Proyectos/apps/Vigia/playstore/simbolos/$V
+cp build/app/outputs/bundle/release/app-release.aab ~/Proyectos/apps/Vigia/playstore/app-release-$V.aab
+```
+
+`--obfuscate` deja `libapp.so` un 17 % más liviano. Los símbolos quedan fuera del repo y
+son los que permiten leer las trazas de error de esa versión con `flutter symbolize`; hay
+que guardarlos junto al AAB. R8 ya viene activo en release y los tiles del mapa ya se
+cachean en disco (flutter_map 8).
+
+Para medir el mapa en un celular conectado por USB (resumen en
+`app/build/mapa_31d_*.timeline_summary.json`):
+
+```bash
+flutter drive --profile --no-dds -d <id> \
+  --dart-define=API_BASE_URL=https://vigia.foxyyts.qzz.io/api/ \
+  --driver=test_driver/rendimiento_driver.dart \
+  --target=integration_test/rendimiento_mapa_test.dart
+```
+
 ## Pendientes de configuración (panel de Cloudflare)
 
 - ✅ **Access** sobre `vigia.foxyyts.qzz.io/admin/` (configurado el 2-nov-2026).

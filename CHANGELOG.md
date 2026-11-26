@@ -7,6 +7,17 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Cambiado
+- Mapa: los focos se dibujan opacos y con el radio redondeado a 0,5 px, así CircleLayer los pinta por lotes. Con 31 días (5000 focos), el raster en un celular de gama media bajó de 110 a ~17 ms por frame.
+- Mapa: seleccionar un foco ya no reconstruye ni repinta todos los círculos (anillo en su propia capa, `select` en vez de `watch`). El build por frame bajó de ~20 a ~4 ms.
+- AAB de Play compilado con `--obfuscate --split-debug-info` (`libapp.so` un 17 % más liviano); el procedimiento está en `DESPLIEGUE.md`.
+
+### Agregado
+- App: prueba de rendimiento del mapa en un celular real (`integration_test/rendimiento_mapa_test.dart`).
+
+### Corregido
+- API: el orden de `/api/focos/` se desempata por id. Con focos de la misma hora, las páginas que la app pide en paralelo podían repetir u omitir focos.
+
 ## [0.7.0] — 2026-11-19 · Registro en la app y pulido
 
 ### Agregado

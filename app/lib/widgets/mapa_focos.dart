@@ -48,7 +48,8 @@ class _MapaFocosState extends State<MapaFocos> {
   static double _radio(Foco f) {
     final frp = f.brilloFrp;
     if (frp == null || frp <= 0) return 4;
-    return 4 + math.min(6, math.log(frp + 1) * 1.4);
+    // Redondeado a 0,5 px: CircleLayer dibuja en un solo lote los de igual radio.
+    return ((4 + math.min(6, math.log(frp + 1) * 1.4)) * 2).roundToDouble() / 2;
   }
 
   /// Los círculos solo se reconstruyen cuando cambia la lista de focos (no
@@ -62,7 +63,9 @@ class _MapaFocosState extends State<MapaFocos> {
           CircleMarker<Foco>(
             point: f.posicion,
             radius: _radio(f),
-            color: colorFuente(f.fuente).withValues(alpha: 0.78),
+            // Opaco: con transparencia, CircleLayer pinta cada borde con su
+            // propio drawCircle (5000 llamadas) en vez de un lote de drawPoints.
+            color: colorFuente(f.fuente),
             borderColor: Colors.white,
             borderStrokeWidth: 0.8,
             hitValue: f,
@@ -80,13 +83,13 @@ class _MapaFocosState extends State<MapaFocos> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<FocosProvider>();
+    // select y no watch: seleccionar un foco solo redibuja _AnilloSeleccion.
+    final focos = context.select<FocosProvider, List<Foco>>((p) => p.focos);
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
-    final seleccionado = p.seleccionado;
 
     return Semantics(
-      label: 'Mapa de Colombia con ${p.focos.length} focos de calor. '
+      label: 'Mapa de Colombia con ${focos.length} focos de calor. '
           'Usa el panel de filtros para cambiar el rango y la fuente.',
       child: FlutterMap(
         mapController: widget.controller,
@@ -97,7 +100,7 @@ class _MapaFocosState extends State<MapaFocos> {
           cameraConstraint: CameraConstraint.containCenter(
             bounds: LatLngBounds(const LatLng(-15, -90), const LatLng(20, -55)),
           ),
-          onTap: (_, _) => p.seleccionar(null),
+          onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
           TileLayer(
@@ -119,26 +122,17 @@ class _MapaFocosState extends State<MapaFocos> {
             child: GestureDetector(
               onTap: () {
                 final valores = _hit.value?.hitValues;
-                if (valores != null && valores.isNotEmpty) p.seleccionar(valores.first);
+                if (valores != null && valores.isNotEmpty) context.read<FocosProvider>().seleccionar(valores.first);
               },
-              child: CircleLayer<Foco>(
-                hitNotifier: _hit,
-                circles: _circulosDe(p.focos),
+              child: RepaintBoundary(
+                child: CircleLayer<Foco>(
+                  hitNotifier: _hit,
+                  circles: _circulosDe(focos),
+                ),
               ),
             ),
           ),
-          if (seleccionado != null)
-            CircleLayer(
-              circles: [
-                CircleMarker(
-                  point: seleccionado.posicion,
-                  radius: _radio(seleccionado) + 6,
-                  color: Colors.transparent,
-                  borderColor: const Color(0xFF1A1F1C),
-                  borderStrokeWidth: 2.5,
-                ),
-              ],
-            ),
+          const _AnilloSeleccion(),
           // Plegable: en pantallas angostas la línea completa se cortaba.
           const RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
@@ -154,6 +148,29 @@ class _MapaFocosState extends State<MapaFocos> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Anillo sobre el foco seleccionado, en su propia capa para que seleccionar
+/// no reconstruya ni repinte los miles de círculos.
+class _AnilloSeleccion extends StatelessWidget {
+  const _AnilloSeleccion();
+
+  @override
+  Widget build(BuildContext context) {
+    final seleccionado = context.select<FocosProvider, Foco?>((p) => p.seleccionado);
+    if (seleccionado == null) return const SizedBox.shrink();
+    return CircleLayer(
+      circles: [
+        CircleMarker(
+          point: seleccionado.posicion,
+          radius: _MapaFocosState._radio(seleccionado) + 6,
+          color: Colors.transparent,
+          borderColor: const Color(0xFF1A1F1C),
+          borderStrokeWidth: 2.5,
+        ),
+      ],
     );
   }
 }
