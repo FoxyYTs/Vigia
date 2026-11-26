@@ -7,6 +7,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Cambiado
+- Correo de recuperación de contraseña: el código ya no va en el asunto (se veía en las notificaciones y en la bandeja sin abrir el correo) y el correo tiene una versión HTML con la estética de la app (barra verde con la marca, tarjeta y código destacado), además del texto plano.
+
 ### Corregido
 - Modo oscuro: «Mi panel», «Iniciar sesión» y «Cerrar sesión» en la barra verde ya no son blancos; usan la superficie oscura con el verde claro del tema (`estiloBotonBarra`).
 

@@ -1,0 +1,13 @@
+Hola, {{ username }}:
+
+Recibimos una solicitud para restablecer la contraseña de tu cuenta de Vigía. Escribe este código en la app junto con tu nueva contraseña:
+
+    {{ codigo }}
+
+Vence en {{ minutos }} minutos y sirve una sola vez.
+
+Si no lo pediste, ignora este correo: tu contraseña sigue igual. Nunca te pediremos este código por otro medio.
+
+--
+Vigía · Alertas tempranas de incendios forestales en Colombia
+{{ sitio }}
