@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/focos_provider.dart';
+import '../providers/preferencias_provider.dart';
 import '../data/models/foco.dart';
 import '../widgets/detalle_foco.dart';
 import '../widgets/formato.dart';
@@ -24,6 +25,9 @@ class MapaScreen extends StatefulWidget {
 
 class _MapaScreenState extends State<MapaScreen> {
   final _mapa = MapController();
+  // Misma instancia en cada build: los cambios de FocosProvider que redibujan
+  // esta pantalla (selección, carga) no reconstruyen el mapa.
+  late final _mapaFocos = MapaFocos(controller: _mapa);
 
   @override
   void initState() {
@@ -77,7 +81,7 @@ class _MapaScreenState extends State<MapaScreen> {
 
     final areaMapa = Stack(
       children: [
-        MapaFocos(controller: _mapa),
+        _mapaFocos,
         if (p.cargando)
           const Positioned(top: 0, left: 0, right: 0, child: LinearProgressIndicator(minHeight: 3)),
         // Controles accesibles por teclado y lector de pantalla (#33): el mapa
@@ -87,6 +91,7 @@ class _MapaScreenState extends State<MapaScreen> {
           right: 12,
           child: Column(
             children: [
+              BotonBrujula(mapa: _mapa),
               _BotonMapa(icono: Icons.center_focus_strong, texto: 'Centrar en Colombia', onPressed: _centrar),
               const SizedBox(height: 8),
               _BotonMapa(icono: Icons.add, texto: 'Acercar', onPressed: () => _zoom(1)),
@@ -134,7 +139,7 @@ class _MapaScreenState extends State<MapaScreen> {
               const Text('Mapa Interactivo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           ],
         ),
-        actions: const [_AccionesSesion(), SizedBox(width: 12)],
+        actions: const [_SelectorTema(), SizedBox(width: 4), _AccionesSesion(), SizedBox(width: 12)],
       ),
       floatingActionButton: ancho || p.seleccionado != null
           ? null
@@ -148,12 +153,12 @@ class _MapaScreenState extends State<MapaScreen> {
       body: ancho
           ? Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 340,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(right: BorderSide(color: VigiaColors.borde)),
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border(right: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
                     ),
                     child: PanelFiltros(),
                   ),
@@ -162,6 +167,29 @@ class _MapaScreenState extends State<MapaScreen> {
               ],
             )
           : areaMapa,
+    );
+  }
+}
+
+/// Tema de la app: el del sistema (por defecto), claro u oscuro.
+class _SelectorTema extends StatelessWidget {
+  const _SelectorTema();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<PreferenciasProvider>();
+    return PopupMenuButton<ThemeMode>(
+      tooltip: 'Tema',
+      icon: const Icon(Icons.brightness_6_outlined, color: Colors.white),
+      onSelected: p.cambiarTema,
+      itemBuilder: (_) => [
+        for (final (modo, etiqueta) in const [
+          (ThemeMode.system, 'Según el sistema'),
+          (ThemeMode.light, 'Claro'),
+          (ThemeMode.dark, 'Oscuro'),
+        ])
+          CheckedPopupMenuItem(value: modo, checked: p.tema == modo, child: Text(etiqueta)),
+      ],
     );
   }
 }
@@ -200,18 +228,51 @@ class _AccionesSesion extends StatelessWidget {
 }
 
 class _BotonMapa extends StatelessWidget {
-  const _BotonMapa({required this.icono, required this.texto, required this.onPressed});
+  const _BotonMapa({required this.icono, required this.texto, required this.onPressed, this.giro = 0});
 
   final IconData icono;
   final String texto;
   final VoidCallback onPressed;
 
+  /// Ángulo del ícono en radianes.
+  final double giro;
+
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         elevation: 2,
         borderRadius: BorderRadius.circular(8),
-        child: IconButton(tooltip: texto, icon: Icon(icono, color: VigiaColors.bosque), onPressed: onPressed),
+        child: IconButton(
+          tooltip: texto,
+          icon: Transform.rotate(angle: giro, child: Icon(icono, color: Theme.of(context).colorScheme.primary)),
+          onPressed: onPressed,
+        ),
+      );
+}
+
+/// Brújula (#93): aparece solo con el mapa girado, apunta al norte y al
+/// tocarla lo devuelve a su orientación.
+class BotonBrujula extends StatelessWidget {
+  const BotonBrujula({super.key, required this.mapa});
+
+  final MapController mapa;
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<MapEvent>(
+        stream: mapa.mapEventStream,
+        builder: (context, evento) {
+          final camara = evento.data?.camera;
+          if (camara == null || (camara.rotation % 360).abs() < 0.5) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _BotonMapa(
+              icono: Icons.navigation,
+              texto: 'Orientar al norte',
+              giro: camara.rotationRad,
+              onPressed: () => mapa.rotate(0),
+            ),
+          );
+        },
       );
 }
 
@@ -223,7 +284,7 @@ class _ChipContador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         elevation: 2,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
@@ -231,7 +292,7 @@ class _ChipContador extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.local_fire_department, color: VigiaColors.fuego, size: 18),
+              Icon(Icons.local_fire_department, color: Theme.of(context).colorScheme.secondary, size: 18),
               const SizedBox(width: 6),
               Text(cargando ? 'Cargando…' : '$total focos', style: const TextStyle(fontWeight: FontWeight.w700)),
             ],
@@ -250,16 +311,16 @@ class _AvisoError extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
         liveRegion: true,
         child: Material(
-          color: const Color(0xFFFFDAD6),
+          color: Theme.of(context).colorScheme.errorContainer,
           borderRadius: BorderRadius.circular(8),
           elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: VigiaColors.error),
+                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
                 const SizedBox(width: 10),
-                Expanded(child: Text(mensaje, style: const TextStyle(color: Color(0xFF7A0E0A)))),
+                Expanded(child: Text(mensaje, style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer))),
                 TextButton(onPressed: onReintentar, child: const Text('Reintentar')),
               ],
             ),
@@ -275,15 +336,15 @@ class _AvisoVacio extends StatelessWidget {
   Widget build(BuildContext context) => Align(
         alignment: Alignment.topCenter,
         child: Material(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           elevation: 2,
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.all(12),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.info_outline, color: VigiaColors.bosque),
+                Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
                 SizedBox(width: 10),
                 Flexible(child: Text('No hay focos en este rango. Prueba con otra fecha o un rango más amplio.')),
               ],
@@ -322,7 +383,7 @@ class ListaFocos extends StatelessWidget {
             itemBuilder: (_, i) {
               final f = focos[i];
               return ListTile(
-                leading: Icon(Icons.local_fire_department, color: colorFuente(f.fuente)),
+                leading: Icon(Icons.local_fire_department, color: colorFuente(f.fuente, Theme.of(context).brightness)),
                 title: Text('${f.fuente?.etiqueta ?? 'Fuente desconocida'} · ${Formato.fechaHora(f.fechaHora)}'),
                 subtitle: Text(
                   '${Formato.coordenada(f.posicion.latitude, latitud: true)}, '

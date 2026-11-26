@@ -153,6 +153,10 @@ REST_FRAMEWORK = {
         "anon": "20000/hour",
         "registro": "20/hour",
         "login": "60/hour",
+        # Cada solicitud manda un correo: el límite evita llenar buzones ajenos
+        # y gastar la cuota del SMTP.
+        "recuperar": "5/hour",
+        "recuperar-confirmar": "30/hour",
         "refresco": "120/hour",
         "reporte": "30/hour",
         "informe": "60/hour",
@@ -166,7 +170,7 @@ REST_FRAMEWORK = {
 # Documentación OpenAPI (/api/schema/ y /api/docs/).
 SPECTACULAR_SETTINGS = {
     "TITLE": "API de Vigía",
-    "VERSION": "0.7.0",
+    "VERSION": "0.8.0",
     "DESCRIPTION": """
 Alertas tempranas de incendios forestales en Colombia. Los endpoints marcados como públicos
 no piden sesión y forman una API de **datos abiertos**, con un límite de 20.000 consultas
@@ -221,6 +225,23 @@ LOGGING = {
 }
 
 # Celery (ver Vigia-UML-Despliegue § Redis "broker")
+# Correo (recuperación de contraseña). Sin EMAIL_HOST los correos salen por la
+# consola del worker de Celery, que sirve en desarrollo.
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend"
+    if EMAIL_HOST
+    else "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+# `or`: en el .env la clave puede estar vacía.
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="") or "Vigía <no-reply@vigia.foxyyts.qzz.io>"
+EMAIL_TIMEOUT = 15
+
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/fondo_vigia.dart';
 import '../widgets/vigia_marca.dart';
 import 'rutas.dart';
 
@@ -16,7 +17,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
+      body: FondoVigia(child: LayoutBuilder(
         builder: (context, c) {
           final ancho = c.maxWidth >= 900;
           final formulario = Center(
@@ -32,9 +33,9 @@ class LoginScreen extends StatelessWidget {
                     ],
                     const FormularioLogin(),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Proyecto Integrador · PCJIC 2026',
-                      style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ],
                 ),
@@ -49,7 +50,7 @@ class LoginScreen extends StatelessWidget {
             ],
           );
         },
-      ),
+      )),
     );
   }
 }
@@ -227,9 +228,9 @@ class _FormularioLoginState extends State<FormularioLogin> {
                       style: tema.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Accede para reportar focos y gestionar alertas.',
-                  style: TextStyle(color: VigiaColors.textoSecundario),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
                 if (auth.error != null) ...[
@@ -285,13 +286,17 @@ class _FormularioLoginState extends State<FormularioLogin> {
                       : const Icon(Icons.login),
                   label: Text(auth.enviando ? 'Ingresando…' : 'Ingresar'),
                 ),
-                const SizedBox(height: 12),
+                TextButton(
+                  key: const Key('boton-recuperar'),
+                  onPressed: () => Navigator.of(context).pushNamed(Rutas.recuperar),
+                  child: const Text('¿Olvidaste tu contraseña?'),
+                ),
                 // "Iniciar Sesión/Registrar cuenta" en el mapa de navegación.
                 Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text('¿No tienes cuenta?', style: TextStyle(color: VigiaColors.textoSecundario)),
+                    Text('¿No tienes cuenta?', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     TextButton(
                       key: const Key('boton-registro'),
                       onPressed: () => Navigator.of(context).pushNamed(Rutas.registro),
@@ -300,12 +305,12 @@ class _FormularioLoginState extends State<FormularioLogin> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                const Row(
+                Row(
                   children: [
                     Expanded(child: Divider()),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('o también', style: TextStyle(color: VigiaColors.textoSecundario)),
+                      child: Text('o también', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                     Expanded(child: Divider()),
                   ],
@@ -338,17 +343,17 @@ class _MensajeError extends StatelessWidget {
         key: const Key('error-login'),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFDAD6),
+          color: Theme.of(context).colorScheme.errorContainer,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: VigiaColors.error),
+          border: Border.all(color: Theme.of(context).colorScheme.error),
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: VigiaColors.error),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
             const SizedBox(width: 10),
             Expanded(
               child: Text(mensaje,
-                  style: const TextStyle(color: Color(0xFF7A0E0A), fontWeight: FontWeight.w500)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer, fontWeight: FontWeight.w500)),
             ),
           ],
         ),

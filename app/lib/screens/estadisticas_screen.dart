@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/estadisticas.dart';
 import '../data/models/foco.dart';
 import '../data/models/reporte.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/indicador.dart';
 import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
 import '../widgets/lista_centrada.dart';
@@ -14,6 +14,24 @@ import '../widgets/selector_periodo.dart';
 
 /// "Gestionar Estadísticas" (UC7): incidentes por región y periodo, para
 /// administradores y staff. La API limita al administrador a su jurisdicción.
+/// Forma de las estadísticas para el skeleton de carga.
+final _ejemplo = Estadisticas(
+  desde: DateTime(2026, 10, 27),
+  hasta: DateTime(2026, 11, 25),
+  nacional: true,
+  focos: 10000,
+  focosPorFuente: const [Conteo('NASA_FIRMS', 6000), Conteo('INPE_QUEIMADAS', 4000)],
+  focosPorDepartamento: [for (var i = 0; i < 8; i++) Conteo('Departamento', 1000 - i * 100)],
+  focosPorDia: [
+    for (var d = 0; d < 30; d++)
+      Conteo(DateTime(2026, 10, 27 + d).toIso8601String().substring(0, 10), 100 + (d % 7) * 40),
+  ],
+  alertas: 200,
+  alertasPorTipo: const [Conteo('deteccion_satelital', 190), Conteo('validacion_manual', 10)],
+  reportes: 20,
+  reportesPorEstado: const [Conteo('pendiente', 10), Conteo('validado', 6), Conteo('rechazado', 4)],
+);
+
 class EstadisticasScreen extends StatefulWidget {
   const EstadisticasScreen({super.key});
 
@@ -71,6 +89,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
           EstadoCarga<Estadisticas>(
             futuro: _datos,
             mensajeError: 'No se pudieron cargar las estadísticas.',
+            esqueleto: _ejemplo,
             onReintentar: () => _cambiarPeriodo(_dias),
             contenido: _Contenido.new,
           ),
@@ -100,7 +119,7 @@ class _Contenido extends StatelessWidget {
             Text(
               'Del ${Formato.fecha(e.desde)} al ${Formato.fecha(e.hasta)} · '
               '${e.nacional ? 'Todo el país' : 'Jurisdicción de tu entidad'}',
-              style: const TextStyle(color: VigiaColors.textoSecundario),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -112,7 +131,7 @@ class _Contenido extends StatelessWidget {
                   ('Alertas', e.alertas, Icons.notifications_active_outlined),
                   ('Reportes ciudadanos', e.reportes, Icons.add_a_photo_outlined),
                 ])
-                  SizedBox(width: total, child: _Total(etiqueta, valor, icono)),
+                  SizedBox(width: total, child: Indicador(etiqueta, valor, icono)),
               ],
             ),
             const SizedBox(height: 16),
@@ -153,40 +172,6 @@ class _Contenido extends StatelessWidget {
   }
 }
 
-class _Total extends StatelessWidget {
-  const _Total(this.etiqueta, this.valor, this.icono);
-
-  final String etiqueta;
-  final int valor;
-  final IconData icono;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: VigiaColors.bosqueClaro,
-                child: Icon(icono, color: VigiaColors.bosqueOscuro),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(Formato.entero(valor), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
-                    Text(etiqueta, style: const TextStyle(color: VigiaColors.textoSecundario)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
 class _Seccion extends StatelessWidget {
   const _Seccion(this.titulo, this.hijos);
 
@@ -206,7 +191,7 @@ class _Seccion extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               if (hijos.isEmpty)
-                const Text('Sin datos en el periodo.', style: TextStyle(color: VigiaColors.textoSecundario))
+                Text('Sin datos en el periodo.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))
               else
                 ...hijos,
             ],
@@ -246,8 +231,8 @@ class _Fila extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: maximo == 0 ? 0 : cantidad / maximo,
                 minHeight: 6,
-                color: VigiaColors.fuego,
-                backgroundColor: VigiaColors.fuegoClaro,
+                color: Theme.of(context).colorScheme.secondary,
+                backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -266,9 +251,9 @@ class _Barras extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maximo = dias.fold(0, (m, d) => d.cantidad > m ? d.cantidad : m);
-    if (maximo == 0) return const Text('Sin detecciones.', style: TextStyle(color: VigiaColors.textoSecundario));
+    if (maximo == 0) return Text('Sin detecciones.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant));
     final pico = dias.firstWhere((d) => d.cantidad == maximo);
-    const secundario = TextStyle(color: VigiaColors.textoSecundario, fontSize: 12);
+    final secundario = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12);
     return Semantics(
       label: 'Máximo de ${Formato.entero(maximo)} detecciones el ${Formato.fecha(DateTime.parse(pico.clave!))}',
       child: ExcludeSemantics(
@@ -282,8 +267,8 @@ class _Barras extends StatelessWidget {
             const SizedBox(height: 8),
             Container(
               height: 140,
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: VigiaColors.borde)),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -296,8 +281,8 @@ class _Barras extends StatelessWidget {
                           // Mínimo de 2 px para que los días con pocas detecciones se vean.
                           height: d.cantidad == 0 ? 0 : (140 * d.cantidad / maximo).clamp(2, 140),
                           margin: EdgeInsets.symmetric(horizontal: dias.length > 60 ? 0 : 1.5),
-                          decoration: const BoxDecoration(
-                            color: VigiaColors.fuego,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary,
                             borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
                           ),
                         ),

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/lista_centrada.dart';
@@ -79,10 +78,10 @@ class _InformesScreenState extends State<InformesScreen> {
           const SizedBox(height: 8),
           SelectorPeriodo(dias: _dias, onCambio: _generando != null ? null : (d) => setState(() => _dias = d)),
           if (soloPdf)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text('Para un año solo está el PDF: el detalle en Excel o CSV admite hasta 92 días.',
-                  style: TextStyle(color: VigiaColors.textoSecundario)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ),
           const SizedBox(height: 16),
           _Formato(
@@ -159,7 +158,7 @@ class _Formato extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(icono, color: VigiaColors.bosque),
+                  Icon(icono, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Semantics(
@@ -170,7 +169,7 @@ class _Formato extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario)),
+              Text(detalle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ?extra,
               const SizedBox(height: 8),
               Align(

@@ -14,7 +14,7 @@ class VigiaMarca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorTexto = claro ? Colors.white : VigiaColors.texto;
+    final colorTexto = claro ? Colors.white : Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -52,7 +52,7 @@ class VigiaMarca extends StatelessWidget {
               Text(
                 subtitulo!,
                 style: TextStyle(
-                  color: claro ? const Color(0xFFD4EBDC) : VigiaColors.textoSecundario,
+                  color: claro ? const Color(0xFFD4EBDC) : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 11,
                   letterSpacing: 1.1,
                   fontWeight: FontWeight.w600,

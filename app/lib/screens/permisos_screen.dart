@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
@@ -89,10 +88,10 @@ class _PermisosScreenState extends State<PermisosScreen> {
         maximo: ListaCentrada.lectura,
         children: [
           if (!staff)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: Text('Administradores de tu entidad. Los permisos los cambia el staff de Vigía.',
-                  style: TextStyle(color: VigiaColors.textoSecundario)),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ),
           Wrap(
             spacing: 12,
@@ -129,9 +128,22 @@ class _PermisosScreenState extends State<PermisosScreen> {
           EstadoCarga<List<Map<String, dynamic>>>(
             futuro: _usuarios,
             mensajeError: 'No se pudieron cargar los usuarios.',
+            esqueleto: [
+              for (var i = 0; i < 6; i++)
+                {
+                  'id': i,
+                  'username': 'usuario_ejemplo',
+                  'email': 'usuario@correo.co',
+                  'rol': 'ciudadano',
+                  'entidad': null,
+                  'entidad_nombre': null,
+                  'nombre': '',
+                  'is_active': true,
+                },
+            ],
             onReintentar: _recargar,
             contenido: (usuarios) => usuarios.isEmpty
-                ? const Text('Ningún usuario coincide.', style: TextStyle(color: VigiaColors.textoSecundario))
+                ? Text('Ningún usuario coincide.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))
                 : Card(
                     margin: EdgeInsets.zero,
                     child: Column(
@@ -163,7 +175,7 @@ class _Usuario extends StatelessWidget {
     final activo = u['is_active'] as bool;
     final email = u['email'] as String;
     return ListTile(
-      leading: Icon(Icons.person_outline, color: activo ? VigiaColors.bosque : VigiaColors.textoSecundario),
+      leading: Icon(Icons.person_outline, color: activo ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
       title: Text(u['username'] as String, style: TextStyle(decoration: activo ? null : TextDecoration.lineThrough)),
       subtitle: Text([
         Rol.desdeApi(u['rol'] as String?).etiqueta,
@@ -246,10 +258,10 @@ class _EditarUsuarioState extends State<_EditarUsuario> {
                   onChanged: (v) => setState(() => _entidad = v),
                 ),
               if (_rol.valorApi != widget.usuario['rol'])
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 8),
                   child: Text('Al cambiar el rol se cerrarán sus sesiones abiertas.',
-                      style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                 ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

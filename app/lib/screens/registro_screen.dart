@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_config.dart';
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
@@ -112,15 +111,15 @@ class _RegistroScreenState extends State<RegistroScreen> {
                             style: tema.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
+                      Text(
                         'Con tu cuenta puedes reportar incendios con foto y seguir el estado de tus reportes.',
-                        style: TextStyle(color: VigiaColors.textoSecundario),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 20),
                       if (_error != null) ...[
                         Semantics(
                           liveRegion: true,
-                          child: Text(_error!, style: const TextStyle(color: VigiaColors.error)),
+                          child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -249,7 +248,7 @@ class _SelectorMunicipio extends StatelessWidget {
           if (lista == null) {
             return Text(
               snap.hasError ? 'No se pudo cargar la lista de municipios; puedes registrarte sin él.' : 'Cargando municipios…',
-              style: const TextStyle(color: VigiaColors.textoSecundario),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             );
           }
           final departamentos = {for (final m in lista) m.departamento}.toList()..sort();

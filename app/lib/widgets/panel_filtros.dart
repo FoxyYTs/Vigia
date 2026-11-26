@@ -7,6 +7,7 @@ import '../data/models/historico.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
+import '../providers/preferencias_provider.dart';
 import 'formato.dart';
 
 /// Filtros, contador y leyenda del Mapa Interactivo. Se usa como panel
@@ -48,12 +49,21 @@ class PanelFiltros extends StatelessWidget {
             ),
             for (final f in FuenteSatelital.values)
               ChoiceChip(
-                avatar: _Punto(colorFuente(f)),
+                avatar: _Punto(colorFuente(f, Theme.of(context).brightness)),
                 label: Text(f.etiqueta),
                 selected: p.fuente == f,
                 onSelected: (_) => p.cambiarFuente(f),
               ),
           ],
+        ),
+        const SizedBox(height: 20),
+        const _Titulo('Visualización'),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Agrupar focos cercanos'),
+          subtitle: const Text('Con el mapa alejado, un círculo con el número de focos'),
+          value: context.watch<PreferenciasProvider>().agruparFocos,
+          onChanged: context.read<PreferenciasProvider>().cambiarAgruparFocos,
         ),
         const SizedBox(height: 20),
         const PanelPrediccion(),
@@ -68,8 +78,12 @@ class PanelFiltros extends StatelessWidget {
   }
 }
 
-Color colorFuente(FuenteSatelital? f) =>
-    f == FuenteSatelital.inpeQueimadas ? VigiaColors.inpe : VigiaColors.firms;
+/// Con [brillo] oscuro, INPE se aclara para íconos y leyendas (el morado da
+/// 1,5:1 sobre el fondo oscuro). Los círculos del mapa no lo necesitan: llevan
+/// borde blanco.
+Color colorFuente(FuenteSatelital? f, [Brightness brillo = Brightness.light]) => f == FuenteSatelital.inpeQueimadas
+    ? (brillo == Brightness.dark ? VigiaColors.inpeOscuro : VigiaColors.inpe)
+    : VigiaColors.firms;
 
 /// Tramos de probabilidad de la capa de predicción (de menor a mayor).
 const tramosPuntaje = [
@@ -133,7 +147,7 @@ class PanelPrediccion extends StatelessWidget {
           if (p.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(p.error!, style: const TextStyle(color: VigiaColors.error)),
+              child: Text(p.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           const SizedBox(height: 12),
           for (final (_, etiqueta, color) in tramosPuntaje.reversed)
@@ -152,7 +166,7 @@ class PanelPrediccion extends StatelessWidget {
             'Probabilidad de detecciones satelitales según el historial 2019–hoy, en celdas de ~11 km. '
             'No es un pronóstico del clima.'
             '${p.fechaModelo == null ? '' : ' Modelo actualizado el ${Formato.fecha(p.fechaModelo!)}.'}',
-            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ],
@@ -242,7 +256,7 @@ class PanelHistorico extends StatelessWidget {
           if (h.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(h.error!, style: const TextStyle(color: VigiaColors.error)),
+              child: Text(h.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           const SizedBox(height: 12),
           for (final (i, etiqueta) in etiquetasClases(h.cortes, h.indicador).indexed.toList().reversed)
@@ -262,7 +276,7 @@ class PanelHistorico extends StatelessWidget {
                 ? 'Incendios forestales reportados a la UNGRD (2019–2024). Son reportes de emergencias: '
                     'un municipio sin color puede tener incendios que no se reportaron.'
                 : 'Hectáreas de bosque natural deforestadas en el año, según el monitoreo del IDEAM (SMByC).',
-            style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ],
@@ -305,7 +319,7 @@ class _SelectorCorte extends StatelessWidget {
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               'Del ${Formato.fechaHora(desde)} al ${Formato.fechaHora(corte)}',
-              style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
       ],
@@ -339,16 +353,16 @@ class ContadorFocos extends StatelessWidget {
                       text: Formato.entero(p.total),
                       style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
                     ),
-                    const TextSpan(text: '  focos', style: TextStyle(color: VigiaColors.textoSecundario)),
+                    TextSpan(text: '  focos', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ]),
                 ),
-              const Text('en el rango seleccionado', style: TextStyle(color: VigiaColors.textoSecundario)),
+              Text('en el rango seleccionado', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               if (p.truncado) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Se dibujan los ${Formato.entero(p.focos.length)} más recientes. '
                   'Acota el rango para ver el resto.',
-                  style: const TextStyle(fontSize: 12, color: VigiaColors.fuego, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w600),
                 ),
               ],
               const SizedBox(height: 12),
@@ -357,7 +371,7 @@ class ContadorFocos extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [
-                      _Punto(colorFuente(f)),
+                      _Punto(colorFuente(f, Theme.of(context).brightness)),
                       const SizedBox(width: 8),
                       Expanded(child: Text(f.etiqueta)),
                       Text(Formato.entero(p.contarPorFuente(f)),
@@ -369,7 +383,7 @@ class ContadorFocos extends StatelessWidget {
                 const Divider(height: 20),
                 Text(
                   'Último foco cargado: ${Formato.fechaHora(p.ultimoDisponible!)}',
-                  style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ],
@@ -397,23 +411,23 @@ class Leyenda extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                _Punto(colorFuente(f), tamano: 14),
+                _Punto(colorFuente(f, Theme.of(context).brightness), tamano: 14),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(f.etiqueta, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text(detalle, style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario)),
+                      Text(detalle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-        const Text(
+        Text(
           'El tamaño del círculo crece con la potencia radiativa del fuego (FRP).',
-          style: TextStyle(fontSize: 12, color: VigiaColors.textoSecundario),
+          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ],
     );

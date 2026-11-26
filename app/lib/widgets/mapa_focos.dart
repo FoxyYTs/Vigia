@@ -5,10 +5,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
+import '../providers/preferencias_provider.dart';
+import 'agrupar_focos.dart';
+import 'formato.dart';
 import 'panel_filtros.dart' show colorFuente, colorPuntaje, coloresHistorico;
 
 /// Rectángulo que contiene el territorio continental e insular de Colombia.
@@ -28,8 +32,6 @@ class MapaFocos extends StatefulWidget {
 class _MapaFocosState extends State<MapaFocos> {
   final LayerHitNotifier<Foco> _hit = ValueNotifier(null);
 
-  List<Foco>? _focosPrevios;
-  List<CircleMarker<Foco>> _circulos = const [];
   int? _versionHistorico;
   List<Polygon> _municipios = const [];
 
@@ -45,33 +47,6 @@ class _MapaFocosState extends State<MapaFocos> {
     return _municipios;
   }
 
-  static double _radio(Foco f) {
-    final frp = f.brilloFrp;
-    if (frp == null || frp <= 0) return 4;
-    return 4 + math.min(6, math.log(frp + 1) * 1.4);
-  }
-
-  /// Los círculos solo se reconstruyen cuando cambia la lista de focos (no
-  /// en cada selección), para que el mapa siga fluido con miles de puntos.
-  List<CircleMarker<Foco>> _circulosDe(List<Foco> focos) {
-    if (!identical(focos, _focosPrevios)) {
-      _focosPrevios = focos;
-      _circulos = [
-        // Los más antiguos primero: los recientes quedan dibujados encima.
-        for (final f in focos.reversed)
-          CircleMarker<Foco>(
-            point: f.posicion,
-            radius: _radio(f),
-            color: colorFuente(f.fuente).withValues(alpha: 0.78),
-            borderColor: Colors.white,
-            borderStrokeWidth: 0.8,
-            hitValue: f,
-          ),
-      ];
-    }
-    return _circulos;
-  }
-
   @override
   void dispose() {
     _hit.dispose();
@@ -80,13 +55,14 @@ class _MapaFocosState extends State<MapaFocos> {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<FocosProvider>();
+    // select y no watch: seleccionar un foco solo redibuja _AnilloSeleccion.
+    final focos = context.select<FocosProvider, List<Foco>>((p) => p.focos);
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
-    final seleccionado = p.seleccionado;
+
 
     return Semantics(
-      label: 'Mapa de Colombia con ${p.focos.length} focos de calor. '
+      label: 'Mapa de Colombia con ${focos.length} focos de calor. '
           'Usa el panel de filtros para cambiar el rango y la fuente.',
       child: FlutterMap(
         mapController: widget.controller,
@@ -97,9 +73,11 @@ class _MapaFocosState extends State<MapaFocos> {
           cameraConstraint: CameraConstraint.containCenter(
             bounds: LatLngBounds(const LatLng(-15, -90), const LatLng(20, -55)),
           ),
-          onTap: (_, _) => p.seleccionar(null),
+          onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
+          // Claro también con la app en oscuro: los mapas base oscuros raster no
+          // convencieron (ver #102, migración a MapLibre).
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.vigia.foxyyts',
@@ -119,41 +97,168 @@ class _MapaFocosState extends State<MapaFocos> {
             child: GestureDetector(
               onTap: () {
                 final valores = _hit.value?.hitValues;
-                if (valores != null && valores.isNotEmpty) p.seleccionar(valores.first);
+                if (valores != null && valores.isNotEmpty) context.read<FocosProvider>().seleccionar(valores.first);
               },
-              child: CircleLayer<Foco>(
-                hitNotifier: _hit,
-                circles: _circulosDe(p.focos),
-              ),
+              child: _CapaFocos(focos: focos, hit: _hit),
             ),
           ),
-          if (seleccionado != null)
-            CircleLayer(
-              circles: [
-                CircleMarker(
-                  point: seleccionado.posicion,
-                  radius: _radio(seleccionado) + 6,
-                  color: Colors.transparent,
-                  borderColor: const Color(0xFF1A1F1C),
-                  borderStrokeWidth: 2.5,
-                ),
-              ],
-            ),
+          const _AnilloSeleccion(),
           // Plegable: en pantallas angostas la línea completa se cortaba.
-          const RichAttributionWidget(
+          RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
+            // Con tooltip; el color es fijo porque el mapa siempre es claro.
+            openButton: (context, abrir) => IconButton(
+              tooltip: 'Fuentes y atribuciones',
+              onPressed: abrir,
+              icon: const Icon(Icons.info_outlined, color: VigiaColors.texto),
+            ),
             attributions: [
-              TextSourceAttribution('OpenStreetMap contributors'),
-              TextSourceAttribution('NASA FIRMS', prependCopyright: false),
-              TextSourceAttribution('INPE', prependCopyright: false),
-              TextSourceAttribution('UNGRD', prependCopyright: false),
-              TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
-              TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
-              TextSourceAttribution('Modelo Vigía', prependCopyright: false),
+              const TextSourceAttribution('OpenStreetMap contributors'),
+              const TextSourceAttribution('NASA FIRMS', prependCopyright: false),
+              const TextSourceAttribution('INPE', prependCopyright: false),
+              const TextSourceAttribution('UNGRD', prependCopyright: false),
+              const TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
+              const TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
+              const TextSourceAttribution('Modelo Vigía', prependCopyright: false),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+double _radio(Foco f) {
+  final frp = f.brilloFrp;
+  if (frp == null || frp <= 0) return 4;
+  // Redondeado a 0,5 px: CircleLayer dibuja en un solo lote los de igual radio.
+  return ((4 + math.min(6, math.log(frp + 1) * 1.4)) * 2).roundToDouble() / 2;
+}
+
+/// Focos sueltos como círculos y, con zoom menor a [zoomSinAgrupar], las
+/// celdas con al menos [tamanoMinimoGrupo] focos agrupadas en un círculo con el conteo (#94).
+class _CapaFocos extends StatefulWidget {
+  const _CapaFocos({required this.focos, required this.hit});
+
+  final List<Foco> focos;
+  final LayerHitNotifier<Foco> hit;
+
+  @override
+  State<_CapaFocos> createState() => _CapaFocosState();
+}
+
+class _CapaFocosState extends State<_CapaFocos> {
+  List<Foco>? _focosPrevios;
+  int? _zoomPrevio;
+  bool? _agruparPrevio;
+  List<CircleMarker<Foco>> _sueltos = const [];
+  List<Marker> _grupos = const [];
+
+  /// Solo se reagrupa al cambiar la lista o el zoom entero, no en cada frame
+  /// del arrastre.
+  void _agrupar(int zoom, bool agrupar) {
+    if (identical(widget.focos, _focosPrevios) && zoom == _zoomPrevio && agrupar == _agruparPrevio) return;
+    _focosPrevios = widget.focos;
+    _zoomPrevio = zoom;
+    _agruparPrevio = agrupar;
+    final grupos = !agrupar || zoom >= zoomSinAgrupar ? const <GrupoFocos>[] : agruparFocos(widget.focos, zoom);
+    final agrupados = Set<Foco>.identity()..addAll([for (final g in grupos) if (g.focos.length >= tamanoMinimoGrupo) ...g.focos]);
+    _sueltos = [
+      // Los más antiguos primero: los recientes quedan dibujados encima.
+      for (final f in widget.focos.reversed)
+        if (!agrupados.contains(f))
+          CircleMarker<Foco>(
+            point: f.posicion,
+            radius: _radio(f),
+            // Opaco: con transparencia, CircleLayer pinta cada borde con su
+            // propio drawCircle (5000 llamadas) en vez de un lote de drawPoints.
+            color: colorFuente(f.fuente),
+            borderColor: Colors.white,
+            borderStrokeWidth: 0.8,
+            hitValue: f,
+          ),
+    ];
+    _grupos = [
+      for (final g in grupos)
+        if (g.focos.length >= tamanoMinimoGrupo) _MarcaGrupo.marker(g),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _agrupar(
+      MapCamera.of(context).zoom.floor(),
+      context.select<PreferenciasProvider, bool>((p) => p.agruparFocos),
+    );
+    return Stack(
+      children: [
+        RepaintBoundary(child: CircleLayer<Foco>(hitNotifier: widget.hit, circles: _sueltos)),
+        if (_grupos.isNotEmpty) MarkerLayer(markers: _grupos),
+      ],
+    );
+  }
+}
+
+/// Círculo con el número de focos del grupo; tocarlo acerca el mapa a ellos.
+class _MarcaGrupo extends StatelessWidget {
+  const _MarcaGrupo(this.grupo);
+
+  final GrupoFocos grupo;
+
+  static Marker marker(GrupoFocos g) {
+    final lado = 30 + math.min(18.0, math.log(g.focos.length) * 4).toDouble();
+    return Marker(point: g.centro, width: lado, height: lado, child: _MarcaGrupo(g));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final n = grupo.focos.length;
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: '${Formato.entero(n)} focos. Toca para acercar.',
+      child: GestureDetector(
+        onTap: () => MapController.of(context).fitCamera(
+          CameraFit.bounds(bounds: grupo.limites, padding: const EdgeInsets.all(48), maxZoom: zoomSinAgrupar + 1),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: colorFuente(grupo.fuentePrincipal), width: 3),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1))],
+          ),
+          child: Center(
+            child: Text(
+              n >= 1000 ? '${(n / 1000).round()} mil' : '$n',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1A1F1C)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Anillo sobre el foco seleccionado, en su propia capa para que seleccionar
+/// no reconstruya ni repinte los miles de círculos.
+class _AnilloSeleccion extends StatelessWidget {
+  const _AnilloSeleccion();
+
+  @override
+  Widget build(BuildContext context) {
+    final seleccionado = context.select<FocosProvider, Foco?>((p) => p.seleccionado);
+    if (seleccionado == null) return const SizedBox.shrink();
+    return CircleLayer(
+      circles: [
+        CircleMarker(
+          point: seleccionado.posicion,
+          radius: _radio(seleccionado) + 6,
+          color: Colors.transparent,
+          borderColor: VigiaColors.texto, // el mapa siempre es claro
+          borderStrokeWidth: 2.5,
+        ),
+      ],
     );
   }
 }

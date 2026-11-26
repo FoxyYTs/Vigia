@@ -8,9 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/fondo_vigia.dart';
 import '../widgets/mapa_focos.dart' show limitesColombia;
 
 /// Formulario del reporte ciudadano: foto tomada en el momento (sin galería,
@@ -109,18 +109,18 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nuevo reporte')),
-      body: ListView(
+      body: FondoVigia(child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const _Paso('1. Foto del incendio', 'Tómala ahora con la cámara; no se aceptan fotos de la galería.'),
           // En el navegador de escritorio el selector puede abrir archivos:
           // el servidor revisa la fecha y el GPS de la foto (EXIF).
           if (kIsWeb)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 4),
               child: Text(
                 'Desde el navegador se puede elegir un archivo; la fecha y la ubicación de la foto se revisan al validar.',
-                style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
               ),
             ),
           const SizedBox(height: 8),
@@ -160,7 +160,7 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
                     if (_usuario != null)
                       Marker(
                         point: _usuario!,
-                        child: const Icon(Icons.my_location, color: VigiaColors.bosque, semanticLabel: 'Tu ubicación'),
+                        child: Icon(Icons.my_location, color: Theme.of(context).colorScheme.primary, semanticLabel: 'Tu ubicación'),
                       ),
                     if (_incendio != null)
                       Marker(
@@ -168,7 +168,7 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
                         width: 40,
                         height: 40,
                         alignment: Alignment.topCenter,
-                        child: const Icon(Icons.location_on, size: 40, color: VigiaColors.fuego,
+                        child: Icon(Icons.location_on, size: 40, color: Theme.of(context).colorScheme.secondary,
                             semanticLabel: 'Ubicación del incendio'),
                       ),
                   ]),
@@ -182,9 +182,9 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
             ),
           ),
           if (_usuario == null && _error == null)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
-              child: Text('Obteniendo tu ubicación…', style: TextStyle(color: VigiaColors.textoSecundario)),
+              child: Text('Obteniendo tu ubicación…', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ),
           const SizedBox(height: 20),
           const _Paso('3. Descripción (opcional)', 'Qué ves: humo, llamas, tamaño aproximado, accesos.'),
@@ -197,7 +197,7 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
             decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           if (_error != null) ...[
-            Text(_error!, style: const TextStyle(color: VigiaColors.error)),
+            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             if (_usuario == null)
               Align(
                 alignment: Alignment.centerLeft,
@@ -213,7 +213,7 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
             label: const Text('Enviar reporte'),
           ),
         ],
-      ),
+      )),
     );
   }
 }
@@ -232,7 +232,7 @@ class _Paso extends StatelessWidget {
             header: true,
             child: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           ),
-          Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+          Text(detalle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
         ],
       );
 }

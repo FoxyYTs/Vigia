@@ -50,6 +50,16 @@ class GestionUsuarioSerializer(serializers.ModelSerializer):
         return datos
 
 
+class RecuperarSolicitudSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class RecuperarConfirmacionSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    codigo = serializers.RegexField(r"^\d{6}$", error_messages={"invalid": "El código tiene 6 dígitos."})
+    password = serializers.CharField(write_only=True, style={"input_type": "password"})
+
+
 class RegistroSerializer(serializers.ModelSerializer):
     """Registro público: SIEMPRE crea un ciudadano. Administradores y staff
     los crea el equipo desde el Django Admin, nunca por autoservicio."""

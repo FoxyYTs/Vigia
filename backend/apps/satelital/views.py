@@ -77,7 +77,9 @@ class FocoIncendioViewSet(viewsets.ReadOnlyModelViewSet):
                 raise ValidationError({"bbox": "Fuera de rango: oeste < este (−180 a 180), sur < norte (−90 a 90)."})
             qs = qs.filter(ubicacion__intersects=Polygon.from_bbox((oeste, sur, este, norte)))
 
-        return qs.order_by("-fecha_hora")
+        # "-id" desempata focos de la misma hora: sin él, las páginas (que la
+        # app pide en paralelo) pueden repetir u omitir focos.
+        return qs.order_by("-fecha_hora", "-id")
 
     @action(detail=False, url_path="ultimo")
     def ultimo(self, request):

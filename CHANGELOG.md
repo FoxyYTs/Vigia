@@ -7,7 +7,25 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.8.0] — 2026-11-25 · Mejoras para producción en Play
+
+### Cambiado
+- Mapa: los focos se dibujan opacos y con el radio redondeado a 0,5 px, así CircleLayer los pinta por lotes. Con 31 días (5000 focos), el raster en un celular de gama media bajó de 110 a ~17 ms por frame.
+- Mapa: seleccionar un foco ya no reconstruye ni repinta todos los círculos (anillo en su propia capa, `select` en vez de `watch`). El build por frame bajó de ~20 a ~4 ms.
+- AAB de Play compilado con `--obfuscate --split-debug-info` (`libapp.so` un 17 % más liviano); el procedimiento está en `DESPLIEGUE.md`.
+
+### Agregado
+- App: skeletons de carga en Estadísticas, Históricos, Bot, Permisos y Reportes (`skeletonizer`, según la norma Skeleton-Screens): el layout real con datos de ejemplo en gris, después de 300 ms, sin animación con movimiento reducido y anunciado como «Cargando».
+- App: Históricos con totales arriba (incendios, hectáreas deforestadas y detecciones) y una barra por año en cada tabla para ver la tendencia.
+- App: fondo con curvas de nivel tenues (estilo mapa topográfico) en las pantallas con contenido, en lugar de una superficie plana.
+- Recuperar contraseña: «¿Olvidaste tu contraseña?» en el login manda un código de 6 dígitos al correo de la cuenta (vence en 15 minutos, 5 intentos) y con él se pone una contraseña nueva en la misma app; se cierran las sesiones abiertas. API: `POST /api/auth/recuperar/` y `/api/auth/recuperar/confirmar/`, que responden igual exista o no el correo. El correo sale por SMTP (`EMAIL_*` en el `.env`) desde Celery.
+- App: modo oscuro, con selector Sistema/Claro/Oscuro en la barra del mapa (por defecto, el del sistema). Las pantallas toman los colores del tema (el claro queda igual). El mapa se queda claro (los mapas base oscuros raster no convencieron; ver #102). Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
+- App: con zoom menor a 9, las zonas con 5 focos o más se agrupan en un círculo con el conteo; tocarlo acerca el mapa a ellos. Se puede desactivar en Filtros. Con 31 días, el raster en el celular baja a ~10 ms por frame.
+- App: brújula en el mapa: aparece al girarlo con dos dedos, apunta al norte y al tocarla lo endereza.
+- App: prueba de rendimiento del mapa en un celular real (`integration_test/rendimiento_mapa_test.dart`).
+
 ### Corregido
+- API: el orden de `/api/focos/` se desempata por id. Con focos de la misma hora, las páginas que la app pide en paralelo podían repetir u omitir focos.
 - Bot de Telegram: las detecciones satelitales sin confirmar ya no salen una por una (llegaron a 350 mensajes al día al canal privado y Telegram bloqueó el bot por reportes de spam). Ahora van en un solo resumen sin sonido por cada ingesta (cada 3 h como máximo), contado por departamento y municipio. Las alertas confirmadas y la acumulación de reportes siguen saliendo una por una.
 
 ## [0.7.0] — 2026-11-19 · Registro en la app y pulido
@@ -187,7 +205,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.7.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.8.0...develop
+[0.8.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.8.0
 [0.7.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.7.0
 [0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0
 [0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0

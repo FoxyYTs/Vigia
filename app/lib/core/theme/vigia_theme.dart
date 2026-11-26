@@ -21,66 +21,91 @@ class VigiaColors {
   /// leyenda: el color nunca es la única señal).
   static const firms = Color(0xFFD9531E);
   static const inpe = Color(0xFF7B1E5A);
+  static const inpeOscuro = Color(0xFFE08BC4); // INPE en íconos con el tema oscuro
 }
 
-ThemeData construirTemaVigia() {
-  final esquema = ColorScheme.fromSeed(
-    seedColor: VigiaColors.bosque,
-    primary: VigiaColors.bosque,
-    onPrimary: Colors.white,
-    secondary: VigiaColors.fuego,
-    onSecondary: Colors.white,
-    error: VigiaColors.error,
-    surface: Colors.white,
-    onSurface: VigiaColors.texto,
-  );
+/// Tema claro u oscuro con la misma marca. Las pantallas toman sus colores
+/// del [ColorScheme] (no de [VigiaColors]) para servir en los dos; el claro
+/// fija cada rol al color que ya usaba la app.
+ThemeData construirTemaVigia({Brightness brillo = Brightness.light}) {
+  final oscuro = brillo == Brightness.dark;
+  final esquema = oscuro
+      ? ColorScheme.fromSeed(
+          seedColor: VigiaColors.bosque,
+          brightness: Brightness.dark,
+          secondary: const Color(0xFFFFB59B), // fuego aclarado: 4,5:1 sobre la superficie oscura
+          onSecondary: const Color(0xFF5C1900),
+          tertiaryContainer: const Color(0xFF7E2C05),
+          onTertiaryContainer: VigiaColors.fuegoClaro,
+        )
+      : ColorScheme.fromSeed(
+          seedColor: VigiaColors.bosque,
+          primary: VigiaColors.bosque,
+          onPrimary: Colors.white,
+          primaryContainer: VigiaColors.bosqueClaro,
+          onPrimaryContainer: VigiaColors.bosqueOscuro,
+          secondary: VigiaColors.fuego,
+          onSecondary: Colors.white,
+          tertiaryContainer: VigiaColors.fuegoClaro,
+          onTertiaryContainer: const Color(0xFF8A2A0A), // fuego oscurecido: 4,5:1 sobre fuegoClaro
+          error: VigiaColors.error,
+          errorContainer: const Color(0xFFFFDAD6),
+          onErrorContainer: const Color(0xFF7A0E0A),
+          surface: Colors.white,
+          onSurface: VigiaColors.texto,
+          onSurfaceVariant: VigiaColors.textoSecundario,
+          outline: const Color(0xFF707971),
+          outlineVariant: VigiaColors.borde,
+        );
+  final fondoTarjeta = oscuro ? esquema.surfaceContainer : esquema.surface;
 
   const radio = BorderRadius.all(Radius.circular(8));
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: esquema,
-    scaffoldBackgroundColor: VigiaColors.superficie,
+    scaffoldBackgroundColor: oscuro ? esquema.surface : VigiaColors.superficie,
+    // La barra de la marca es la misma en los dos temas (blanco sobre bosque, 7,6:1).
     appBarTheme: const AppBarTheme(
       backgroundColor: VigiaColors.bosque,
       foregroundColor: Colors.white,
       elevation: 0,
       centerTitle: false,
     ),
-    cardTheme: const CardThemeData(
-      color: Colors.white,
+    cardTheme: CardThemeData(
+      color: fondoTarjeta,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: radio,
-        side: BorderSide(color: VigiaColors.borde),
+        side: BorderSide(color: esquema.outlineVariant),
       ),
     ),
-    inputDecorationTheme: const InputDecorationTheme(
+    inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: radio),
+      fillColor: fondoTarjeta,
+      border: const OutlineInputBorder(borderRadius: radio),
       enabledBorder: OutlineInputBorder(
         borderRadius: radio,
-        borderSide: BorderSide(color: Color(0xFF707971)),
+        borderSide: BorderSide(color: esquema.outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: radio,
-        borderSide: BorderSide(color: VigiaColors.bosque, width: 2),
+        borderSide: BorderSide(color: esquema.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: radio,
-        borderSide: BorderSide(color: VigiaColors.error),
+        borderSide: BorderSide(color: esquema.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: radio,
-        borderSide: BorderSide(color: VigiaColors.error, width: 2),
+        borderSide: BorderSide(color: esquema.error, width: 2),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: VigiaColors.bosque,
-        foregroundColor: Colors.white,
+        backgroundColor: esquema.primary,
+        foregroundColor: esquema.onPrimary,
         minimumSize: const Size(64, 48),
         shape: const RoundedRectangleBorder(borderRadius: radio),
         textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
@@ -88,16 +113,16 @@ ThemeData construirTemaVigia() {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: VigiaColors.bosque,
+        foregroundColor: esquema.primary,
         minimumSize: const Size(64, 48),
-        side: const BorderSide(color: VigiaColors.borde),
+        side: BorderSide(color: esquema.outlineVariant),
         shape: const RoundedRectangleBorder(borderRadius: radio),
       ),
     ),
-    chipTheme: const ChipThemeData(
-      selectedColor: VigiaColors.bosqueClaro,
-      shape: RoundedRectangleBorder(borderRadius: radio),
-      side: BorderSide(color: VigiaColors.borde),
+    chipTheme: ChipThemeData(
+      selectedColor: esquema.primaryContainer,
+      shape: const RoundedRectangleBorder(borderRadius: radio),
+      side: BorderSide(color: esquema.outlineVariant),
     ),
   );
 }
