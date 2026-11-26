@@ -463,7 +463,8 @@ class _Punto extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 1.5),
+          // Del color de la superficie: en oscuro un borde blanco se veía como un anillo.
+          border: Border.all(color: Theme.of(context).colorScheme.surface, width: 1.5),
         ),
       );
 }
