@@ -7,6 +7,10 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Corregido
+- Modo oscuro: los controles que flotan sobre el mapa (botones, contador, avisos, detalle del foco) usan el tema claro, como el mapa, en vez de verse negros sobre él; los puntos de color de Filtros ya no tienen un anillo blanco.
+- Reportes en pantallas anchas: rejilla de 2 o 3 columnas con la foto grande arriba, en vez de una tarjeta de borde a borde con una miniatura diminuta; en el celular, miniatura de 88 px.
+
 ## [0.8.0] — 2026-11-25 · Mejoras para producción en Play
 
 ### Cambiado

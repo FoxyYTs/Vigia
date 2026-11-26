@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../data/api/vigia_api.dart';
 import '../data/models/reporte.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/lista_centrada.dart';
 import '../widgets/fondo_vigia.dart';
 import '../widgets/esqueleto.dart';
 import '../widgets/formato.dart';
@@ -106,36 +108,32 @@ class _ReportesScreenState extends State<ReportesScreen> {
                     ? 'Todavía no has reportado ningún incendio.'
                     : 'No hay reportes ciudadanos en tu jurisdicción.',
               ),
-            AsyncSnapshot(hasData: true, :final data) => ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                children: [
-                  for (final r in data!)
-                    _TarjetaReporte(
-                      r,
-                      onResolver: rol == Rol.administrador && r.estado == EstadoReporte.pendiente
-                          ? (validar) => _resolver(r, validar: validar)
-                          : null,
-                      bloqueado: _resolviendo != null,
-                    ),
-                ],
-              ),
-            _ => Esqueleto(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                  children: [
-                    for (var i = 0; i < 4; i++)
-                      _TarjetaReporte(
-                        Reporte(
-                          id: i,
-                          ciudadano: 'ciudadano',
-                          ubicacionIncendio: const LatLng(6.15, -75.37),
-                          estado: EstadoReporte.pendiente,
-                          fechaCreacion: DateTime(2026, 11, 25),
-                          descripcion: 'Descripción del reporte de ejemplo para el skeleton.',
-                        ),
+            AsyncSnapshot(hasData: true, :final data) => _Rejilla([
+                for (final r in data!)
+                  (vertical) => _TarjetaReporte(
+                        r,
+                        vertical: vertical,
+                        onResolver: rol == Rol.administrador && r.estado == EstadoReporte.pendiente
+                            ? (validar) => _resolver(r, validar: validar)
+                            : null,
+                        bloqueado: _resolviendo != null,
                       ),
-                  ],
-                ),
+              ]),
+            _ => Esqueleto(
+                child: _Rejilla([
+                  for (var i = 0; i < 4; i++)
+                    (vertical) => _TarjetaReporte(
+                          Reporte(
+                            id: i,
+                            ciudadano: 'ciudadano',
+                            ubicacionIncendio: const LatLng(6.15, -75.37),
+                            estado: EstadoReporte.pendiente,
+                            fechaCreacion: DateTime(2026, 11, 25),
+                            descripcion: 'Descripción del reporte de ejemplo para el skeleton.',
+                          ),
+                          vertical: vertical,
+                        ),
+                ]),
               ),
           },
         ),
@@ -161,7 +159,7 @@ class _Mensaje extends StatelessWidget {
 }
 
 class _TarjetaReporte extends StatelessWidget {
-  const _TarjetaReporte(this.reporte, {this.onResolver, this.bloqueado = false});
+  const _TarjetaReporte(this.reporte, {this.onResolver, this.bloqueado = false, this.vertical = false});
 
   final Reporte reporte;
   final void Function(bool validar)? onResolver;
@@ -169,75 +167,87 @@ class _TarjetaReporte extends StatelessWidget {
   /// Hay una validación o un rechazo en curso: los botones esperan.
   final bool bloqueado;
 
+  /// En rejilla (pantallas anchas): foto grande arriba y datos debajo.
+  final bool vertical;
+
   @override
   Widget build(BuildContext context) {
     final r = reporte;
     final p = r.ubicacionIncendio;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final datos = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Miniatura(r.miniaturaUrl),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text('Reporte #${r.id}',
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                          ),
-                          _EtiquetaEstado(r.estado),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(Formato.fechaHora(r.fechaCreacion),
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                      Text('${Formato.coordenada(p.latitude, latitud: true)}, ${Formato.coordenada(p.longitude, latitud: false)}',
-                          style: const TextStyle(fontSize: 13)),
-                      if (r.distanciaKm != null)
-                        Text('A ${r.distanciaKm!.toStringAsFixed(1)} km de quien reportó',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                      if (r.descripcion.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(r.descripcion),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+            Expanded(
+              child: Text('Reporte #${r.id}',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             ),
-            if (onResolver != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: bloqueado ? null : () => onResolver!(false),
-                      icon: const Icon(Icons.close),
-                      label: const Text('Rechazar'),
-                      style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: bloqueado ? null : () => onResolver!(true),
-                      icon: const Icon(Icons.check),
-                      label: const Text('Validar'),
-                    ),
-                  ],
-                ),
-              ),
+            _EtiquetaEstado(r.estado),
           ],
         ),
+        const SizedBox(height: 4),
+        Text(Formato.fechaHora(r.fechaCreacion),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        Text('${Formato.coordenada(p.latitude, latitud: true)}, ${Formato.coordenada(p.longitude, latitud: false)}',
+            style: const TextStyle(fontSize: 13)),
+        if (r.distanciaKm != null)
+          Text('A ${r.distanciaKm!.toStringAsFixed(1)} km de quien reportó',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+        if (r.descripcion.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(r.descripcion),
+        ],
+      ],
+    );
+    return Card(
+      margin: vertical ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (vertical) AspectRatio(aspectRatio: 16 / 9, child: _Miniatura(r.miniaturaUrl, lado: null)),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (vertical)
+                  datos
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Miniatura(r.miniaturaUrl),
+                      const SizedBox(width: 14),
+                      Expanded(child: datos),
+                    ],
+                  ),
+                if (onResolver != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: bloqueado ? null : () => onResolver!(false),
+                          icon: const Icon(Icons.close),
+                          label: const Text('Rechazar'),
+                          style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
+                          onPressed: bloqueado ? null : () => onResolver!(true),
+                          icon: const Icon(Icons.check),
+                          label: const Text('Validar'),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -264,9 +274,12 @@ class _EtiquetaEstado extends StatelessWidget {
 }
 
 class _Miniatura extends StatefulWidget {
-  const _Miniatura(this.url);
+  const _Miniatura(this.url, {this.lado = 88});
 
   final String? url;
+
+  /// Lado del cuadrado; null para llenar el espacio disponible (foto grande de la rejilla).
+  final double? lado;
 
   @override
   State<_Miniatura> createState() => _MiniaturaState();
@@ -287,7 +300,7 @@ class _MiniaturaState extends State<_Miniatura> {
 
   @override
   Widget build(BuildContext context) {
-    const lado = 72.0;
+    final lado = widget.lado;
     Widget sinFoto(IconData icono) => Container(
           width: lado,
           height: lado,
@@ -295,16 +308,48 @@ class _MiniaturaState extends State<_Miniatura> {
           child: Icon(icono, color: Theme.of(context).colorScheme.onSurfaceVariant),
         );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(lado == null ? 0 : 8),
       child: _bytes == null
           ? Semantics(label: 'Foto eliminada por retención', child: sinFoto(Icons.hide_image_outlined))
           : FutureBuilder<Uint8List>(
               future: _bytes,
               builder: (context, snap) => snap.hasData
-                  ? Image.memory(snap.data!, width: lado, height: lado, fit: BoxFit.cover,
+                  ? Image.memory(snap.data!, width: lado ?? double.infinity, height: lado ?? double.infinity, fit: BoxFit.cover,
                       semanticLabel: 'Foto del incendio reportado')
                   : sinFoto(snap.hasError ? Icons.broken_image_outlined : Icons.image_outlined),
             ),
     );
   }
 }
+
+/// Reportes en una columna en el celular y en rejilla de 2 o 3 columnas, con
+/// la foto grande arriba, en pantallas anchas (antes una tarjeta ocupaba todo
+/// el ancho con una miniatura diminuta).
+class _Rejilla extends StatelessWidget {
+  const _Rejilla(this.tarjetas);
+
+  final List<Widget Function(bool vertical)> tarjetas;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, limites) {
+        final margen = math.max(16.0, (limites.maxWidth - ListaCentrada.amplio) / 2);
+        final util = limites.maxWidth - 2 * margen;
+        final columnas = util >= 1100 ? 3 : (util >= 700 ? 2 : 1);
+        final relleno = EdgeInsets.fromLTRB(margen, 16, margen, 96); // 96: espacio para el botón flotante
+        if (columnas == 1) {
+          return ListView(padding: relleno, children: [for (final t in tarjetas) t(false)]);
+        }
+        final ancho = (util - 16 * (columnas - 1)) / columnas;
+        return ListView(
+          padding: relleno,
+          children: [
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [for (final t in tarjetas) SizedBox(width: ancho, child: t(true))],
+            ),
+          ],
+        );
+      });
+}
+
