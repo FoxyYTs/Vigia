@@ -81,6 +81,7 @@ void main() {
         (c.onPrimaryContainer, c.primaryContainer),
         (c.onErrorContainer, c.errorContainer),
         (c.onTertiaryContainer, c.tertiaryContainer),
+        (c.primary, c.surfaceContainerHighest), // botón de la barra en oscuro (estiloBotonBarra)
       ]) {
         expect(contraste(texto, fondo), greaterThanOrEqualTo(4.5), reason: '$texto sobre $fondo');
       }
