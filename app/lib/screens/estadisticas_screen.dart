@@ -6,6 +6,7 @@ import '../data/models/estadisticas.dart';
 import '../data/models/foco.dart';
 import '../data/models/reporte.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/indicador.dart';
 import '../widgets/estado_carga.dart';
 import '../widgets/formato.dart';
 import '../widgets/lista_centrada.dart';
@@ -13,6 +14,24 @@ import '../widgets/selector_periodo.dart';
 
 /// "Gestionar Estadísticas" (UC7): incidentes por región y periodo, para
 /// administradores y staff. La API limita al administrador a su jurisdicción.
+/// Forma de las estadísticas para el skeleton de carga.
+final _ejemplo = Estadisticas(
+  desde: DateTime(2026, 10, 27),
+  hasta: DateTime(2026, 11, 25),
+  nacional: true,
+  focos: 10000,
+  focosPorFuente: const [Conteo('NASA_FIRMS', 6000), Conteo('INPE_QUEIMADAS', 4000)],
+  focosPorDepartamento: [for (var i = 0; i < 8; i++) Conteo('Departamento', 1000 - i * 100)],
+  focosPorDia: [
+    for (var d = 0; d < 30; d++)
+      Conteo(DateTime(2026, 10, 27 + d).toIso8601String().substring(0, 10), 100 + (d % 7) * 40),
+  ],
+  alertas: 200,
+  alertasPorTipo: const [Conteo('deteccion_satelital', 190), Conteo('validacion_manual', 10)],
+  reportes: 20,
+  reportesPorEstado: const [Conteo('pendiente', 10), Conteo('validado', 6), Conteo('rechazado', 4)],
+);
+
 class EstadisticasScreen extends StatefulWidget {
   const EstadisticasScreen({super.key});
 
@@ -70,6 +89,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
           EstadoCarga<Estadisticas>(
             futuro: _datos,
             mensajeError: 'No se pudieron cargar las estadísticas.',
+            esqueleto: _ejemplo,
             onReintentar: () => _cambiarPeriodo(_dias),
             contenido: _Contenido.new,
           ),
@@ -111,7 +131,7 @@ class _Contenido extends StatelessWidget {
                   ('Alertas', e.alertas, Icons.notifications_active_outlined),
                   ('Reportes ciudadanos', e.reportes, Icons.add_a_photo_outlined),
                 ])
-                  SizedBox(width: total, child: _Total(etiqueta, valor, icono)),
+                  SizedBox(width: total, child: Indicador(etiqueta, valor, icono)),
               ],
             ),
             const SizedBox(height: 16),
@@ -150,40 +170,6 @@ class _Contenido extends StatelessWidget {
       },
     );
   }
-}
-
-class _Total extends StatelessWidget {
-  const _Total(this.etiqueta, this.valor, this.icono);
-
-  final String etiqueta;
-  final int valor;
-  final IconData icono;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                child: Icon(icono, color: Theme.of(context).colorScheme.onPrimaryContainer),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(Formato.entero(valor), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
-                    Text(etiqueta, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
 }
 
 class _Seccion extends StatelessWidget {

@@ -13,6 +13,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - AAB de Play compilado con `--obfuscate --split-debug-info` (`libapp.so` un 17 % más liviano); el procedimiento está en `DESPLIEGUE.md`.
 
 ### Agregado
+- App: skeletons de carga en Estadísticas, Históricos, Bot, Permisos y Reportes (`skeletonizer`, según la norma Skeleton-Screens): el layout real con datos de ejemplo en gris, después de 300 ms, sin animación con movimiento reducido y anunciado como «Cargando».
+- App: Históricos con totales arriba (incendios, hectáreas deforestadas y detecciones) y una barra por año en cada tabla para ver la tendencia.
+- App: fondo con curvas de nivel tenues (estilo mapa topográfico) en las pantallas con contenido, en lugar de una superficie plana.
 - Recuperar contraseña: «¿Olvidaste tu contraseña?» en el login manda un código de 6 dígitos al correo de la cuenta (vence en 15 minutos, 5 intentos) y con él se pone una contraseña nueva en la misma app; se cierran las sesiones abiertas. API: `POST /api/auth/recuperar/` y `/api/auth/recuperar/confirmar/`, que responden igual exista o no el correo. El correo sale por SMTP (`EMAIL_*` en el `.env`) desde Celery.
 - App: modo oscuro, con selector Sistema/Claro/Oscuro en la barra del mapa (por defecto, el del sistema). Las pantallas toman los colores del tema (el claro queda igual). El mapa se queda claro (los mapas base oscuros raster no convencieron; ver #102). Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
 - App: con zoom menor a 9, las zonas con 5 focos o más se agrupan en un círculo con el conteo; tocarlo acerca el mapa a ellos. Se puede desactivar en Filtros. Con 31 días, el raster en el celular baja a ~10 ms por frame.

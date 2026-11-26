@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'fondo_vigia.dart';
+
 /// Lista desplazable con el contenido centrado y un ancho máximo, para que en
 /// pantallas anchas no se estire de borde a borde. En el celular deja 16 px.
 class ListaCentrada extends StatelessWidget {
@@ -17,11 +19,13 @@ class ListaCentrada extends StatelessWidget {
   final double maximo;
 
   @override
-  Widget build(BuildContext context) => ListView(
-        padding: EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: max(16, (MediaQuery.sizeOf(context).width - maximo) / 2),
+  Widget build(BuildContext context) => FondoVigia(
+        child: ListView(
+          padding: EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: max(16, (MediaQuery.sizeOf(context).width - maximo) / 2),
+          ),
+          children: children,
         ),
-        children: children,
       );
 }

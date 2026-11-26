@@ -23,6 +23,38 @@ class BotTelegramScreen extends StatefulWidget {
   State<BotTelegramScreen> createState() => _BotTelegramScreenState();
 }
 
+/// Forma del estado del bot para el skeleton de carga.
+final _ejemplo = EstadoBot(
+  bot: 'Bot de Vigía',
+  tokenConfigurado: true,
+  canales: [
+    for (final (canal, nombre) in const [
+      ('telegram_publico', 'Telegram público'),
+      ('telegram_privado', 'Telegram privado'),
+      ('telegram_interno', 'Telegram interno'),
+    ])
+      CanalBot(
+        canal: canal,
+        nombre: nombre,
+        configurado: true,
+        alertas: const ['validacion_manual'],
+        enviados7d: 10,
+        fallidos7d: 0,
+        ultimoEnvio: DateTime(2026, 11, 25),
+      ),
+  ],
+  recientes: [
+    for (var i = 0; i < 5; i++)
+      EnvioBot(
+        fechaEnvio: DateTime(2026, 11, 25),
+        canal: 'telegram_privado',
+        estado: 'enviado',
+        tipoAlerta: 'deteccion_satelital',
+        municipio: 'Municipio',
+      ),
+  ],
+);
+
 class _BotTelegramScreenState extends State<BotTelegramScreen> {
   static const _estados = {'enviado': 'Enviado', 'fallido': 'Fallido', 'leido': 'Leído'};
 
@@ -76,6 +108,7 @@ class _BotTelegramScreenState extends State<BotTelegramScreen> {
       body: EstadoCarga<EstadoBot>(
         futuro: _datos,
         mensajeError: 'No se pudo cargar el estado del bot.',
+        esqueleto: _ejemplo,
         onReintentar: _recargar,
         contenido: (datos) => ListaCentrada(children: _contenido(datos, staff)),
       ),

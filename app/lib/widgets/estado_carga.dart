@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../data/api/vigia_api.dart';
+import 'esqueleto.dart';
 
-/// Carga de una pantalla: indicador mientras espera, error con «Reintentar»
+/// Carga de una pantalla: skeleton del [contenido] con [esqueleto] mientras
+/// espera (o un indicador si no hay datos de ejemplo), error con «Reintentar»
 /// y el [contenido] cuando llegan los datos. El mensaje de una [ApiException]
 /// se muestra tal cual; cualquier otro error, con [mensajeError].
 class EstadoCarga<T> extends StatelessWidget {
@@ -12,12 +14,16 @@ class EstadoCarga<T> extends StatelessWidget {
     required this.mensajeError,
     required this.onReintentar,
     required this.contenido,
+    this.esqueleto,
   });
 
   final Future<T> futuro;
   final String mensajeError;
   final VoidCallback onReintentar;
   final Widget Function(T datos) contenido;
+
+  /// Datos de ejemplo con la forma del resultado, para el skeleton.
+  final T? esqueleto;
 
   @override
   Widget build(BuildContext context) => FutureBuilder<T>(
@@ -43,6 +49,7 @@ class EstadoCarga<T> extends StatelessWidget {
               ),
             ),
           AsyncSnapshot(connectionState: ConnectionState.done, hasData: true, :final data) => contenido(data as T),
+          _ when esqueleto != null => Esqueleto(child: contenido(esqueleto as T)),
           _ => const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
         },
       );

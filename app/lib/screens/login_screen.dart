@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/vigia_theme.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/fondo_vigia.dart';
 import '../widgets/vigia_marca.dart';
 import 'rutas.dart';
 
@@ -16,7 +17,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
+      body: FondoVigia(child: LayoutBuilder(
         builder: (context, c) {
           final ancho = c.maxWidth >= 900;
           final formulario = Center(
@@ -49,7 +50,7 @@ class LoginScreen extends StatelessWidget {
             ],
           );
         },
-      ),
+      )),
     );
   }
 }
