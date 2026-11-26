@@ -170,7 +170,7 @@ REST_FRAMEWORK = {
 # Documentación OpenAPI (/api/schema/ y /api/docs/).
 SPECTACULAR_SETTINGS = {
     "TITLE": "API de Vigía",
-    "VERSION": "0.8.0",
+    "VERSION": "0.8.1",
     "DESCRIPTION": """
 Alertas tempranas de incendios forestales en Colombia. Los endpoints marcados como públicos
 no piden sesión y forman una API de **datos abiertos**, con un límite de 20.000 consultas
@@ -206,6 +206,9 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    # Sin esto, el "último inicio de sesión" del Django Admin solo contaba el
+    # admin: las cuentas que entran por la app aparecían como "nunca".
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # Logs a la consola (Twelve-Factor XI): Docker los recoge con `docker compose logs`.

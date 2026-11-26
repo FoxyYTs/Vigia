@@ -7,6 +7,13 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.8.1] — 2026-11-25 · Ajustes del modo oscuro y de los reportes
+
+### Corregido
+- Modo oscuro: los controles que flotan sobre el mapa (botones, contador, avisos, detalle del foco) usan el tema claro, como el mapa, en vez de verse negros sobre él; los puntos de color de Filtros ya no tienen un anillo blanco.
+- Reportes en pantallas anchas: rejilla de 2 o 3 columnas con la foto grande arriba, en vez de una tarjeta de borde a borde con una miniatura diminuta; en el celular, miniatura de 88 px.
+- El «último inicio de sesión» del Django Admin ahora cuenta también los inicios de sesión desde la app (`UPDATE_LAST_LOGIN`); antes todas esas cuentas aparecían como «nunca».
+
 ## [0.8.0] — 2026-11-25 · Mejoras para producción en Play
 
 ### Cambiado
@@ -205,7 +212,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.8.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.8.1...develop
+[0.8.1]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.8.1
 [0.8.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.8.0
 [0.7.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.7.0
 [0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0

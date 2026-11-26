@@ -23,6 +23,8 @@ class MapaScreen extends StatefulWidget {
   State<MapaScreen> createState() => _MapaScreenState();
 }
 
+final _temaMapa = construirTemaVigia();
+
 class _MapaScreenState extends State<MapaScreen> {
   final _mapa = MapController();
   // Misma instancia en cada build: los cambios de FocosProvider que redibujan
@@ -79,7 +81,11 @@ class _MapaScreenState extends State<MapaScreen> {
     final ancho = MediaQuery.sizeOf(context).width >= 900;
     final p = context.watch<FocosProvider>();
 
-    final areaMapa = Stack(
+    // El mapa es siempre claro: lo que flota encima (botones, contador,
+    // avisos, detalle del foco) usa el tema claro aunque la app esté en oscuro.
+    final areaMapa = Theme(
+      data: _temaMapa,
+      child: Stack(
       children: [
         _mapaFocos,
         if (p.cargando)
@@ -121,6 +127,7 @@ class _MapaScreenState extends State<MapaScreen> {
             ),
           ),
       ],
+    ),
     );
 
     return Scaffold(
