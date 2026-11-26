@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Código para restablecer tu contraseña</title>
+</head>
+{# Correo de recuperación con la estética de la app: barra verde, tarjeta blanca sobre fondo gris verdoso. Tablas y estilos en línea porque los clientes de correo ignoran el CSS moderno. #}
+<body style="margin:0;padding:0;background:#F4F6F3;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1A1F1C;">
+  <span style="display:none;max-height:0;overflow:hidden;">Tu código vence en {{ minutos }} minutos.</span>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6F3;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFFF;border:1px solid #D5DBD3;border-radius:8px;overflow:hidden;">
+        <tr>
+          <td style="background:#1B5E3A;padding:18px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+              <td style="padding-right:12px;"><img src="{{ sitio }}icons/Icon-192.png" width="36" height="36" alt="" style="display:block;border-radius:8px;border:1px solid rgba(255,255,255,0.25);"></td>
+              <td>
+                <div style="font-size:20px;font-weight:800;color:#FFFFFF;line-height:1.1;">Vigía</div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#D4EBDC;">ALERTA TEMPRANA DE INCENDIOS</div>
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 24px 8px;">
+            <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;">Restablece tu contraseña</h1>
+            <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#404942;">Hola, <strong style="color:#1A1F1C;">{{ username }}</strong>. Recibimos una solicitud para restablecer la contraseña de tu cuenta. Escribe este código en la app junto con tu nueva contraseña:</p>
+            <div style="text-align:center;margin:0 0 20px;">
+              <span style="display:inline-block;padding:14px 22px;background:#EAF4EC;border:1px solid #AEF2C2;border-radius:8px;font-family:'Roboto Mono',Consolas,'Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#1B5E3A;">{{ codigo }}</span>
+            </div>
+            <p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#404942;">🕒 Vence en <strong>{{ minutos }} minutos</strong> y sirve una sola vez.</p>
+            <p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#404942;">Si no lo pediste, ignora este correo: tu contraseña sigue igual. Nunca te pediremos este código por otro medio.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 24px;border-top:1px solid #D5DBD3;font-size:12px;line-height:1.5;color:#404942;">
+            <a href="{{ sitio }}" style="color:#1B5E3A;font-weight:600;text-decoration:none;">vigia.foxyyts.qzz.io</a> · Alertas tempranas de incendios forestales en Colombia<br>
+            Proyecto Integrador · Politécnico Colombiano Jaime Isaza Cadavid
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
