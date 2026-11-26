@@ -5,6 +5,7 @@ import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/fondo_vigia.dart';
 import '../widgets/vigia_marca.dart';
 import 'bot_telegram_screen.dart';
 import 'estadisticas_screen.dart';
@@ -74,7 +75,7 @@ class PanelScreen extends StatelessWidget {
           const SizedBox(width: 12),
         ],
       ),
-      body: ListView(
+      body: FondoVigia(child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Center(
@@ -108,7 +109,7 @@ class PanelScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }

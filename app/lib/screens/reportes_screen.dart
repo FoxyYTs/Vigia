@@ -1,12 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../data/api/vigia_api.dart';
 import '../data/models/reporte.dart';
 import '../data/models/usuario.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/fondo_vigia.dart';
+import '../widgets/esqueleto.dart';
 import '../widgets/formato.dart';
 import 'nuevo_reporte_screen.dart';
 
@@ -86,7 +89,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
               label: const Text('Nuevo reporte'),
             )
           : null,
-      body: RefreshIndicator(
+      body: FondoVigia(child: RefreshIndicator(
         onRefresh: () async {
           _recargar();
           await _reportes;
@@ -116,10 +119,27 @@ class _ReportesScreenState extends State<ReportesScreen> {
                     ),
                 ],
               ),
-            _ => const Center(child: CircularProgressIndicator()),
+            _ => Esqueleto(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  children: [
+                    for (var i = 0; i < 4; i++)
+                      _TarjetaReporte(
+                        Reporte(
+                          id: i,
+                          ciudadano: 'ciudadano',
+                          ubicacionIncendio: const LatLng(6.15, -75.37),
+                          estado: EstadoReporte.pendiente,
+                          fechaCreacion: DateTime(2026, 11, 25),
+                          descripcion: 'Descripción del reporte de ejemplo para el skeleton.',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
           },
         ),
-      ),
+      )),
     );
   }
 }

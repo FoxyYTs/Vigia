@@ -128,6 +128,19 @@ class _PermisosScreenState extends State<PermisosScreen> {
           EstadoCarga<List<Map<String, dynamic>>>(
             futuro: _usuarios,
             mensajeError: 'No se pudieron cargar los usuarios.',
+            esqueleto: [
+              for (var i = 0; i < 6; i++)
+                {
+                  'id': i,
+                  'username': 'usuario_ejemplo',
+                  'email': 'usuario@correo.co',
+                  'rol': 'ciudadano',
+                  'entidad': null,
+                  'entidad_nombre': null,
+                  'nombre': '',
+                  'is_active': true,
+                },
+            ],
             onReintentar: _recargar,
             contenido: (usuarios) => usuarios.isEmpty
                 ? Text('Ningún usuario coincide.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))

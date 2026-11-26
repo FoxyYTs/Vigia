@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../data/api/vigia_api.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/fondo_vigia.dart';
 import '../widgets/mapa_focos.dart' show limitesColombia;
 
 /// Formulario del reporte ciudadano: foto tomada en el momento (sin galería,
@@ -108,7 +109,7 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nuevo reporte')),
-      body: ListView(
+      body: FondoVigia(child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const _Paso('1. Foto del incendio', 'Tómala ahora con la cámara; no se aceptan fotos de la galería.'),
@@ -212,7 +213,7 @@ class _NuevoReporteScreenState extends State<NuevoReporteScreen> {
             label: const Text('Enviar reporte'),
           ),
         ],
-      ),
+      )),
     );
   }
 }
