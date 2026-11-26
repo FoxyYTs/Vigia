@@ -7,6 +7,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Corregido
+- Modo oscuro: «Mi panel», «Iniciar sesión» y «Cerrar sesión» en la barra verde ya no son blancos; usan la superficie oscura con el verde claro del tema (`estiloBotonBarra`).
+
 ## [0.8.1] — 2026-11-25 · Ajustes del modo oscuro y de los reportes
 
 ### Corregido

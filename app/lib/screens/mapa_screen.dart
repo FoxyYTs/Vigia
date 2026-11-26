@@ -210,7 +210,7 @@ class _AccionesSesion extends StatelessWidget {
     final compacto = MediaQuery.sizeOf(context).width < 600;
     if (!auth.autenticado) {
       return FilledButton.icon(
-        style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: VigiaColors.bosque),
+        style: estiloBotonBarra(context),
         onPressed: () => Navigator.of(context).pushNamed(Rutas.login),
         icon: const Icon(Icons.login),
         label: const Text('Iniciar sesión'),
@@ -224,7 +224,7 @@ class _AccionesSesion extends StatelessWidget {
             child: Text('${auth.username} · ${auth.rol.etiqueta}', style: const TextStyle(color: Colors.white)),
           ),
         FilledButton.icon(
-          style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: VigiaColors.bosque),
+          style: estiloBotonBarra(context),
           onPressed: () => Navigator.of(context).pushNamed(Rutas.panel),
           icon: const Icon(Icons.dashboard_outlined),
           label: const Text('Mi panel'),

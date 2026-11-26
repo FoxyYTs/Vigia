@@ -126,3 +126,15 @@ ThemeData construirTemaVigia({Brightness brillo = Brightness.light}) {
     ),
   );
 }
+
+/// Botón destacado sobre la barra verde («Mi panel», «Iniciar sesión»,
+/// «Cerrar sesión»): blanco en el tema claro; en el oscuro, superficie oscura
+/// con el verde claro del tema, porque el blanco resaltaba demasiado.
+ButtonStyle estiloBotonBarra(BuildContext context) {
+  final tema = Theme.of(context);
+  final oscuro = tema.brightness == Brightness.dark;
+  return FilledButton.styleFrom(
+    backgroundColor: oscuro ? tema.colorScheme.surfaceContainerHighest : Colors.white,
+    foregroundColor: oscuro ? tema.colorScheme.primary : VigiaColors.bosque,
+  );
+}
