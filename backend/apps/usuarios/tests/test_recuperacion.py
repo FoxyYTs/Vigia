@@ -88,7 +88,11 @@ def test_cuenta_eliminada_no_recibe_codigo(api, con_correo):
     _pedir_codigo(api).assert_not_called()
 
 
-def test_el_correo_lleva_el_codigo():
-    enviar_codigo_recuperacion("ana@example.com", "ana", "123456")
-    assert len(mail.outbox) == 1
-    assert "123456" in mail.outbox[0].body and mail.outbox[0].to == ["ana@example.com"]
+def test_el_correo_lleva_el_codigo_en_texto_y_html_pero_no_en_el_asunto():
+    enviar_codigo_recuperacion("ana@example.com", "<ana>", "123456")
+    (correo,) = mail.outbox
+    html, tipo = correo.alternatives[0]
+    assert correo.to == ["ana@example.com"] and tipo == "text/html"
+    assert "123456" in correo.body and "123456" in html
+    assert "123456" not in correo.subject  # el asunto se ve sin abrir el correo
+    assert "&lt;ana&gt;" in html and "<ana>" not in html  # el nombre de usuario va escapado
