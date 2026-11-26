@@ -66,7 +66,7 @@ class PanelScreen extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: VigiaColors.bosque),
+              style: estiloBotonBarra(context),
               onPressed: cerrarSesion,
               icon: const Icon(Icons.logout),
               label: const Text('Cerrar sesión'),
