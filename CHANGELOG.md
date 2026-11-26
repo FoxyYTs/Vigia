@@ -7,6 +7,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+## [0.8.0] — 2026-11-25 · Mejoras para producción en Play
+
 ### Cambiado
 - Mapa: los focos se dibujan opacos y con el radio redondeado a 0,5 px, así CircleLayer los pinta por lotes. Con 31 días (5000 focos), el raster en un celular de gama media bajó de 110 a ~17 ms por frame.
 - Mapa: seleccionar un foco ya no reconstruye ni repinta todos los círculos (anillo en su propia capa, `select` en vez de `watch`). El build por frame bajó de ~20 a ~4 ms.
@@ -203,7 +205,8 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 - API REST con JWT y permisos por rol (#25).
 - Filtro de focos fuera de Colombia (#26).
 
-[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.7.0...develop
+[Sin publicar]: https://github.com/FoxyYTs/Vigia/compare/v0.8.0...develop
+[0.8.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.8.0
 [0.7.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.7.0
 [0.6.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.6.0
 [0.5.0]: https://github.com/FoxyYTs/Vigia/releases/tag/v0.5.0
