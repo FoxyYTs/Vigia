@@ -1,12 +1,11 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../config/app_config.dart';
+import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
@@ -15,13 +14,6 @@ import '../providers/preferencias_provider.dart';
 import 'agrupar_focos.dart';
 import 'formato.dart';
 import 'panel_filtros.dart' show colorFuente, colorPuntaje, coloresHistorico;
-
-/// Stadia en web (autoriza por dominio) o con clave; sin clave en Android
-/// (builds de desarrollo) Stadia responde 401, así que va el gris oscuro de Esri.
-final _teselasOscuras = kIsWeb || AppConfig.stadiaApiKey.isNotEmpty
-    ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
-        '${AppConfig.stadiaApiKey.isEmpty ? '' : '?api_key=${AppConfig.stadiaApiKey}'}'
-    : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 
 /// Rectángulo que contiene el territorio continental e insular de Colombia.
 final limitesColombia = LatLngBounds(const LatLng(-4.3, -79.2), const LatLng(13.6, -66.8));
@@ -68,7 +60,6 @@ class _MapaFocosState extends State<MapaFocos> {
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
 
-    final oscuro = Theme.of(context).brightness == Brightness.dark;
 
     return Semantics(
       label: 'Mapa de Colombia con ${focos.length} focos de calor. '
@@ -85,11 +76,10 @@ class _MapaFocosState extends State<MapaFocos> {
           onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
-          // OSM no tiene estilo oscuro (invertir sus colores lo dejaba en
-          // negativo). En oscuro va Stadia Alidade Smooth Dark, hecho con datos de OSM.
+          // Claro también con la app en oscuro: los mapas base oscuros raster no
+          // convencieron (ver #102, migración a MapLibre).
           TileLayer(
-            urlTemplate: oscuro ? _teselasOscuras : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            retinaMode: oscuro && RetinaMode.isHighDensity(context),
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.vigia.foxyyts',
           ),
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
@@ -116,15 +106,14 @@ class _MapaFocosState extends State<MapaFocos> {
           // Plegable: en pantallas angostas la línea completa se cortaba.
           RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
-            // El botón de flutter_map es negro fijo y no se ve en modo oscuro.
+            // Con tooltip; el color es fijo porque el mapa siempre es claro.
             openButton: (context, abrir) => IconButton(
               tooltip: 'Fuentes y atribuciones',
               onPressed: abrir,
-              icon: Icon(Icons.info_outlined, color: Theme.of(context).colorScheme.onSurface),
+              icon: const Icon(Icons.info_outlined, color: VigiaColors.texto),
             ),
             attributions: [
               const TextSourceAttribution('OpenStreetMap contributors'),
-              if (oscuro) const TextSourceAttribution('Stadia Maps, OpenMapTiles'),
               const TextSourceAttribution('NASA FIRMS', prependCopyright: false),
               const TextSourceAttribution('INPE', prependCopyright: false),
               const TextSourceAttribution('UNGRD', prependCopyright: false),
@@ -266,7 +255,7 @@ class _AnilloSeleccion extends StatelessWidget {
           point: seleccionado.posicion,
           radius: _radio(seleccionado) + 6,
           color: Colors.transparent,
-          borderColor: Theme.of(context).colorScheme.onSurface,
+          borderColor: VigiaColors.texto, // el mapa siempre es claro
           borderStrokeWidth: 2.5,
         ),
       ],

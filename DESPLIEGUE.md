@@ -91,7 +91,6 @@ Desde `app/`, con `app/android/key.properties` apuntando a la clave de subida:
 ```bash
 V=0.X.Y+N   # la versión de pubspec.yaml
 flutter build appbundle --release --obfuscate \
-  --dart-define=STADIA_API_KEY=<clave de Stadia Maps> \
   --split-debug-info=$HOME/Proyectos/apps/Vigia/playstore/simbolos/$V
 cp build/app/outputs/bundle/release/app-release.aab ~/Proyectos/apps/Vigia/playstore/app-release-$V.aab
 ```

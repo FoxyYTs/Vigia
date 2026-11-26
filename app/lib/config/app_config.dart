@@ -19,10 +19,6 @@ class AppConfig {
 
   static const String _apiBaseUrlDefinida = String.fromEnvironment('API_BASE_URL');
 
-  /// Clave de Stadia Maps (mapa oscuro) para Android: `--dart-define=STADIA_API_KEY=...`.
-  /// En web no hace falta, Stadia autoriza por dominio.
-  static const String stadiaApiKey = String.fromEnvironment('STADIA_API_KEY');
-
   static Uri get apiBaseUrl {
     if (_apiBaseUrlDefinida.isNotEmpty) return normalizarBase(_apiBaseUrlDefinida);
     if (kIsWeb) return Uri.base.resolve('/api/');
