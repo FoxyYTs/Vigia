@@ -113,5 +113,7 @@ class MotorAlertas:
         AlertaReporte.objects.bulk_create(
             [AlertaReporte(alerta=alerta, reporte=r) for r in corroboran]
         )
-        transaction.on_commit(lambda: despachar_alerta.delay(alerta.pk))
+        # Las satelitales salen en el resumen de la ingesta (enviar_resumen_satelital).
+        if tipo != Alerta.TipoDisparador.DETECCION_SATELITAL:
+            transaction.on_commit(lambda: despachar_alerta.delay(alerta.pk))
         return alerta
