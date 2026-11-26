@@ -20,6 +20,7 @@ import 'package:vigia_app/providers/historico_provider.dart';
 import 'package:vigia_app/providers/prediccion_provider.dart';
 import 'package:vigia_app/screens/login_screen.dart';
 import 'package:vigia_app/screens/mapa_screen.dart';
+import 'package:vigia_app/screens/recuperar_screen.dart';
 import 'package:vigia_app/widgets/panel_filtros.dart';
 
 final _api = VigiaApi(
@@ -48,6 +49,8 @@ Future<void> _cumplePautas(WidgetTester t, Widget pantalla, {Brightness brillo =
 void main() {
   for (final brillo in Brightness.values) {
     testWidgets('inicio de sesión (${brillo.name})', (t) => _cumplePautas(t, const LoginScreen(), brillo: brillo));
+
+    testWidgets('recuperar contraseña (${brillo.name})', (t) => _cumplePautas(t, const RecuperarScreen(), brillo: brillo));
 
     testWidgets('paneles de predicción e histórico (${brillo.name})', (t) => _cumplePautas(
           t,

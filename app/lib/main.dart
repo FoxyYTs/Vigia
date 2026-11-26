@@ -22,6 +22,7 @@ import 'screens/mapa_screen.dart';
 import 'screens/panel_screen.dart';
 import 'screens/permisos_screen.dart';
 import 'screens/reportes_screen.dart';
+import 'screens/recuperar_screen.dart';
 import 'screens/registro_screen.dart';
 import 'screens/rutas.dart';
 
@@ -77,6 +78,7 @@ class VigiaApp extends StatelessWidget {
             builder: (_) => switch (ajustes.name) {
               Rutas.login => const LoginScreen(),
               Rutas.registro => const RegistroScreen(),
+              Rutas.recuperar => const RecuperarScreen(),
               Rutas.panel => const RequiereSesion(child: PanelScreen()),
               Rutas.reportes => const RequiereSesion(child: ReportesScreen()),
               Rutas.estadisticas => const RequiereSesion(gestion: true, child: EstadisticasScreen()),

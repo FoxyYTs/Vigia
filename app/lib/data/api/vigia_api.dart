@@ -101,6 +101,23 @@ class VigiaApi {
             }),
           ));
 
+  /// Pide el código de 6 dígitos para restablecer la contraseña. El servidor
+  /// responde lo mismo exista o no una cuenta con ese correo.
+  Future<void> solicitarCodigoRecuperacion(String correo) => _enviar(() => _cliente.post(
+        baseUrl.resolve('auth/recuperar/'),
+        headers: _cabeceras(),
+        body: jsonEncode({'email': correo}),
+      ));
+
+  /// Cambia la contraseña con el código recibido por correo; el servidor
+  /// cierra las sesiones abiertas de la cuenta.
+  Future<void> restablecerContrasena({required String correo, required String codigo, required String contrasena}) =>
+      _enviar(() => _cliente.post(
+            baseUrl.resolve('auth/recuperar/confirmar/'),
+            headers: _cabeceras(),
+            body: jsonEncode({'email': correo, 'codigo': codigo, 'password': contrasena}),
+          ));
+
   /// Catálogo de municipios para el formulario de registro (público).
   Future<List<Municipio>> municipios() async => [
         for (final m in await _enviarLista(() => _cliente.get(baseUrl.resolve('municipios/'), headers: _cabeceras())))

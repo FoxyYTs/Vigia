@@ -5,6 +5,8 @@ from apps.usuarios.views import (
     EntidadViewSet,
     GestionUsuarioViewSet,
     MunicipioViewSet,
+    RecuperarConfirmacionView,
+    RecuperarSolicitudView,
     RefrescoView,
     RegistroView,
     TokenView,
@@ -21,5 +23,7 @@ urlpatterns = [
     path("auth/token/", TokenView.as_view(), name="token"),
     path("auth/token/refresh/", RefrescoView.as_view(), name="token-refresh"),
     path("auth/logout/", CerrarSesionView.as_view(), name="logout"),
+    path("auth/recuperar/", RecuperarSolicitudView.as_view(), name="recuperar"),
+    path("auth/recuperar/confirmar/", RecuperarConfirmacionView.as_view(), name="recuperar-confirmar"),
     path("auth/yo/", YoView.as_view(), name="yo"),
 ] + router.urls

@@ -2,8 +2,10 @@ import json
 
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
-from rest_framework import generics, mixins, viewsets
+from django.contrib.auth.password_validation import validate_password
+from rest_framework import generics, mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -17,10 +19,14 @@ from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairVi
 
 from apps.usuarios.models import EntidadPublica, Municipio, Usuario
 from apps.usuarios.permissions import EsAdministrador, EsStaff
+from apps.usuarios.recuperacion import usar_codigo, generar_codigo
+from apps.usuarios.tasks import enviar_codigo_recuperacion
 from apps.usuarios.serializers import (
     EntidadSerializer,
     GestionUsuarioSerializer,
     MunicipioSerializer,
+    RecuperarConfirmacionSerializer,
+    RecuperarSolicitudSerializer,
     RegistroSerializer,
     TokenVigiaSerializer,
     UsuarioSerializer,
@@ -32,6 +38,59 @@ class RegistroView(generics.CreateAPIView):
     serializer_class = RegistroSerializer
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "registro"
+
+
+def _cuenta_por_correo(email):
+    # shortcut: si dos cuentas comparten correo (creadas en el admin), se usa la
+    # más antigua; el registro ya no deja repetirlo.
+    return Usuario.objects.filter(email__iexact=email, is_active=True).order_by("pk").first()
+
+
+@method_decorator(never_cache, name="dispatch")
+class RecuperarSolicitudView(generics.GenericAPIView):
+    """Envía un código de 6 dígitos al correo de la cuenta. Responde igual exista
+    o no, para no revelar qué correos están registrados."""
+
+    permission_classes = [AllowAny]
+    serializer_class = RecuperarSolicitudSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "recuperar"
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        usuario = _cuenta_por_correo(serializer.validated_data["email"])
+        if usuario and (codigo := generar_codigo(usuario)):
+            enviar_codigo_recuperacion.delay(usuario.email, usuario.username, codigo)
+        return Response({"detail": "Si el correo está registrado, te llegará un código de 6 dígitos."})
+
+
+@method_decorator(never_cache, name="dispatch")
+class RecuperarConfirmacionView(generics.GenericAPIView):
+    """Cambia la contraseña con el código recibido y cierra todas las sesiones."""
+
+    permission_classes = [AllowAny]
+    serializer_class = RecuperarConfirmacionSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "recuperar-confirmar"
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        usuario = _cuenta_por_correo(datos["email"])
+        # La contraseña se valida antes de gastar el código (y también sin
+        # cuenta, para que la respuesta no revele si el correo existe).
+        try:
+            validate_password(datos["password"], usuario or Usuario(email=datos["email"]))
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"password": list(e.messages)}) from None
+        if usuario is None or not usar_codigo(usuario, datos["codigo"]):
+            raise serializers.ValidationError({"codigo": ["El código no es válido o ya venció. Pide uno nuevo."]})
+        usuario.set_password(datos["password"])
+        usuario.save(update_fields=["password"])
+        _revocar_sesiones(usuario)
+        return Response({"detail": "Listo: ya puedes iniciar sesión con tu nueva contraseña."})
 
 
 @method_decorator(never_cache, name="dispatch")
