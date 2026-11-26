@@ -7,6 +7,9 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ## [Sin publicar]
 
+### Corregido
+- El «último inicio de sesión» del Django Admin ahora cuenta también los inicios de sesión desde la app (`UPDATE_LAST_LOGIN`); antes todas esas cuentas aparecían como «nunca».
+
 ## [0.8.0] — 2026-11-25 · Mejoras para producción en Play
 
 ### Cambiado

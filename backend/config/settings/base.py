@@ -206,6 +206,9 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    # Sin esto, el "último inicio de sesión" del Django Admin solo contaba el
+    # admin: las cuentas que entran por la app aparecían como "nunca".
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # Logs a la consola (Twelve-Factor XI): Docker los recoge con `docker compose logs`.
