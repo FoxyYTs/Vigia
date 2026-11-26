@@ -7,10 +7,12 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
+from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
 from apps.alertas.motor import MotorAlertas
+from apps.notificaciones.tasks import enviar_resumen_satelital
 from apps.satelital.clientes import ClienteInpeQueimadas, ClienteNasaFirms
 from apps.satelital.models import FocoIncendio
 
@@ -62,4 +64,6 @@ def sincronizar_focos() -> dict:
             pk__gt=ultimo_pk, fecha_hora__gte=timezone.now() - ANTIGUEDAD_MAXIMA_ALERTA
         ).order_by("pk")
     )
+    if resultado["alertas"]:
+        transaction.on_commit(enviar_resumen_satelital.delay)
     return resultado

@@ -175,10 +175,17 @@ def test_validacion_manual_crea_alerta_con_el_reporte(reporte):
     assert AlertaReporte.objects.get(alerta=alerta).reporte == reporte
 
 
-def test_crear_alerta_programa_el_despacho(crear_foco, django_capture_on_commit_callbacks):
+def test_crear_alerta_programa_el_despacho(reporte, django_capture_on_commit_callbacks):
     with patch("apps.alertas.motor.despachar_alerta") as tarea, django_capture_on_commit_callbacks(execute=True):
-        alerta = motor.evaluar_foco_nuevo(crear_foco())
+        alerta = motor.evaluar_validacion_manual(reporte)
     tarea.delay.assert_called_once_with(alerta.pk)
+
+
+def test_la_deteccion_satelital_no_se_despacha_suelta(crear_foco, django_capture_on_commit_callbacks):
+    """Va en el resumen de la ingesta: sueltas llegaban a 350 mensajes al día."""
+    with patch("apps.alertas.motor.despachar_alerta") as tarea, django_capture_on_commit_callbacks(execute=True):
+        assert motor.evaluar_foco_nuevo(crear_foco())
+    tarea.delay.assert_not_called()
 
 
 def test_cuentas_recien_creadas_no_disparan_acumulacion(crear_reporte):
