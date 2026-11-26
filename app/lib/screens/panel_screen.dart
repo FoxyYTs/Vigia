@@ -90,7 +90,7 @@ class PanelScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text('Sesión iniciada como ${auth.rol.etiqueta.toLowerCase()}.',
-                      style: const TextStyle(color: VigiaColors.textoSecundario)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 24),
                   const _GestionarUsuario(),
                   const SizedBox(height: 24),
@@ -146,7 +146,7 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
             final contenido = switch (snap) {
               AsyncSnapshot(hasError: true, :final error) => Text(
                   error is ApiException ? error.mensaje : 'No se pudo cargar el perfil.',
-                  style: const TextStyle(color: VigiaColors.error),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               AsyncSnapshot(hasData: true, :final data) => Wrap(
                   spacing: 32,
@@ -164,7 +164,7 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.manage_accounts_outlined, color: VigiaColors.bosque),
+                    Icon(Icons.manage_accounts_outlined, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Semantics(
@@ -181,7 +181,7 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
                 if (context.watch<AuthProvider>().rol == Rol.ciudadano) ...[
                   const SizedBox(height: 8),
                   TextButton.icon(
-                    style: TextButton.styleFrom(foregroundColor: VigiaColors.error),
+                    style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
                     onPressed: () => _eliminarCuenta(context),
                     icon: const Icon(Icons.delete_outline),
                     label: const Text('Eliminar mi cuenta'),
@@ -193,10 +193,10 @@ class _GestionarUsuarioState extends State<_GestionarUsuario> {
                   const Divider(height: 32),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.admin_panel_settings_outlined, color: VigiaColors.bosque),
+                    leading: Icon(Icons.admin_panel_settings_outlined, color: Theme.of(context).colorScheme.primary),
                     title: const Text(PermisosScreen.titulo, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                    subtitle: const Text('Roles y permisos de los usuarios de cada entidad.',
-                        style: TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                    subtitle: Text('Roles y permisos de los usuarios de cada entidad.',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                     trailing: const Icon(Icons.arrow_forward),
                     onTap: () => Navigator.of(context).pushNamed(Rutas.permisos),
                   ),
@@ -224,7 +224,7 @@ Future<void> _eliminarCuenta(BuildContext context) async {
       actions: [
         TextButton(onPressed: () => Navigator.pop(contexto, false), child: const Text('Cancelar')),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: VigiaColors.error),
+          style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
           onPressed: () => Navigator.pop(contexto, true),
           child: const Text('Eliminar cuenta'),
         ),
@@ -253,7 +253,7 @@ class _Dato extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(etiqueta, style: const TextStyle(fontSize: 12, color: VigiaColors.textoSecundario)),
+          Text(etiqueta, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           Text(valor, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ],
       );
@@ -280,7 +280,7 @@ class _Bloque extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(icono, color: VigiaColors.bosque),
+                    Icon(icono, color: Theme.of(context).colorScheme.primary),
                     const Spacer(),
                     const Icon(Icons.arrow_forward),
                   ],
@@ -291,7 +291,7 @@ class _Bloque extends StatelessWidget {
                   child: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
                 const SizedBox(height: 4),
-                Text(detalle, style: const TextStyle(color: VigiaColors.textoSecundario, fontSize: 13)),
+                Text(detalle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
               ],
             ),
           ),

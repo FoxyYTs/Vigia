@@ -5,10 +5,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
 import '../providers/prediccion_provider.dart';
+import '../providers/preferencias_provider.dart';
 import 'agrupar_focos.dart';
 import 'formato.dart';
 import 'panel_filtros.dart' show colorFuente, colorPuntaje, coloresHistorico;
@@ -58,6 +60,7 @@ class _MapaFocosState extends State<MapaFocos> {
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
 
+
     return Semantics(
       label: 'Mapa de Colombia con ${focos.length} focos de calor. '
           'Usa el panel de filtros para cambiar el rango y la fuente.',
@@ -73,6 +76,8 @@ class _MapaFocosState extends State<MapaFocos> {
           onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
+          // Claro también con la app en oscuro: los mapas base oscuros raster no
+          // convencieron (ver #102, migración a MapLibre).
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.vigia.foxyyts',
@@ -99,16 +104,22 @@ class _MapaFocosState extends State<MapaFocos> {
           ),
           const _AnilloSeleccion(),
           // Plegable: en pantallas angostas la línea completa se cortaba.
-          const RichAttributionWidget(
+          RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
+            // Con tooltip; el color es fijo porque el mapa siempre es claro.
+            openButton: (context, abrir) => IconButton(
+              tooltip: 'Fuentes y atribuciones',
+              onPressed: abrir,
+              icon: const Icon(Icons.info_outlined, color: VigiaColors.texto),
+            ),
             attributions: [
-              TextSourceAttribution('OpenStreetMap contributors'),
-              TextSourceAttribution('NASA FIRMS', prependCopyright: false),
-              TextSourceAttribution('INPE', prependCopyright: false),
-              TextSourceAttribution('UNGRD', prependCopyright: false),
-              TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
-              TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
-              TextSourceAttribution('Modelo Vigía', prependCopyright: false),
+              const TextSourceAttribution('OpenStreetMap contributors'),
+              const TextSourceAttribution('NASA FIRMS', prependCopyright: false),
+              const TextSourceAttribution('INPE', prependCopyright: false),
+              const TextSourceAttribution('UNGRD', prependCopyright: false),
+              const TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
+              const TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
+              const TextSourceAttribution('Modelo Vigía', prependCopyright: false),
             ],
           ),
         ],
@@ -139,16 +150,18 @@ class _CapaFocos extends StatefulWidget {
 class _CapaFocosState extends State<_CapaFocos> {
   List<Foco>? _focosPrevios;
   int? _zoomPrevio;
+  bool? _agruparPrevio;
   List<CircleMarker<Foco>> _sueltos = const [];
   List<Marker> _grupos = const [];
 
   /// Solo se reagrupa al cambiar la lista o el zoom entero, no en cada frame
   /// del arrastre.
-  void _agrupar(int zoom) {
-    if (identical(widget.focos, _focosPrevios) && zoom == _zoomPrevio) return;
+  void _agrupar(int zoom, bool agrupar) {
+    if (identical(widget.focos, _focosPrevios) && zoom == _zoomPrevio && agrupar == _agruparPrevio) return;
     _focosPrevios = widget.focos;
     _zoomPrevio = zoom;
-    final grupos = zoom >= zoomSinAgrupar ? const <GrupoFocos>[] : agruparFocos(widget.focos, zoom);
+    _agruparPrevio = agrupar;
+    final grupos = !agrupar || zoom >= zoomSinAgrupar ? const <GrupoFocos>[] : agruparFocos(widget.focos, zoom);
     final agrupados = Set<Foco>.identity()..addAll([for (final g in grupos) if (g.focos.length >= tamanoMinimoGrupo) ...g.focos]);
     _sueltos = [
       // Los más antiguos primero: los recientes quedan dibujados encima.
@@ -173,7 +186,10 @@ class _CapaFocosState extends State<_CapaFocos> {
 
   @override
   Widget build(BuildContext context) {
-    _agrupar(MapCamera.of(context).zoom.floor());
+    _agrupar(
+      MapCamera.of(context).zoom.floor(),
+      context.select<PreferenciasProvider, bool>((p) => p.agruparFocos),
+    );
     return Stack(
       children: [
         RepaintBoundary(child: CircleLayer<Foco>(hitNotifier: widget.hit, circles: _sueltos)),
@@ -239,7 +255,7 @@ class _AnilloSeleccion extends StatelessWidget {
           point: seleccionado.posicion,
           radius: _radio(seleccionado) + 6,
           color: Colors.transparent,
-          borderColor: const Color(0xFF1A1F1C),
+          borderColor: VigiaColors.texto, // el mapa siempre es claro
           borderStrokeWidth: 2.5,
         ),
       ],

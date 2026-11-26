@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/api/vigia_api.dart';
 
 /// Carga de una pantalla: indicador mientras espera, error con «Reintentar»
@@ -32,7 +31,7 @@ class EstadoCarga<T> extends StatelessWidget {
                   Text(
                     error is ApiException ? error.mensaje : mensajeError,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: VigiaColors.error),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(

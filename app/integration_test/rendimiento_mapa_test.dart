@@ -16,6 +16,7 @@ import 'package:vigia_app/data/storage/almacen_tokens.dart';
 import 'package:vigia_app/main.dart';
 import 'package:vigia_app/providers/auth_provider.dart';
 import 'package:vigia_app/providers/focos_provider.dart';
+import 'package:vigia_app/providers/preferencias_provider.dart';
 import 'package:vigia_app/screens/mapa_screen.dart';
 
 void main() {
@@ -24,7 +25,11 @@ void main() {
 
   testWidgets('mover el mapa con 31 días de focos', (tester) async {
     final api = VigiaApi(baseUrl: AppConfig.apiBaseUrl);
-    await tester.pumpWidget(VigiaApp(api: api, auth: AuthProvider(api: api, almacen: AlmacenTokensSeguro())));
+    await tester.pumpWidget(VigiaApp(
+      api: api,
+      auth: AuthProvider(api: api, almacen: AlmacenTokensSeguro()),
+      preferencias: PreferenciasProvider(),
+    ));
 
     final focos = tester.element(find.byType(MapaScreen)).read<FocosProvider>();
     Future<void> esperarCarga() async {

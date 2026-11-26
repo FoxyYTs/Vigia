@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
 import 'formato.dart';
 import 'panel_filtros.dart' show colorFuente;
@@ -36,7 +35,7 @@ class DetalleFoco extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.local_fire_department, color: colorFuente(foco.fuente)),
+                Icon(Icons.local_fire_department, color: colorFuente(foco.fuente, Theme.of(context).brightness)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Semantics(
@@ -61,7 +60,7 @@ class DetalleFoco extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 120,
-                      child: Text(etiqueta, style: const TextStyle(color: VigiaColors.textoSecundario)),
+                      child: Text(etiqueta, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                     Expanded(child: Text(valor, style: const TextStyle(fontWeight: FontWeight.w600))),
                   ],
