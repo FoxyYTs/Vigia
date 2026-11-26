@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/vigia_theme.dart';
 import '../data/models/foco.dart';
 import '../providers/focos_provider.dart';
 import '../providers/historico_provider.dart';
@@ -59,10 +60,6 @@ class _MapaFocosState extends State<MapaFocos> {
     final zonas = context.watch<PrediccionProvider>().zonas;
     final historico = _poligonosHistoricos(context.watch<HistoricoProvider>());
 
-    final teselas = TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'com.vigia.foxyyts',
-    );
 
     return Semantics(
       label: 'Mapa de Colombia con ${focos.length} focos de calor. '
@@ -79,12 +76,12 @@ class _MapaFocosState extends State<MapaFocos> {
           onTap: (_, _) => context.read<FocosProvider>().seleccionar(null),
         ),
         children: [
-          // OSM no tiene teselas oscuras: se invierten los colores de toda la
-          // capa (por tesela quedaban líneas claras entre ellas).
-          if (Theme.of(context).brightness == Brightness.dark)
-            darkModeTilesContainerBuilder(context, teselas)
-          else
-            teselas,
+          // Claro también con la app en oscuro: los mapas base oscuros raster no
+          // convencieron (ver #102, migración a MapLibre).
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.vigia.foxyyts',
+          ),
           if (historico.isNotEmpty) PolygonLayer(polygons: historico),
           // Debajo de los focos: la predicción es contexto, los focos son lo observado.
           if (zonas.isNotEmpty)
@@ -109,20 +106,20 @@ class _MapaFocosState extends State<MapaFocos> {
           // Plegable: en pantallas angostas la línea completa se cortaba.
           RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
-            // El botón de flutter_map es negro fijo y no se ve en modo oscuro.
+            // Con tooltip; el color es fijo porque el mapa siempre es claro.
             openButton: (context, abrir) => IconButton(
               tooltip: 'Fuentes y atribuciones',
               onPressed: abrir,
-              icon: Icon(Icons.info_outlined, color: Theme.of(context).colorScheme.onSurface),
+              icon: const Icon(Icons.info_outlined, color: VigiaColors.texto),
             ),
-            attributions: const [
-              TextSourceAttribution('OpenStreetMap contributors'),
-              TextSourceAttribution('NASA FIRMS', prependCopyright: false),
-              TextSourceAttribution('INPE', prependCopyright: false),
-              TextSourceAttribution('UNGRD', prependCopyright: false),
-              TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
-              TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
-              TextSourceAttribution('Modelo Vigía', prependCopyright: false),
+            attributions: [
+              const TextSourceAttribution('OpenStreetMap contributors'),
+              const TextSourceAttribution('NASA FIRMS', prependCopyright: false),
+              const TextSourceAttribution('INPE', prependCopyright: false),
+              const TextSourceAttribution('UNGRD', prependCopyright: false),
+              const TextSourceAttribution('IDEAM (CC BY-SA)', prependCopyright: false),
+              const TextSourceAttribution('geoBoundaries/DANE (CC BY)', prependCopyright: false),
+              const TextSourceAttribution('Modelo Vigía', prependCopyright: false),
             ],
           ),
         ],
@@ -258,7 +255,7 @@ class _AnilloSeleccion extends StatelessWidget {
           point: seleccionado.posicion,
           radius: _radio(seleccionado) + 6,
           color: Colors.transparent,
-          borderColor: Theme.of(context).colorScheme.onSurface,
+          borderColor: VigiaColors.texto, // el mapa siempre es claro
           borderStrokeWidth: 2.5,
         ),
       ],

@@ -14,7 +14,7 @@ reconstruyeron a partir de los PR; la primera etiqueta publicada es `v0.4.0`.
 
 ### Agregado
 - Recuperar contraseña: «¿Olvidaste tu contraseña?» en el login manda un código de 6 dígitos al correo de la cuenta (vence en 15 minutos, 5 intentos) y con él se pone una contraseña nueva en la misma app; se cierran las sesiones abiertas. API: `POST /api/auth/recuperar/` y `/api/auth/recuperar/confirmar/`, que responden igual exista o no el correo. El correo sale por SMTP (`EMAIL_*` en el `.env`) desde Celery.
-- App: modo oscuro, con selector Sistema/Claro/Oscuro en la barra del mapa (por defecto, el del sistema). Las pantallas toman los colores del tema (el claro queda igual) y los tiles del mapa se invierten. Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
+- App: modo oscuro, con selector Sistema/Claro/Oscuro en la barra del mapa (por defecto, el del sistema). Las pantallas toman los colores del tema (el claro queda igual). El mapa se queda claro (los mapas base oscuros raster no convencieron; ver #102). Los pares de colores tienen pruebas de contraste WCAG en los dos temas.
 - App: con zoom menor a 9, las zonas con 5 focos o más se agrupan en un círculo con el conteo; tocarlo acerca el mapa a ellos. Se puede desactivar en Filtros. Con 31 días, el raster en el celular baja a ~10 ms por frame.
 - App: brújula en el mapa: aparece al girarlo con dos dedos, apunta al norte y al tocarla lo endereza.
 - App: prueba de rendimiento del mapa en un celular real (`integration_test/rendimiento_mapa_test.dart`).
