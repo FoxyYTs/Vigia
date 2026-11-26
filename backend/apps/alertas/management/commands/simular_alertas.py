@@ -23,6 +23,7 @@ from django.utils import timezone
 
 from apps.alertas.models import Alerta, AlertaReporte
 from apps.alertas.motor import MotorAlertas
+from apps.notificaciones.tasks import enviar_resumen_satelital
 from apps.reportes.models import ReporteCiudadano
 from apps.satelital.models import FocoIncendio
 from apps.usuarios.models import Usuario
@@ -68,6 +69,8 @@ class Command(BaseCommand):
             satelite=SATELITE_DEMO,
         )
         self.resultado(motor.evaluar_foco_nuevo(foco))
+        # Las satelitales salen en el resumen de cada ingesta, no sueltas.
+        transaction.on_commit(enviar_resumen_satelital.delay)
         time.sleep(pausa)
 
         self.paso("2. Coincidencia geográfica (reporte a ~1 km del foco)")

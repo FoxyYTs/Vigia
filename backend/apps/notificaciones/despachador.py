@@ -7,9 +7,15 @@ Ruteo por certeza (decisión de José, 31-oct-2026):
 - público  ← alertas confirmadas (coincidencia geográfica, validación manual)
 - privado  ← todas (entidades públicas)
 - interno  ← acumulación de reportes (admins, para que los validen)
+
+Las detecciones satelitales no salen una por una: van en un resumen por
+ingesta (`resumen_satelital`). Hasta el 25-nov-2026 salían sueltas, hasta
+350 mensajes al día al canal privado, y Telegram bloqueó el bot por reportes
+de spam.
 """
 
 import logging
+from collections import Counter
 from html import escape
 
 import requests
@@ -55,6 +61,10 @@ SATELITES = {
 # VIIRS: l, n, h. MODIS es numérico e INPE no la trae: esos casos no se muestran.
 CONFIANZA = {"l": "baja", "n": "media", "h": "alta"}
 
+URL_MAPA = "https://vigia.foxyyts.qzz.io/"
+# Telegram corta en 4096 caracteres: las listas del resumen se recortan.
+MAXIMO_LINEAS_RESUMEN = 10
+
 
 class Notificador:
     def enviar(self, alerta: Alerta, destino: str) -> bool:
@@ -71,8 +81,9 @@ class NotificadorTelegram(Notificador):
             return False
         return self.enviar_texto(destino, self.mensaje(alerta), f"la alerta {alerta.pk}")
 
-    def enviar_texto(self, destino: str, texto: str, que: str) -> bool:
-        """Envía [texto] (HTML) a [destino]; [que] solo describe el envío en el log."""
+    def enviar_texto(self, destino: str, texto: str, que: str, silencioso: bool = False) -> bool:
+        """Envía [texto] (HTML) a [destino]; [que] solo describe el envío en el
+        log. [silencioso]: llega sin sonido ni vibración."""
         token = settings.TELEGRAM_BOT_TOKEN
         if not token or not destino:
             logger.warning("Telegram sin configurar: %s no enviada", que)
@@ -86,6 +97,7 @@ class NotificadorTelegram(Notificador):
                     "parse_mode": "HTML",
                     # Sin esto, cada alerta trae la tarjeta genérica de OpenStreetMap.
                     "link_preview_options": {"is_disabled": True},
+                    "disable_notification": silencioso,
                 },
                 timeout=10,
             )
@@ -121,6 +133,35 @@ class NotificadorTelegram(Notificador):
         mapa = f"https://www.openstreetmap.org/?mlat={lat:.5f}&mlon={lon:.5f}#map=13/{lat:.5f}/{lon:.5f}"
         lineas.append(f'🗺️ <a href="{escape(mapa)}">Ver en el mapa</a> ({lat:.4f}, {lon:.4f})')
         return "\n".join(lineas)
+
+
+def resumen_satelital(alertas: list[Alerta]) -> str:
+    """Un mensaje con todas las detecciones satelitales de una ingesta,
+    contadas por departamento y municipio."""
+    lineas = [
+        f"<b>🛰️ {len(alertas)} {'posible incendio detectado' if len(alertas) == 1 else 'posibles incendios detectados'}"
+        " por satélite</b>",
+        "Sin confirmar en terreno.",
+    ]
+    fechas = [a.foco.fecha_hora for a in alertas if a.foco]
+    if fechas:
+        desde, hasta = (timezone.localtime(f) for f in (min(fechas), max(fechas)))
+        lineas.append(f"🕒 Detectados entre el {desde:%d/%m %H:%M} y el {hasta:%d/%m %H:%M} (hora de Colombia)")
+
+    def lista(conteo: Counter, titulo: str) -> list[str]:
+        mas = conteo.most_common()
+        salida = ["", f"<b>{titulo}</b>"] + [f"• {escape(n)}: {c}" for n, c in mas[:MAXIMO_LINEAS_RESUMEN]]
+        if resto := mas[MAXIMO_LINEAS_RESUMEN:]:
+            salida.append(f"• Otros {len(resto)}: {sum(c for _, c in resto)}")
+        return salida
+
+    con_municipio = [a.municipio for a in alertas if a.municipio]
+    lineas += lista(Counter(m.departamento for m in con_municipio), "Por departamento")
+    lineas += lista(Counter(f"{m.nombre} ({m.departamento})" for m in con_municipio), "Municipios con más focos")
+    if sin := len(alertas) - len(con_municipio):
+        lineas += ["", f"Fuera de los municipios cargados (zona fronteriza o mar): {sin}"]
+    lineas += ["", f'🗺️ <a href="{URL_MAPA}">Ver los focos en el mapa de Vigía</a>']
+    return "\n".join(lineas)
 
 
 class DespachadorNotificaciones:
