@@ -170,7 +170,7 @@ REST_FRAMEWORK = {
 # Documentación OpenAPI (/api/schema/ y /api/docs/).
 SPECTACULAR_SETTINGS = {
     "TITLE": "API de Vigía",
-    "VERSION": "0.8.0",
+    "VERSION": "0.8.1",
     "DESCRIPTION": """
 Alertas tempranas de incendios forestales en Colombia. Los endpoints marcados como públicos
 no piden sesión y forman una API de **datos abiertos**, con un límite de 20.000 consultas
